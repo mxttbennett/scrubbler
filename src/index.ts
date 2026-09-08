@@ -50,6 +50,8 @@ async function main() {
     verifyAttempts: config.verifyAttempts,
   });
 
+  const albumArt = (artist: string, album: string) => api.albumArt(artist, album);
+
   const worker = new ScrubWorker(
     config,
     db,
@@ -59,6 +61,7 @@ async function main() {
     editor,
     albumEditor,
     reporter,
+    albumArt,
   );
 
   console.log(

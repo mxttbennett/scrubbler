@@ -32,6 +32,7 @@ export class ScrubWorker {
     private readonly editor: Editor,
     private readonly albumEditor: AlbumEditor,
     private readonly reporter: Reporter,
+    private readonly albumArt: (artist: string, album: string) => Promise<string | undefined>,
     hooks: WorkerHooks = {},
   ) {
     this.sleep = hooks.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
@@ -68,6 +69,7 @@ export class ScrubWorker {
       writeDelayMs: this.config.writeDelayMs,
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
+      albumArt: this.albumArt,
     });
     this.executor = executor;
 

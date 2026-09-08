@@ -17,6 +17,8 @@ export interface ExecutorOptions {
   writeDelayMs: number;
   digestEvery: number;
   sleep?: (ms: number) => Promise<void>;
+  /** Post-edit album art, looked up per album and cached by the API client. */
+  albumArt?: (artist: string, album: string) => Promise<string | undefined>;
 }
 
 export interface ExecutionSummary {
@@ -140,6 +142,7 @@ export class Executor {
     try {
       const outcome = await this.albumEditor.apply(edit);
       summary.applied++;
+      const imageUrl = await this.opts.albumArt?.(edit.artist, edit.to);
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
       this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
@@ -152,6 +155,7 @@ export class Executor {
             changes: [{ field: 'album_name', from: edit.from, to: edit.to }],
             groups: edit.groups,
             outcome: outcome === 'applied' ? 'applied' : outcome,
+            ...(imageUrl === undefined ? {} : { imageUrl }),
           },
         ],
         this.totalsOf(summary),
@@ -279,7 +283,7 @@ export class Executor {
       await this.reporter.corrections([...pending], totals());
       pending.length = 0;
     };
-    const record = (edit: PlannedEdit, outcome: Outcome, error?: string) => {
+    const record = (edit: PlannedEdit, outcome: Outcome, error?: string, imageUrl?: string) => {
       pending.push({
         artist: edit.original.artist_name,
         track: edit.original.track_name,
@@ -292,6 +296,7 @@ export class Executor {
         groups: edit.groups,
         outcome,
         ...(error === undefined ? {} : { error }),
+        ...(imageUrl === undefined ? {} : { imageUrl }),
       });
     };
 
@@ -331,7 +336,11 @@ export class Executor {
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
-        record(edit, outcome);
+        const art = await this.opts.albumArt?.(
+          edit.next.album_artist_name || edit.next.artist_name,
+          edit.next.album_name,
+        );
+        record(edit, outcome, undefined, art);
       } catch (error) {
         summary.failed++;
         const message = error instanceof Error ? error.message : String(error);

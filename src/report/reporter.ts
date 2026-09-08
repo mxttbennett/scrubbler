@@ -25,6 +25,8 @@ export interface Correction {
   groups: string[];
   outcome: Outcome;
   error?: string;
+  /** Art for the post-edit album, so the embed shows what it will be. */
+  imageUrl?: string;
 }
 
 export interface CorrectionGroup {
@@ -32,6 +34,7 @@ export interface CorrectionGroup {
   shared: { field: string; from: string; to: string } | undefined;
   items: Correction[];
   outcome: Outcome;
+  imageUrl?: string;
 }
 
 export interface Reporter {
@@ -135,6 +138,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
         { name: `tracks (${n})`, value: trackList(g.items) },
         { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
       ],
+      ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
       footer: { text: progressText(totals) },
     });
   }
@@ -154,6 +158,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
       title: `${OUTCOME_WORD[c.outcome]} · ${c.artist}`,
       color: OUTCOME_COLOR[c.outcome],
       fields,
+      ...(c.imageUrl === undefined ? {} : { thumbnail: { url: c.imageUrl } }),
       footer: { text: progressText(totals) },
     };
   }
