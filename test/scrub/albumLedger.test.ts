@@ -106,3 +106,93 @@ describe('album renames reach the ledger', () => {
     expect(e.streamedSummary.unverified).toBe(1);
   });
 });
+
+describe('an album rename survives a restart with its track list', () => {
+  const withTracks = (): PlannedAlbumEdit => ({
+    ...albumEdit(),
+    trackNames: ['Making Flippy Floppy', 'Found a Job', 'Genius Of Love (Tom Tom Club)'],
+  });
+
+  it('persists the track list, since the album page is gone once the rename lands', () => {
+    const d = db();
+    exec(d, async () => 'verified').checkpointAlbum(withTracks());
+
+    const carried = exec(d, async () => 'verified').resumable('fresh-token');
+
+    expect(carried).toHaveLength(1);
+    const first = carried[0]!;
+    if (first.kind !== 'album') throw new Error('expected an album edit');
+    expect(first.edit.trackNames).toEqual([
+      'Making Flippy Floppy',
+      'Found a Job',
+      'Genius Of Love (Tom Tom Club)',
+    ]);
+  });
+
+  it('keeps a name containing a comma intact, which comma-joining would have split', () => {
+    const d = db();
+    exec(d, async () => 'verified').checkpointAlbum({
+      ...albumEdit(),
+      trackNames: ['Good Morning, Captain', 'Nosferatu Man'],
+    });
+
+    const carried = exec(d, async () => 'verified').resumable('fresh-token');
+    const first = carried[0]!;
+    if (first.kind !== 'album') throw new Error('expected an album edit');
+
+    expect(first.edit.trackNames).toEqual(['Good Morning, Captain', 'Nosferatu Man']);
+  });
+
+  it('resumes an album row written before the column existed', () => {
+    const d = db();
+    exec(d, async () => 'verified').checkpointAlbum(withTracks());
+    // Exactly what a pre-0007 row looks like.
+    d.update(schema.appliedEdits).set({ trackNames: null }).run();
+
+    const carried = exec(d, async () => 'verified').resumable('fresh-token');
+    const first = carried[0]!;
+    if (first.kind !== 'album') throw new Error('expected an album edit');
+
+    expect(first.edit.trackNames).toBeUndefined();
+    expect(first.edit.from).toBe('Tim (Remastered)');
+  });
+
+  it('does not throw on a malformed value', () => {
+    const d = db();
+    exec(d, async () => 'verified').checkpointAlbum(withTracks());
+    d.update(schema.appliedEdits).set({ trackNames: 'not json' }).run();
+
+    const carried = exec(d, async () => 'verified').resumable('fresh-token');
+    const first = carried[0]!;
+    if (first.kind !== 'album') throw new Error('expected an album edit');
+
+    expect(first.edit.trackNames).toBeUndefined();
+  });
+
+  it('reports the track list after a resumed apply, which is the bug this fixes', async () => {
+    const items: Correction[] = [];
+    const d = db();
+    const reporter: Reporter = {
+      corrections: async (c: Correction[]) => void items.push(...c),
+      group: async () => {},
+      summary: async () => {},
+      report: async () => {},
+      shadow: async () => {},
+    };
+    const e = new Executor(d, {} as never, { apply: async () => 'verified' } as never, reporter, {
+      dryRun: false,
+      maxEditsPerRun: 100,
+      writeDelayMs: 0,
+      digestEvery: 1,
+    });
+
+    e.checkpointAlbum(withTracks());
+    await e.applyCarried(e.resumable('fresh-token'), new Set());
+
+    expect(items[0]!.scrobbledTracks).toEqual([
+      'Making Flippy Floppy',
+      'Found a Job',
+      'Genius Of Love (Tom Tom Club)',
+    ]);
+  });
+});

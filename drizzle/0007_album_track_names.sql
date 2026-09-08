@@ -1,0 +1,1 @@
+ALTER TABLE `applied_edits` ADD `track_names` text;
