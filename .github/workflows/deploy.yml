@@ -1,0 +1,88 @@
+name: deploy
+
+# Deliberately NOT `push: [main]`, unlike the sibling feed1 service. A merge here widens what the
+# service rewrites on a real Last.fm account, and those edits are irreversible — the manual trigger
+# is the human beat before that happens. See deploy/README.md.
+on:
+  workflow_dispatch:
+
+# Two deploys must not interleave: each one restarts the process, and the WriteLock that serialises
+# Last.fm writes is per-process, so it cannot order writes across a swap.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Stage and rsync build to server
+        run: |
+          set -euo pipefail
+          mkdir -p stage
+          cp -r dist drizzle deploy package.json package-lock.json stage/
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "mkdir -p '${{ secrets.DEPLOY_PATH }}/incoming'"
+          rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519" \
+            stage/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/incoming/"
+
+      - name: Stop service, snapshot the ledger, swap in build, restart
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" bash -s <<'EOF'
+          set -euo pipefail
+          APP="${{ secrets.DEPLOY_PATH }}"
+          cd "$APP"
+
+          # Blocks up to the unit's TimeoutStopSec (90s) so an in-flight edit AND its verification
+          # finish. Killing it between the Last.fm POST and the ledger row is the one thing to avoid.
+          sudo systemctl stop scrubbler || true
+
+          rel=$(grep -E '^DB_PATH=' .env 2>/dev/null | tail -1 | cut -d= -f2- || true)
+          rel=${rel:-.data/scrubbler.sqlite}
+          case "$rel" in /*) DB="$rel" ;; *) DB="$APP/$rel" ;; esac
+          if [ -f "$DB" ]; then
+            mkdir -p "$APP/.data/backups"
+            SNAP="$APP/.data/backups/predeploy_$(date +%Y%m%dT%H%M%S).sqlite"
+            # VACUUM INTO, not cp: the service exits without closing the handle, so committed frames
+            # can still be sitting in the -wal file and a plain copy loses them.
+            node -e 'const D=require("better-sqlite3");const db=new D(process.argv[1]);db.prepare("VACUUM INTO ?").run(process.argv[2]);db.close()' "$DB" "$SNAP"
+            echo "pre-deploy snapshot: $SNAP"
+          fi
+
+          rsync -a --delete \
+            --exclude '.data' --exclude '.env' --exclude 'node_modules' --exclude 'incoming' \
+            "$APP/incoming/" "$APP/"
+          npm ci --omit=dev
+          sudo systemctl start scrubbler
+          EOF
+
+      # Separate step so a service that dies on boot fails the run loudly, rather than being masked
+      # by the swap step's own exit status.
+      - name: Confirm the service came back
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" bash -s <<'EOF'
+          set -euo pipefail
+          sleep 8
+          systemctl is-active scrubbler
+          # Restart=always means a crash-looping build still reports active; the startup line is
+          # what proves this build actually booted and read its config.
+          journalctl -u scrubbler --since '-2 min' --no-pager | grep -F 'scrubbler starting' | tail -1
+          EOF
