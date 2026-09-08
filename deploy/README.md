@@ -102,3 +102,10 @@ with proposals outstanding: the next cycle drains them through the ordinary path
 cards, because incremental discovery only sees new scrobbles and would otherwise leave those
 entities waiting for the weekly full sweep. Use `/scrub pause` for a live stop that needs no
 restart.
+
+## Rolling back past custom replacements
+
+`groups` now carries a `custom` tag alongside the catalogue names. It is read back with an unchecked
+cast (`executor.ts`), so an older build will accept the value without complaining — the tag only
+renders in the `rule` field of an embed, so the consequence is a wrong label, never a wrong edit. No
+SQL step is needed for this migration, unlike the approval gate above.

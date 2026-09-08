@@ -1,11 +1,13 @@
 import { eq, and } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
+import type { WriteLock } from '../core/writeLock.js';
 import { schema } from '../db/index.js';
 import type { AlbumEditor, PlannedAlbumEdit } from '../lastfm/albumEditor.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
 import type { Correction, Outcome, RunTotals } from '../report/reporter.js';
+import type { RuleTag } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
@@ -19,6 +21,16 @@ export interface ExecutorOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Post-edit album art, looked up per album and cached by the API client. */
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
+  /**
+   * Shared across every executor in the process. Omitted only in tests that write nothing
+   * concurrently; production must pass one or the worker, an approval and a command can interleave.
+   */
+  writeLock?: WriteLock;
+  /**
+   * Fired only once a write actually landed as applied or verified — never on failure — so a custom
+   * rule's apply count can never claim an edit that did not happen.
+   */
+  onApplied?: (tags: RuleTag[], entity: { kind: 'track' | 'album'; artist: string; title: string }) => void;
 }
 
 export interface ExecutionSummary {
@@ -173,7 +185,7 @@ export class Executor {
     if (this.stopRequested) return;
 
     try {
-      const outcome = await this.albumEditor.apply(edit);
+      const outcome = await this.locked(() => this.albumEditor.apply(edit));
       summary.applied++;
       summary.byKind.album.applied++;
       summary.byKind.album.tracksCovered += edit.trackNames?.length ?? 0;
@@ -181,6 +193,11 @@ export class Executor {
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
       this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+      this.opts.onApplied?.(edit.groups as RuleTag[], {
+        kind: 'album',
+        artist: edit.artist,
+        title: edit.from,
+      });
       await this.emit(
         [
           {
@@ -290,6 +307,15 @@ export class Executor {
         ),
       )
       .get();
+  }
+
+  /**
+   * The POST and its verification read are one critical section: Last.fm serves stale rows briefly
+   * after a write, so another writer landing between them makes the verification read the wrong row.
+   */
+  private async locked<T>(fn: () => Promise<T>): Promise<T> {
+    const lock = this.opts.writeLock;
+    return lock === undefined ? await fn() : await lock.run(fn);
   }
 
   /** The approval row's buttons address ledger rows by id, so the caller needs the id back. */
@@ -428,12 +454,17 @@ export class Executor {
       if (this.stopRequested) break;
 
       try {
-        const outcome = await this.editor.apply(edit);
+        const outcome = await this.locked(() => this.editor.apply(edit));
         summary.applied++;
         summary.byKind.track.applied++;
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+        this.opts.onApplied?.(edit.groups, {
+          kind: 'track',
+          artist: edit.original.artist_name,
+          title: edit.original.track_name,
+        });
         const art = await this.opts.albumArt?.(
           edit.next.album_artist_name || edit.next.artist_name,
           edit.next.album_name,

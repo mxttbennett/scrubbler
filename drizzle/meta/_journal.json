@@ -36,6 +36,13 @@
       "when": 1788837226278,
       "tag": "0004_approvals_and_album_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788842109066,
+      "tag": "0005_custom_rules",
+      "breakpoints": true
     }
   ]
 }

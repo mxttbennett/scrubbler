@@ -80,6 +80,28 @@ names, is in `src/lastfm/editor.ts`.
 Automatic-edit rules live at two separate URLs:
 `/settings/subscription/automatic-edits/albums` (unpaginated) and `.../tracks` (paginated).
 
+## Writes
+
+- **One `WriteLock` per process, and every Last.fm write goes through it.** The worker, an approval
+  click and a slash command are three independent writers; Last.fm returns `200` for a no-op edit, so
+  an interleaved write is misreported as success rather than merely delayed.
+- The lock is **not re-entrant** by design — a depth counter cannot tell a nested acquire from a
+  second caller arriving while it is held, and the permissive guess allows exactly what it prevents.
+  Acquire at the innermost write only; a mistake then deadlocks loudly instead of corrupting quietly.
+
+## Custom replacements
+
+- **A custom rule is consulted in `cleanTitle`, before the pass loop, and both the planner and the
+  resolver must pass the lookup.** Discovery and resolution are separate decisions through the same
+  function: a rule the planner cannot see nominates no candidate, and one the resolver cannot see
+  reads as `already clean on the library page`.
+- **The replacement is returned as typed and never stripped further.** One rule, one answer.
+- **Artist is required.** `Candidate` needs one and neither library path can be built without one, so
+  a title-only rule is undiscoverable — this is structural, not a deferred feature.
+- `custom` is a `RuleTag`, deliberately **not** a tenth `GroupName`: `MARKER_GROUPS` is keyed on
+  `GroupName` and `RULES_ENABLED` validates against it, so a tenth group would be nameable in config
+  and need a fake pattern entry.
+
 ## Approvals
 
 An approval is a **resume**, not a second persistence path. A proposal marks existing

@@ -1,5 +1,5 @@
 import type { PlannedAlbumEdit } from '../lastfm/albumEditor.js';
-import type { GroupName } from '../rules/markers.js';
+import type { RuleTag } from '../rules/markers.js';
 
 export interface Candidate {
   kind: 'track' | 'album';
@@ -31,7 +31,7 @@ export interface PlannedEdit {
   csrfToken: string;
   action: string;
   refererPath: string;
-  groups: GroupName[];
+  groups: RuleTag[];
 }
 
 export function tupleKey(t: Tuple): string {
