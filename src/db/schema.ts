@@ -187,3 +187,34 @@ export const customRules = sqliteTable(
   (t) => [uniqueIndex('custom_rules_entity').on(t.kind, t.artist, t.fromTitle)],
 );
 
+/**
+ * What a *disabled* experimental rule would have changed, so a rule can be vetted against the real
+ * library before it is trusted with it. Not a ledger row: `applied_edits` is unique on the four
+ * *_original columns and its statuses all mean a decision was taken, so a shadow hit there would
+ * occupy the tuple a later real correction needs.
+ *
+ * Keyed without the artist on purpose — `sweepIncremental` nominates an album under the TRACK
+ * artist while `sweep()` uses the album artist, so including it would record the same album twice.
+ */
+export const shadowHits = sqliteTable(
+  'shadow_hits',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** A GroupName, deliberately unconstrained so a new group needs no migration. */
+    rule: text('rule').notNull(),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    title: text('title').notNull(),
+    wouldBe: text('would_be').notNull(),
+    /** Display only, outside the identity key for the reason above. */
+    sourceArtist: text('source_artist').notNull(),
+    seenAt: createdAt(),
+    lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }),
+    /** Null until a send actually returned: the REST sender no-ops silently when unconfigured. */
+    reportedAt: integer('reported_at', { mode: 'timestamp_ms' }),
+  },
+  (t) => [
+    uniqueIndex('shadow_hits_entity').on(t.rule, t.kind, t.title),
+    index('shadow_hits_unreported').on(t.reportedAt),
+  ],
+);
+

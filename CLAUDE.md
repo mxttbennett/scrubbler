@@ -102,6 +102,23 @@ Automatic-edit rules live at two separate URLs:
   `GroupName` and `RULES_ENABLED` validates against it, so a tenth group would be nameable in config
   and need a fake pattern entry.
 
+## Shadow mode
+
+- **A shadow hit is not a ledger row.** `applied_edits` is unique on the four `*_original` columns
+  and every status there means a decision was taken, so a shadow row would occupy the tuple a later
+  real correction needs. It lives in `shadow_hits`, keyed `(rule, kind, title)`.
+- **The artist is outside that key on purpose.** `sweepIncremental` nominates an album under the
+  TRACK artist (`planner.ts` says so in its own comment) while `sweep()` uses the album artist, so
+  including it would record the same album twice. Albums are therefore shadowed on the full sweep only.
+- **Reporting happens after the cycle commits its state.** `RateLimiter.acquire` reserves its slot
+  before awaiting, so posting fifty cards first pushes the awaited summary behind all of them and
+  delays the cursor write by minutes.
+- **`reportedAt` is separate from `seenAt`** and set only after a send returns. The REST sender
+  no-ops silently when Discord is unconfigured, so marking a row reported at record time would
+  suppress a card that was never sent.
+- **The diff is against the enabled result**, not the raw title — otherwise every catalogue hit would
+  also report as a shadow hit for every disabled rule.
+
 ## Approvals
 
 An approval is a **resume**, not a second persistence path. A proposal marks existing

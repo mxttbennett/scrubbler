@@ -4,6 +4,7 @@ import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { CustomRuleLookup } from '../rules/customRules.js';
+import { type ShadowHit, shadowVerdicts } from '../rules/shadow.js';
 import type { GroupName } from '../rules/markers.js';
 import type { Candidate } from './types.js';
 
@@ -22,7 +23,19 @@ export class Planner {
     private readonly deadAfterAttempts = 3,
     /** Consulted during discovery too: a rule the planner cannot see nominates no candidate. */
     private readonly overrides?: CustomRuleLookup,
+    /**
+     * Called for every entity examined, with what a *disabled* experimental rule would have done.
+     * Synchronous and never awaited: discovery must not be slowed or failed by reporting.
+     */
+    private readonly onShadow?: (hit: ShadowHit) => void,
   ) {}
+
+  private shadow(kind: 'track' | 'album', artist: string, title: string): void {
+    if (this.onShadow === undefined) return;
+    for (const v of shadowVerdicts(title, kind, this.enabled, this.override(artist))) {
+      this.onShadow({ ...v, kind, artist, title });
+    }
+  }
 
   private override(artist: string): { artist: string; lookup: CustomRuleLookup } | undefined {
     return this.overrides === undefined ? undefined : { artist, lookup: this.overrides };
@@ -97,6 +110,9 @@ export class Planner {
       if (cleanTitle(s.track, 'track', this.enabled, this.override(s.artist))) {
         push({ kind: 'track', artist: s.artist, title: s.track });
       }
+      // Tracks only: an album shadowed here would be filed under the track artist and would not
+      // match the row the full sweep records for the same album.
+      this.shadow('track', s.artist, s.track);
       if (seen % 200 === 0) onProgress?.(seen, candidates.length);
     }
 
@@ -119,6 +135,7 @@ export class Planner {
       if (cleanTitle(album.name, 'album', this.enabled, this.override(album.artist))) {
         candidates.push({ kind: 'album', artist: album.artist, title: album.name });
       }
+      this.shadow('album', album.artist, album.name);
       if (seen % 1000 === 0) onProgress?.(seen, candidates.length);
     }
 
@@ -127,6 +144,7 @@ export class Planner {
       if (cleanTitle(track.name, 'track', this.enabled, this.override(track.artist))) {
         candidates.push({ kind: 'track', artist: track.artist, title: track.name });
       }
+      this.shadow('track', track.artist, track.name);
       if (seen % 1000 === 0) onProgress?.(seen, candidates.length);
     }
 

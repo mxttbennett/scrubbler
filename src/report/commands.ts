@@ -3,7 +3,8 @@ import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
-import type { Field } from '../rules/markers.js';
+import { EXPERIMENTAL_GROUPS, type Field } from '../rules/markers.js';
+import type { ShadowStore } from '../scrub/shadowStore.js';
 
 export interface CommandDeps {
   db: Db;
@@ -16,6 +17,10 @@ export interface CommandDeps {
   applyNow: (rule: { kind: Field; artist: string; fromTitle: string }) => Promise<string>;
   approvalMode: boolean;
   dryRun: boolean;
+  shadowStore: ShadowStore;
+  shadowMode: boolean;
+  /** So an already-enabled rule is answered honestly rather than shown as an empty list. */
+  enabledRules: ReadonlySet<string>;
   channelId: string | undefined;
   guildId: string | undefined;
 }
@@ -92,6 +97,35 @@ export const COMMAND_DEFINITION = {
         { type: 3, name: 'from', description: 'The current title', required: true },
       ],
     },
+    {
+      type: 1,
+      name: 'shadow',
+      description: 'What a disabled experimental rule would have caught',
+      options: [
+        {
+          type: 3,
+          name: 'rule',
+          description: 'Limit to one rule',
+          required: false,
+          choices: EXPERIMENTAL_GROUPS.map((g) => ({ name: g, value: g })),
+        },
+        { type: 4, name: 'page', description: '1-based page', required: false },
+      ],
+    },
+    {
+      type: 1,
+      name: 'shadow-clear',
+      description: 'Forget recorded shadow hits so they are announced again',
+      options: [
+        {
+          type: 3,
+          name: 'rule',
+          description: 'Limit to one rule',
+          required: false,
+          choices: EXPERIMENTAL_GROUPS.map((g) => ({ name: g, value: g })),
+        },
+      ],
+    },
     { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
     { type: 1, name: 'resume', description: 'Carry on sweeping' },
     { type: 1, name: 'resweep', description: 'Clear the scrobble cursor so the next sweep is full' },
@@ -135,6 +169,10 @@ export class Commands {
         return { text: this.rulesList() };
       case 'unrule':
         return { text: this.unrule(args) };
+      case 'shadow':
+        return { text: this.shadowList(args) };
+      case 'shadow-clear':
+        return { text: this.shadowClear(args) };
       case 'retry-dead':
         return { text: this.retryDead() };
       default:
@@ -356,6 +394,49 @@ export class Commands {
     return removed
       ? `Removed the ${kind} rule for ${artist} — "${fromTitle}".`
       : `No ${kind} rule for ${artist} — "${fromTitle}".`;
+  }
+
+  private shadowList(args: Record<string, string | number>): string {
+    const raw = args['rule'] === undefined ? undefined : String(args['rule']);
+    if (raw !== undefined && !EXPERIMENTAL_GROUPS.includes(raw as never)) {
+      return `\`${raw}\` is not an experimental rule. Try: ${EXPERIMENTAL_GROUPS.join(', ')}`;
+    }
+    if (raw !== undefined && this.deps.enabledRules.has(raw)) {
+      // Shadow rows only exist for disabled rules, so an empty list here would read as "clean".
+      return `\`${raw}\` is already enabled, so it corrects for real and records no shadow hits.`;
+    }
+
+    const rows = this.deps.shadowStore.list(raw);
+    if (rows.length === 0) {
+      return this.deps.shadowMode
+        ? 'Nothing recorded yet. A full sweep is what finds these.'
+        : 'Shadow mode is off. Set SHADOW_MODE=true and restart to start recording.';
+    }
+
+    const page = Math.max(1, Number(args['page'] ?? 1));
+    const start = (page - 1) * PAGE_SIZE;
+    const slice = rows.slice(start, start + PAGE_SIZE);
+    if (slice.length === 0) return `Page ${page} is past the end (${rows.length} entries).`;
+
+    const counts = this.deps.shadowStore
+      .countsByRule()
+      .map((c) => `${c.rule} ${c.n}`)
+      .join(' · ');
+    const lines = slice.map(
+      (r) => `[${r.rule}] ${r.kind} ${r.artist} — "${r.title}"\n  -> "${r.wouldBe}"`,
+    );
+    const pages = Math.ceil(rows.length / PAGE_SIZE);
+    return fence([...lines, ``, `page ${page}/${pages} · ${counts}`]);
+  }
+
+  private shadowClear(args: Record<string, string | number>): string {
+    const raw = args['rule'] === undefined ? undefined : String(args['rule']);
+    const before = this.deps.shadowStore.list(raw).length;
+    this.deps.db
+      .delete(schema.shadowHits)
+      .where(raw === undefined ? undefined : eq(schema.shadowHits.rule, raw))
+      .run();
+    return `Forgot ${before} shadow hit(s)${raw === undefined ? '' : ` for ${raw}`}. They will be announced again.`;
   }
 
   private retryDead(): string {

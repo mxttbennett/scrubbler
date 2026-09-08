@@ -13,6 +13,7 @@ import type { Resolver } from './resolver.js';
 import type { WriteLock } from '../core/writeLock.js';
 import type { AlbumDetails } from '../lastfm/types.js';
 import type { Approvals } from './approvals.js';
+import type { ShadowStore } from './shadowStore.js';
 import type { Candidate } from './types.js';
 
 export interface WorkerDeps {
@@ -28,6 +29,8 @@ export interface WorkerDeps {
   albumDetails?: (artist: string, album: string) => Promise<AlbumDetails>;
   /** Always present: the unattended path needs it to drain a queue left by an earlier mode. */
   approvals: Approvals;
+  /** Present only when shadow mode is on; its absence is what keeps discovery silent. */
+  shadowStore?: ShadowStore;
   writeLock?: WriteLock;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -50,6 +53,7 @@ export class ScrubWorker {
     | ((artist: string, album: string) => Promise<AlbumDetails>)
     | undefined;
   private readonly approvals: Approvals;
+  private readonly shadowStore: ShadowStore | undefined;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
 
@@ -65,6 +69,7 @@ export class ScrubWorker {
     this.albumArt = deps.albumArt;
     this.albumDetails = deps.albumDetails;
     this.approvals = deps.approvals;
+    this.shadowStore = deps.shadowStore;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
@@ -254,6 +259,34 @@ export class ScrubWorker {
         tracks: summary.byKind.track.applied,
       },
     );
+
+    // Only now, after the cursor and the summary are committed. The rate limiter reserves its slot
+    // before awaiting, so posting these first would push the awaited summary behind every one of
+    // them and delay the state write by minutes.
+    await this.drainShadow();
+  }
+
+  /**
+   * Posts what a disabled rule would have caught, capped per cycle. A row is marked reported only
+   * after the send returns, so a cycle that could not post leaves it for the next one — the sender
+   * no-ops silently when Discord is unconfigured.
+   */
+  private async drainShadow(): Promise<void> {
+    const store = this.shadowStore;
+    if (store === undefined) return;
+    const cap = this.config.shadowMaxPerSweep;
+    if (cap <= 0) return;
+
+    const batch = store.unreported(cap);
+    if (batch.length === 0) return;
+    // Read before posting: every row in the batch is still unreported at this point.
+    const total = store.countUnreported();
+
+    for (const [i, hit] of batch.entries()) {
+      if (this.stopped) break;
+      await this.reporter.shadow(hit, total - (i + 1));
+      store.markReported(hit.id);
+    }
   }
 
   private async loop(): Promise<void> {

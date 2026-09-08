@@ -9,6 +9,7 @@ const silent: Reporter = {
   group: async () => {},
   summary: async () => {},
   report: async () => {},
+  shadow: async () => {},
 };
 
 function db() {

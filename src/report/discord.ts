@@ -9,6 +9,8 @@ export const COLOR = {
   failed: 0xc4161c,
   warn: 0x8a5a12,
   done: 0x2e7d4f,
+  /** A disabled rule's observation. Violet, so it cannot be mistaken for warn's amber. */
+  shadow: 0x6d4a9c,
 } as const;
 
 export interface DiscordEmbedField {

@@ -223,6 +223,36 @@ Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** 
 | `/scrub rules` | the custom replacements you have set, with apply counts |
 | `/scrub unrule` | remove one |
 
+## Shadow mode
+
+The experimental rule groups are off because enabling one is irreversible. Shadow mode is how you
+find out what a rule would do *before* trusting it with the library: with `SHADOW_MODE=true`, every
+sweep reports what each **disabled** rule would have changed, in a violet card, and writes nothing.
+
+```
+Would correct — live-track
+Nirvana ↗
+  track name   all apologies - live ↗
+               all apologies
+  rule         `live-track` is off — set RULES_EXPERIMENTAL_ENABLED to turn it on
+  nothing was changed · 137 more recorded, see /scrub shadow
+```
+
+Measured against a real library, which is the point: `live-track` would touch **138 tracks** whose
+studio takes are also in the library, `feat-track` **272**, `feat-album` **20**. Those numbers are
+the argument for looking first.
+
+- One card per hit, **capped per sweep** (`SHADOW_MAX_PER_SWEEP`, 50). Everything is recorded either
+  way; the cap only delays announcements, and the rest go out on the next cycle.
+- Each entity is announced **once**. A later sweep is silent unless the rule's answer changed.
+- `/scrub shadow [rule]` lists everything recorded; `/scrub shadow-clear [rule]` forgets it so it is
+  announced again.
+- Albums are shadowed on the **weekly full sweep** only — the incremental path knows a scrobble's
+  track artist but not its album artist, and filing an album under the wrong artist would break the
+  dedupe permanently.
+- A shadow hit is an observation, not a queued edit. There is no button to accept one: you either
+  enable the rule or use `/scrub replace`.
+
 ## Custom replacements
 
 The marker catalogue is closed on purpose — it matches whole trailing segments against a named list,
