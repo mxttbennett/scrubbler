@@ -143,9 +143,22 @@ export class LibraryPages {
     return Date.now() < this.throttledUntil;
   }
 
+  /**
+   * Distinguishes "this entity is gone" from "Last.fm would not answer", which verification needs:
+   * an absent page proves a rename landed, a throttle proves nothing.
+   */
+  async fetchOutcome(path: string): Promise<{ html: string; gone: boolean }> {
+    const html = await this.fetch(path);
+    if (html !== '') return { html, gone: false };
+    return { html: '', gone: !this.isBackingOff && !this.lastAttemptFailed };
+  }
+
+  private lastAttemptFailed = false;
+
   /** A 200 carrying only the placeholder skeleton is a failure, not an empty library page. */
   async fetch(path: string): Promise<string> {
     let backoffMs = 1000;
+    this.lastAttemptFailed = false;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       await this.limiter.acquire();
       const res = await this.session.request(path);
@@ -156,6 +169,7 @@ export class LibraryPages {
       // A redirect is a definitive answer, and a settled page with no chartlist is really empty.
       if (res.status >= 300 && res.status < 400) return '';
       if (res.status === 200 && !isThrottled(html) && isSettledEmpty(html)) return '';
+      if (res.status === 404) return '';
 
       const throttled = res.status === 429 || isThrottled(html);
       if (throttled) this.throttledUntil = Date.now() + THROTTLED_BACKOFF_MS;
@@ -167,6 +181,7 @@ export class LibraryPages {
           : throttled
             ? THROTTLED_BACKOFF_MS
             : backoffMs;
+      this.lastAttemptFailed = true;
       this.log(
         `retrying ${path} (${throttled ? 'throttled by Last.fm' : `status ${res.status}`}, attempt ${attempt}) in ${wait}ms`,
       );

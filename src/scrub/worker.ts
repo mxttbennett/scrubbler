@@ -1,13 +1,16 @@
 import type { Config } from '../core/config.js';
 import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
+import type { AlbumEditor } from '../lastfm/albumEditor.js';
 import type { Editor } from '../lastfm/editor.js';
 import { readExistingRules } from '../lastfm/rules.js';
 import type { Session } from '../lastfm/session.js';
 import type { Reporter } from '../report/reporter.js';
+import { eq } from 'drizzle-orm';
 import { Executor } from './executor.js';
 import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
+import type { Candidate } from './types.js';
 
 export interface WorkerHooks {
   sleep?: (ms: number) => Promise<void>;
@@ -16,6 +19,8 @@ export interface WorkerHooks {
 export class ScrubWorker {
   private running = false;
   private stopped = false;
+  private inFlight: Promise<void> | undefined;
+  private executor: Executor | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
 
   constructor(
@@ -25,6 +30,7 @@ export class ScrubWorker {
     private readonly planner: Planner,
     private readonly resolver: Resolver,
     private readonly editor: Editor,
+    private readonly albumEditor: AlbumEditor,
     private readonly reporter: Reporter,
     hooks: WorkerHooks = {},
   ) {
@@ -38,9 +44,15 @@ export class ScrubWorker {
     void this.loop();
   }
 
-  stop(): void {
+  /**
+   * Requests a stop and resolves once the in-flight edit and its verification have finished, so a
+   * deploy cannot kill a write between the Last.fm POST and the ledger row that records it.
+   */
+  async stop(): Promise<void> {
     this.stopped = true;
     this.running = false;
+    this.executor?.requestStop();
+    await this.inFlight;
   }
 
   async runOnce(): Promise<void> {
@@ -57,6 +69,7 @@ export class ScrubWorker {
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
     });
+    this.executor = executor;
 
     // Apply anything a previous run resolved but never wrote, before spending hours re-scraping.
     const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
@@ -66,36 +79,89 @@ export class ScrubWorker {
       await executor.run(carried, rules.keys);
     }
 
-    const candidates = await this.planner.sweep((seen, hits) =>
-      console.log(`swept ${seen} entities, ${hits} candidates`),
-    );
+    const state = this.db.select().from(schema.sweepState).where(eq(schema.sweepState.id, 1)).get();
+    const cursor = state?.lastScrobbleUts ?? null;
+    const lastFull = state?.lastFullSweepAt?.getTime() ?? 0;
+    const fullDue = cursor === null || Date.now() - lastFull >= this.config.fullSweepIntervalMs;
+
+    let candidates: Candidate[];
+    let newestUts: number | undefined;
+    if (fullDue) {
+      console.log(cursor === null ? 'full sweep (no cursor yet)' : 'full sweep (interval elapsed)');
+      candidates = await this.planner.sweep((seen, hits) =>
+        console.log(`swept ${seen} entities, ${hits} candidates`),
+      );
+    } else {
+      console.log(`incremental sweep from uts ${cursor}`);
+      const r = await this.planner.sweepIncremental(cursor, (seen, hits) =>
+        console.log(`examined ${seen} new scrobbles, ${hits} candidates`),
+      );
+      candidates = r.candidates;
+      newestUts = r.newestUts;
+    }
     console.log(`sweep complete: ${candidates.length} candidates`);
 
-    const { skips } = await this.resolver.resolve(
-      candidates,
-      async (edit) => {
+    let albumApplied = 0;
+    let albumFailed = 0;
+    const { skips } = await this.resolver.resolve(candidates, {
+      onEdit: async (edit) => {
         executor.checkpoint(edit);
         await executor.applyOne(edit, rules.keys);
       },
-      (doneCount, total, edits, candidate) => {
+      onAlbumEdit: async (albumEdit) => {
+        try {
+          const outcome = await this.albumEditor.apply(albumEdit);
+          albumApplied++;
+          await this.reporter.corrections(
+            [
+              {
+                artist: albumEdit.artist,
+                track: '(whole album)',
+                album: albumEdit.from,
+                changes: [{ field: 'album_name', from: albumEdit.from, to: albumEdit.to }],
+                groups: albumEdit.groups,
+                outcome,
+              },
+            ],
+            executor.streamedSummary,
+          );
+        } catch (error) {
+          albumFailed++;
+          await this.reporter.report(error, `album edit ${albumEdit.artist} — ${albumEdit.from}`);
+        }
+        await this.sleep(this.config.writeDelayMs);
+      },
+      shouldStop: () => this.stopped,
+      onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
         console.log(
           `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
-            `${edits} tuples · ${s.applied} applied · ${s.verified} verified · ` +
-            `${s.unverified} unverified · ${s.failed} failed`,
+            `${albumApplied} albums · ${edits} tuples · ${s.applied} applied · ` +
+            `${s.verified} verified · ${s.unverified} unverified · ${s.failed} failed`,
         );
       },
-    );
+    });
 
+    for (const skip of skips) this.planner.recordDead(skip.candidate, skip.reason);
     executor.recordSkips(skips);
     const summary = executor.streamedSummary;
 
+    // The cursor advances only after a completed cycle, so an interrupted one re-examines.
+    const finished = !this.stopped;
+    const advanced =
+      finished && newestUts !== undefined ? { lastScrobbleUts: newestUts } : {};
+    const fullStamp = finished && fullDue ? { lastFullSweepAt: new Date() } : {};
     this.db
       .insert(schema.sweepState)
-      .values({ id: 1, lastFullSweepAt: new Date(), lastSweepEditCount: summary.applied })
+      .values({
+        id: 1,
+        lastFullSweepAt: new Date(),
+        lastSweepEditCount: summary.applied,
+        ...(newestUts !== undefined ? { lastScrobbleUts: newestUts } : {}),
+      })
       .onConflictDoUpdate({
         target: schema.sweepState.id,
-        set: { lastFullSweepAt: new Date(), lastSweepEditCount: summary.applied },
+        set: { lastSweepEditCount: summary.applied, ...advanced, ...fullStamp },
       })
       .run();
 
@@ -103,6 +169,7 @@ export class ScrubWorker {
       this.config.dryRun ? 'Dry run complete — nothing written' : 'Sweep complete',
       [
         `candidates      ${candidates.length}`,
+        `album renames  ${albumApplied}${albumFailed > 0 ? ` (${albumFailed} failed)` : ''}`,
         `distinct tuples ${summary.planned}`,
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,
@@ -122,7 +189,8 @@ export class ScrubWorker {
   private async loop(): Promise<void> {
     while (!this.stopped) {
       try {
-        await this.runOnce();
+        this.inFlight = this.runOnce();
+        await this.inFlight;
       } catch (error) {
         await this.reporter.report(error, 'sweep');
       }

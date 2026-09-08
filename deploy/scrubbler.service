@@ -11,6 +11,8 @@ EnvironmentFile=/opt/scrubbler/.env
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=15
+# the service drains its in-flight edit on SIGTERM; give it room
+TimeoutStopSec=90
 # migrations run at app startup, so a plain restart is a full deploy step
 StandardOutput=journal
 StandardError=journal

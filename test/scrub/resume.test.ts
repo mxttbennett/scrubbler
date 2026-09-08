@@ -12,6 +12,7 @@ function db() {
 
 const silentReporter: Reporter = {
   corrections: async (_i: Correction[], _t: RunTotals) => {},
+  group: async () => {},
   summary: async () => {},
   report: async () => {},
 };

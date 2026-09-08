@@ -31,6 +31,16 @@ export interface ExecutionSummary {
 
 export class Executor {
   private readonly sleep: (ms: number) => Promise<void>;
+  private stopRequested = false;
+
+  /** Stops before the *next* write; the in-flight one always finishes and records its ledger row. */
+  requestStop(): void {
+    this.stopRequested = true;
+  }
+
+  get stopping(): boolean {
+    return this.stopRequested;
+  }
 
   constructor(
     private readonly db: Db,
@@ -150,6 +160,8 @@ export class Executor {
     const record = (edit: PlannedEdit, outcome: Outcome, error?: string) => {
       pending.push({
         artist: edit.original.artist_name,
+        track: edit.original.track_name,
+        album: edit.original.album_name,
         changes: changedFields(edit).map((f) => ({
           field: f,
           from: edit.original[f],
@@ -189,6 +201,7 @@ export class Executor {
         summary.capped = true;
         break;
       }
+      if (this.stopRequested) break;
 
       try {
         const outcome = await this.editor.apply(edit);

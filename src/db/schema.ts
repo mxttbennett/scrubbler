@@ -61,4 +61,26 @@ export const sweepState = sqliteTable('sweep_state', {
   id: integer('id').primaryKey(),
   lastFullSweepAt: integer('last_full_sweep_at', { mode: 'timestamp_ms' }),
   lastSweepEditCount: integer('last_sweep_edit_count').notNull().default(0),
+  /** Newest scrobble already examined; null forces a full sweep. */
+  lastScrobbleUts: integer('last_scrobble_uts'),
 });
+
+/**
+ * Entities the service has learned are pointless to ask about — an album with no scrobbles under
+ * that exact title, say. Distinct from `skipped` (a transient per-pass note) and from a user's
+ * ignore decision: this is the service's own memory, and clearing it is safe.
+ */
+export const deadCandidates = sqliteTable(
+  'dead_candidates',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    artist: text('artist').notNull(),
+    title: text('title').notNull(),
+    attempts: integer('attempts').notNull().default(1),
+    reason: text('reason').notNull(),
+    lastTriedAt: integer('last_tried_at', { mode: 'timestamp_ms' }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('dead_candidates_entity').on(t.kind, t.artist, t.title)],
+);
