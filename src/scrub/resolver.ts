@@ -1,6 +1,7 @@
 import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.js';
 import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
+import type { CustomRuleLookup } from '../rules/customRules.js';
 import type { GroupName } from '../rules/markers.js';
 import {
   type Candidate,
@@ -44,7 +45,13 @@ export class Resolver {
     private readonly pages: LibraryPages,
     private readonly username: string,
     private readonly enabled: ReadonlySet<GroupName>,
+    /** The same lookup the planner uses: consulted here too, or the edit would read as already clean. */
+    private readonly overrides?: CustomRuleLookup,
   ) {}
+
+  private override(artist: string): { artist: string; lookup: CustomRuleLookup } | undefined {
+    return this.overrides === undefined ? undefined : { artist, lookup: this.overrides };
+  }
 
   /**
    * Merges every candidate into at most one edit per (track, artist, album, album artist) tuple.
@@ -126,7 +133,12 @@ export class Resolver {
     if (!form) return { reason: 'album page has no edit form (markup may have changed)' };
 
     // Re-derive from the page's own value; the API's copy can be stale.
-    const cleaned = cleanTitle(form.album_name, 'album', this.enabled);
+    const cleaned = cleanTitle(
+      form.album_name,
+      'album',
+      this.enabled,
+      this.override(form.album_artist_name),
+    );
     if (!cleaned) return { reason: 'album title is already clean on the library page' };
 
     const trackNames = [...new Set(extractScrobbleRows(html).map((r) => r.track_name))];
@@ -154,9 +166,16 @@ export class Resolver {
     if (byTuple.has(key)) return undefined;
 
     // Always re-derive from the authoritative page value; the API's copy can be stale.
-    const track = cleanTitle(row.track_name, 'track', this.enabled);
+    const track = cleanTitle(row.track_name, 'track', this.enabled, this.override(row.artist_name));
     const album =
-      row.album_name === '' ? null : cleanTitle(row.album_name, 'album', this.enabled);
+      row.album_name === ''
+        ? null
+        : cleanTitle(
+            row.album_name,
+            'album',
+            this.enabled,
+            this.override(row.album_artist_name || row.artist_name),
+          );
     if (!track && !album) return undefined;
 
     const groups = [...new Set([...(track?.groups ?? []), ...(album?.groups ?? [])])].sort();

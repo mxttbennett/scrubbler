@@ -164,3 +164,26 @@ export const ignored = sqliteTable(
   },
   (t) => [uniqueIndex('ignored_entity').on(t.kind, t.artist, t.title)],
 );
+
+/**
+ * User-supplied replacements the closed marker catalogue cannot express. Artist is required, not
+ * optional: every path in the pipeline is artist-addressed, so a title-only rule could be applied
+ * to an entity already found but could never be discovered. Every key column is non-null, because
+ * SQLite treats repeated NULLs in a unique index as distinct.
+ */
+export const customRules = sqliteTable(
+  'custom_rules',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    artist: text('artist').notNull(),
+    fromTitle: text('from_title').notNull(),
+    toTitle: text('to_title').notNull(),
+    createdBy: text('created_by'),
+    createdAt: createdAt(),
+    lastAppliedAt: integer('last_applied_at', { mode: 'timestamp_ms' }),
+    timesApplied: integer('times_applied').notNull().default(0),
+  },
+  (t) => [uniqueIndex('custom_rules_entity').on(t.kind, t.artist, t.fromTitle)],
+);
+

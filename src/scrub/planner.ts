@@ -3,6 +3,7 @@ import type { LastfmApi } from '../lastfm/api.js';
 import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import { cleanTitle } from '../rules/engine.js';
+import type { CustomRuleLookup } from '../rules/customRules.js';
 import type { GroupName } from '../rules/markers.js';
 import type { Candidate } from './types.js';
 
@@ -19,7 +20,13 @@ export class Planner {
     private readonly enabled: ReadonlySet<GroupName>,
     private readonly db?: Db,
     private readonly deadAfterAttempts = 3,
+    /** Consulted during discovery too: a rule the planner cannot see nominates no candidate. */
+    private readonly overrides?: CustomRuleLookup,
   ) {}
+
+  private override(artist: string): { artist: string; lookup: CustomRuleLookup } | undefined {
+    return this.overrides === undefined ? undefined : { artist, lookup: this.overrides };
+  }
 
   /** Entities already learned to be pointless, so they stop costing a paced page fetch. */
   private isDead(c: Candidate): boolean {
@@ -83,11 +90,11 @@ export class Planner {
         candidates.push(c);
       };
 
-      if (s.album !== '' && cleanTitle(s.album, 'album', this.enabled)) {
+      if (s.album !== '' && cleanTitle(s.album, 'album', this.enabled, this.override(s.artist))) {
         // artist here is the TRACK artist; the resolver reads the real album artist off the page.
         push({ kind: 'album', artist: s.artist, title: s.album });
       }
-      if (cleanTitle(s.track, 'track', this.enabled)) {
+      if (cleanTitle(s.track, 'track', this.enabled, this.override(s.artist))) {
         push({ kind: 'track', artist: s.artist, title: s.track });
       }
       if (seen % 200 === 0) onProgress?.(seen, candidates.length);
@@ -109,7 +116,7 @@ export class Planner {
 
     for await (const album of this.api.iterateTopAlbums(this.username)) {
       seen++;
-      if (cleanTitle(album.name, 'album', this.enabled)) {
+      if (cleanTitle(album.name, 'album', this.enabled, this.override(album.artist))) {
         candidates.push({ kind: 'album', artist: album.artist, title: album.name });
       }
       if (seen % 1000 === 0) onProgress?.(seen, candidates.length);
@@ -117,7 +124,7 @@ export class Planner {
 
     for await (const track of this.api.iterateTopTracks(this.username)) {
       seen++;
-      if (cleanTitle(track.name, 'track', this.enabled)) {
+      if (cleanTitle(track.name, 'track', this.enabled, this.override(track.artist))) {
         candidates.push({ kind: 'track', artist: track.artist, title: track.name });
       }
       if (seen % 1000 === 0) onProgress?.(seen, candidates.length);

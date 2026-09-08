@@ -11,6 +11,12 @@ export type GroupName =
   | 'version'
   | 'mono-stereo';
 
+/**
+ * A custom replacement is not a catalogue group: it has no pattern, applies to one artist's title,
+ * and must never be nameable in RULES_ENABLED — hence a widened tag rather than a tenth GroupName.
+ */
+export type RuleTag = GroupName | 'custom';
+
 export interface MarkerGroup {
   appliesTo: readonly Field[];
   experimental: boolean;

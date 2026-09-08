@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
 import { Commands } from '../../src/report/commands.js';
+import { CustomRules } from '../../src/rules/customRules.js';
 import { Approvals } from '../../src/scrub/approvals.js';
 import { Executor } from '../../src/scrub/executor.js';
 import { Planner } from '../../src/scrub/planner.js';
@@ -21,7 +22,9 @@ const transport: ProposalTransport = {
   editMessage: async () => {},
 };
 
-function harness(opts: { approvalMode?: boolean; dryRun?: boolean } = {}) {
+function harness(
+  opts: { approvalMode?: boolean; dryRun?: boolean; applyNow?: () => Promise<string> } = {},
+) {
   const d = createDb(':memory:');
   runMigrations(d);
   const executor = new Executor(
@@ -39,15 +42,22 @@ function harness(opts: { approvalMode?: boolean; dryRun?: boolean } = {}) {
     ttlHours: 168,
     log: () => {},
   });
+  const customRules = new CustomRules(d);
+  const applied: { kind: string; artist: string; fromTitle: string }[] = [];
   const commands = new Commands({
     db: d,
     approvals,
+    customRules,
+    applyNow: async (rule) => {
+      applied.push(rule);
+      return opts.applyNow === undefined ? 'Applied now: 1 write(s), 1 verified.' : await opts.applyNow();
+    },
     approvalMode: opts.approvalMode ?? true,
     dryRun: opts.dryRun ?? false,
     channelId: 'chan',
     guildId: 'guild',
   });
-  return { d, commands, approvals, executor };
+  return { d, commands, approvals, executor, customRules, applied };
 }
 
 function seedLedger(d: ReturnType<typeof createDb>) {
@@ -86,34 +96,34 @@ function seedLedger(d: ReturnType<typeof createDb>) {
 }
 
 describe('/scrub status', () => {
-  it('names the mode and reads the live phase and pause flag', () => {
+  it('names the mode and reads the live phase and pause flag', async () => {
     const h = harness({ approvalMode: true });
     h.d.insert(schema.sweepState)
       .values({ id: 1, phase: 'resolving', candidatesDone: 12, candidatesTotal: 40, paused: true })
       .run();
 
-    const text = h.commands.handle('status').text;
+    const text = (await h.commands.handle('status')).text;
 
     expect(text).toContain('mode        approval');
     expect(text).toContain('resolving — PAUSED');
     expect(text).toContain('12/40 candidates');
   });
 
-  it('says unattended when approval mode is off', () => {
-    expect(harness({ approvalMode: false }).commands.handle('status').text).toContain('unattended');
+  it('says unattended when approval mode is off', async () => {
+    expect((await harness({ approvalMode: false }).commands.handle('status')).text).toContain('unattended');
   });
 
-  it('marks a dry run so the numbers are not mistaken for writes', () => {
-    expect(harness({ dryRun: true }).commands.handle('status').text).toContain('(dry run)');
+  it('marks a dry run so the numbers are not mistaken for writes', async () => {
+    expect((await harness({ dryRun: true }).commands.handle('status')).text).toContain('(dry run)');
   });
 });
 
 describe('/scrub stats', () => {
-  it('counts albums and tracks separately, all-time', () => {
+  it('counts albums and tracks separately, all-time', async () => {
     const h = harness();
     seedLedger(h.d);
 
-    const text = h.commands.handle('stats').text;
+    const text = (await h.commands.handle('stats')).text;
 
     // 5 verified + 1 applied albums; 3 verified tracks.
     expect(text).toMatch(/corrected\s+6\s+3/);
@@ -122,14 +132,14 @@ describe('/scrub stats', () => {
     expect(text).toContain('total corrected 9');
   });
 
-  it('reads zero cleanly on an empty ledger', () => {
-    expect(harness().commands.handle('stats').text).toContain('total corrected 0');
+  it('reads zero cleanly on an empty ledger', async () => {
+    expect((await harness().commands.handle('stats')).text).toContain('total corrected 0');
   });
 });
 
 describe('/scrub pending', () => {
-  it('says so when nothing is waiting', () => {
-    expect(harness().commands.handle('pending').text).toBe('Nothing awaiting approval.');
+  it('says so when nothing is waiting', async () => {
+    expect((await harness().commands.handle('pending')).text).toBe('Nothing awaiting approval.');
   });
 
   it('lists a pending proposal with a jump link', async () => {
@@ -149,7 +159,7 @@ describe('/scrub pending', () => {
       shared: { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
     });
 
-    const text = h.commands.handle('pending').text;
+    const text = (await h.commands.handle('pending')).text;
 
     expect(text).toContain('Nirvana');
     expect(text).toContain('In Utero (Deluxe Edition) -> In Utero');
@@ -175,91 +185,255 @@ describe('/scrub approve-all', () => {
       shared: { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
     });
 
-    const reply = h.commands.handle('approve-all');
+    const reply = await h.commands.handle('approve-all');
 
     expect(reply.confirm?.customId).toBe('approve-all:0');
     expect(reply.text).toContain('cannot be undone');
   });
 
-  it('offers no button when nothing is pending', () => {
-    expect(harness().commands.handle('approve-all').confirm).toBeUndefined();
+  it('offers no button when nothing is pending', async () => {
+    expect((await harness().commands.handle('approve-all')).confirm).toBeUndefined();
   });
 });
 
 describe('/scrub ignored and unignore', () => {
-  it('round-trips an entry back into the planner', () => {
+  it('round-trips an entry back into the planner', async () => {
     const h = harness();
     h.d.insert(schema.ignored)
       .values({ kind: 'track', artist: 'Slint', title: 'Good Morning, Captain', reason: 'x' })
       .run();
 
-    expect(h.commands.handle('ignored').text).toContain('Slint');
+    expect((await h.commands.handle('ignored')).text).toContain('Slint');
 
     const planner = new Planner({} as never, 'u', new Set(['remaster']), h.d, 3);
     const candidate = { kind: 'track' as const, artist: 'Slint', title: 'Good Morning, Captain' };
     expect(planner.filterLive([candidate])).toEqual([]);
 
-    const removed = h.commands.handle('unignore', {
-      artist: 'Slint',
-      title: 'Good Morning, Captain',
-    }).text;
+    const removed = (
+      await h.commands.handle('unignore', {
+        artist: 'Slint',
+        title: 'Good Morning, Captain',
+      })
+    ).text;
 
     expect(removed).toContain('can be proposed again');
     expect(planner.filterLive([candidate])).toEqual([candidate]);
   });
 
-  it('says so for an entry that was never ignored', () => {
-    expect(harness().commands.handle('unignore', { artist: 'a', title: 'b' }).text).toContain(
+  it('says so for an entry that was never ignored', async () => {
+    expect((await harness().commands.handle('unignore', { artist: 'a', title: 'b' })).text).toContain(
       'Not on the ignore list',
     );
   });
 
-  it('requires both fields', () => {
-    expect(harness().commands.handle('unignore', { artist: '', title: 'b' }).text).toContain(
+  it('requires both fields', async () => {
+    expect((await harness().commands.handle('unignore', { artist: '', title: 'b' })).text).toContain(
       'required',
     );
   });
 
-  it('reports an empty list rather than an empty fence', () => {
-    expect(harness().commands.handle('ignored').text).toBe('The ignore list is empty.');
+  it('reports an empty list rather than an empty fence', async () => {
+    expect((await harness().commands.handle('ignored')).text).toBe('The ignore list is empty.');
   });
 });
 
 describe('/scrub pause and resume', () => {
-  it('sets the flag the worker reads at the candidate boundary', () => {
+  it('sets the flag the worker reads at the candidate boundary', async () => {
     const h = harness();
 
-    h.commands.handle('pause');
+    await h.commands.handle('pause');
     expect(h.d.select().from(schema.sweepState).all()[0]!.paused).toBe(true);
 
-    h.commands.handle('resume');
+    await h.commands.handle('resume');
     expect(h.d.select().from(schema.sweepState).all()[0]!.paused).toBe(false);
   });
 });
 
 describe('/scrub resweep and retry-dead', () => {
-  it('clears the cursor so the next sweep is full', () => {
+  it('clears the cursor so the next sweep is full', async () => {
     const h = harness();
     h.d.insert(schema.sweepState).values({ id: 1, lastScrobbleUts: 1772659220 }).run();
 
-    h.commands.handle('resweep');
+    await h.commands.handle('resweep');
 
     expect(h.d.select().from(schema.sweepState).all()[0]!.lastScrobbleUts).toBeNull();
   });
 
-  it('forgets the learned-empty candidates and says how many', () => {
+  it('forgets the learned-empty candidates and says how many', async () => {
     const h = harness();
     h.d.insert(schema.deadCandidates)
       .values({ kind: 'track', artist: 'a', title: 'b', reason: 'x', lastTriedAt: new Date() })
       .run();
 
-    expect(h.commands.handle('retry-dead').text).toContain('Forgot 1');
+    expect((await h.commands.handle('retry-dead')).text).toContain('Forgot 1');
     expect(h.d.select().from(schema.deadCandidates).all()).toHaveLength(0);
   });
 });
 
 describe('unknown subcommand', () => {
-  it('replies rather than throwing', () => {
-    expect(harness().commands.handle('nonsense').text).toContain('Unknown subcommand');
+  it('replies rather than throwing', async () => {
+    expect((await harness().commands.handle('nonsense')).text).toContain('Unknown subcommand');
+  });
+});
+
+describe('/scrub replace', () => {
+  it('saves the rule and applies the named entity at once', async () => {
+    const h = harness();
+
+    const text = (
+      await h.commands.handle('replace', {
+        kind: 'album',
+        artist: 'Pavement',
+        from: 'Wowee Zowee: Sordid Sentinels Edition',
+        to: 'Wowee Zowee',
+      })
+    ).text;
+
+    expect(text).toContain('Rule saved');
+    expect(text).toContain('Applied now');
+    expect(h.customRules.list()).toHaveLength(1);
+    expect(h.applied).toEqual([
+      {
+        kind: 'album',
+        artist: 'Pavement',
+        fromTitle: 'Wowee Zowee: Sordid Sentinels Edition',
+      },
+    ]);
+  });
+
+  it('makes the rule live for the engine immediately', async () => {
+    const h = harness();
+    await h.commands.handle('replace', {
+      kind: 'track',
+      artist: 'Slint',
+      from: 'Good Morning, Captain',
+      to: 'Good Morning Captain',
+    });
+
+    expect(h.customRules.lookup('track', 'Slint', 'Good Morning, Captain')).toBe(
+      'Good Morning Captain',
+    );
+  });
+
+  it('rejects a replacement that could never land, and writes nothing', async () => {
+    const h = harness();
+
+    const empty = (
+      await h.commands.handle('replace', { kind: 'album', artist: 'A', from: 'X', to: '' })
+    ).text;
+    const casing = (
+      await h.commands.handle('replace', { kind: 'album', artist: 'A', from: 'Xy', to: 'XY' })
+    ).text;
+
+    expect(empty).toContain('cannot be empty');
+    expect(casing).toContain('only in casing');
+    expect(h.customRules.list()).toHaveLength(0);
+    expect(h.applied).toEqual([]);
+  });
+
+  it('rejects a kind that is neither track nor album', async () => {
+    const h = harness();
+    const text = (
+      await h.commands.handle('replace', { kind: 'artist', artist: 'A', from: 'X', to: 'Y' })
+    ).text;
+
+    expect(text).toContain('track or album');
+    expect(h.customRules.list()).toHaveLength(0);
+  });
+
+  it('refuses while paused rather than writing against a paused service', async () => {
+    const h = harness();
+    await h.commands.handle('pause');
+
+    const text = (
+      await h.commands.handle('replace', {
+        kind: 'album',
+        artist: 'Pavement',
+        from: 'Wowee Zowee: Sordid Sentinels Edition',
+        to: 'Wowee Zowee',
+      })
+    ).text;
+
+    expect(text).toContain('paused');
+    expect(h.applied).toEqual([]);
+    expect(h.customRules.list()).toHaveLength(0);
+  });
+
+  it('reports the reason when the entity cannot be found yet', async () => {
+    const h = harness({ applyNow: async () => 'Not applied yet: album no longer in library' });
+
+    const text = (
+      await h.commands.handle('replace', { kind: 'album', artist: 'A', from: 'Gone', to: 'Here' })
+    ).text;
+
+    expect(text).toContain('Not applied yet');
+    // The rule is still saved: the entity may reappear, and the next sweep will catch it.
+    expect(h.customRules.list()).toHaveLength(1);
+  });
+});
+
+describe('/scrub rules and unrule', () => {
+  it('lists a rule with its apply count', async () => {
+    const h = harness();
+    h.customRules.add({
+      kind: 'album',
+      artist: 'Pavement',
+      fromTitle: 'Wowee Zowee: Sordid Sentinels Edition',
+      toTitle: 'Wowee Zowee',
+    });
+
+    const text = (await h.commands.handle('rules')).text;
+
+    expect(text).toContain('Pavement');
+    expect(text).toContain('never applied');
+  });
+
+  it('says so when there are none', async () => {
+    expect((await harness().commands.handle('rules')).text).toBe('No custom replacements set.');
+  });
+
+  it('removes one and reports a miss honestly', async () => {
+    const h = harness();
+    h.customRules.add({
+      kind: 'album',
+      artist: 'Pavement',
+      fromTitle: 'Wowee Zowee: Sordid Sentinels Edition',
+      toTitle: 'Wowee Zowee',
+    });
+
+    const removed = (
+      await h.commands.handle('unrule', {
+        kind: 'album',
+        artist: 'Pavement',
+        from: 'Wowee Zowee: Sordid Sentinels Edition',
+      })
+    ).text;
+    const missing = (
+      await h.commands.handle('unrule', { kind: 'album', artist: 'Nobody', from: 'Nothing' })
+    ).text;
+
+    expect(removed).toContain('Removed');
+    expect(missing).toContain('No album rule');
+    expect(h.customRules.list()).toHaveLength(0);
+  });
+});
+
+describe('approval-only commands with the mode off', () => {
+  it('explains rather than disappearing, so a missing command never reads as a broken bot', async () => {
+    const h = harness({ approvalMode: false });
+
+    const pending = (await h.commands.handle('pending')).text;
+    const approveAll = (await h.commands.handle('approve-all')).text;
+
+    expect(pending).toContain('Approval mode is off');
+    expect(approveAll).toContain('Approval mode is off');
+    expect(pending).toContain('APPROVAL_MODE=true');
+  });
+
+  it('still answers status and stats with the mode off', async () => {
+    const h = harness({ approvalMode: false });
+
+    expect((await h.commands.handle('status')).text).toContain('unattended');
+    expect((await h.commands.handle('stats')).text).toContain('total corrected');
   });
 });

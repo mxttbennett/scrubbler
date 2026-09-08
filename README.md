@@ -169,14 +169,15 @@ journald log and in batched digests the same outcomes are marked `+`, `?`, `!` a
 Posting is rate limited to one message per 1.2s, under Discord's ~5-per-5s channel limit, so
 one-per-correction is safe even in a dry run where nothing pauses between edits.
 
-Reports go over the REST API, which is best-effort throughout and never fails a sweep. In the
-default unattended mode there is no websocket at all, so **the bot shows as offline** in Discord's
-member list — a service that only posts gains nothing from a connection to supervise.
+Reports go over the REST API, which is best-effort throughout and never fails a sweep.
 
-Approval mode does hold a gateway connection, because it has to receive button clicks, so there the
-bot shows **online**. Proposals use a separate transport that throws on failure rather than
-swallowing it: a report that vanishes costs a line of history, while a proposal that vanishes would
-leave an approval nobody can ever act on.
+Whether the bot shows **online** depends on configuration, not on the mode: set `DISCORD_OWNER_ID`
+and `DISCORD_GUILD_ID` and it holds a gateway connection to receive commands and button clicks. With
+only a token and channel it posts and never listens, so it shows offline.
+
+Proposals use a separate transport that throws on failure rather than swallowing it: a report that
+vanishes costs a line of history, while a proposal that vanishes would leave an approval nobody can
+ever act on.
 
 ## Approval mode
 
@@ -203,7 +204,9 @@ leave proposals stranded. For a live stop, use `/scrub pause`.
 
 ### Commands
 
-Guild-scoped, owner-only, replies are ephemeral.
+Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** — set
+`DISCORD_OWNER_ID` and `DISCORD_GUILD_ID` and you get all of these unattended too; `pending` and
+`approve-all` simply say the mode is off. Type `/scrub` in the channel to see the list.
 
 | Command | Does |
 |---|---|
@@ -216,6 +219,37 @@ Guild-scoped, owner-only, replies are ephemeral.
 | `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |
 | `/scrub resweep` | clear the scrobble cursor so the next sweep walks the whole library |
 | `/scrub retry-dead` | forget the learned-empty candidates |
+| `/scrub replace` | add a custom replacement and apply it now (see below) |
+| `/scrub rules` | the custom replacements you have set, with apply counts |
+| `/scrub unrule` | remove one |
+
+## Custom replacements
+
+The marker catalogue is closed on purpose — it matches whole trailing segments against a named list,
+which is why `- 2022 Mix`, `- Second Version` and `Mono Mix Remaster` are all left alone. The cost of
+that safety is that some real cruft is unreachable: a store artifact, a label's odd suffix, a title
+that is simply wrong.
+
+`/scrub replace` names one yourself:
+
+```
+/scrub replace kind:album artist:Pavement
+               from:"Wowee Zowee: Sordid Sentinels Edition"
+               to:"Wowee Zowee"
+```
+
+- It is a **standing rule**, consulted on every sweep, not a one-off — so a re-scrobble is caught too.
+- It **beats the catalogue** and the replacement is used exactly as typed; it is never stripped
+  further. One rule, one answer.
+- It **applies to the named entity immediately**, because a new rule cannot be discovered until the
+  next full sweep (weekly). Anything else matching is caught on that sweep.
+- It **names one artist**, always. That is a structural limit, not a missing feature: everything in
+  the pipeline is artist-addressed, and a title-only rule could never be discovered.
+- It goes through the same ledger, verification and automatic-edit-rule path as a catalogue match, and
+  **skips the approval gate** — approving your own typed instruction is a round trip for nothing.
+
+Matching ignores casing and surrounding spaces, since Last.fm's own casing varies. A replacement that
+differs from the original only in casing is rejected, because Last.fm silently discards such an edit.
 
 ## Seeing what it would change
 

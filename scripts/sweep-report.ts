@@ -4,14 +4,14 @@ import { writeFileSync } from 'node:fs';
 import { loadConfig } from '../src/core/config.js';
 import { LastfmApi } from '../src/lastfm/api.js';
 import { cleanTitle } from '../src/rules/engine.js';
-import type { GroupName } from '../src/rules/markers.js';
+import type { RuleTag } from '../src/rules/markers.js';
 
 interface Row {
   kind: 'album' | 'track';
   artist: string;
   from: string;
   to: string;
-  groups: GroupName[];
+  groups: RuleTag[];
 }
 
 const cfg = loadConfig();

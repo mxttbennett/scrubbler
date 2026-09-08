@@ -1,5 +1,6 @@
 import { loadConfig } from './core/config.js';
 import { AlreadyRunningError, acquireLock, lockPath } from './core/lock.js';
+import { WriteLock } from './core/writeLock.js';
 import { createDb, runMigrations, schema } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
 import { AlbumEditor } from './lastfm/albumEditor.js';
@@ -13,6 +14,7 @@ import { Proposals } from './report/proposals.js';
 import { ConsoleAndDiscordReporter } from './report/reporter.js';
 import { Approvals } from './scrub/approvals.js';
 import { Executor } from './scrub/executor.js';
+import { CustomRules } from './rules/customRules.js';
 import { Planner } from './scrub/planner.js';
 import { Resolver } from './scrub/resolver.js';
 import { ScrubWorker } from './scrub/worker.js';
@@ -37,14 +39,16 @@ async function main() {
     jitterMs: config.pageDelayJitterMs,
   });
   const api = new LastfmApi(config.apiKey);
+  const customRules = new CustomRules(db);
   const planner = new Planner(
     api,
     config.username,
     config.enabledGroups,
     db,
     config.deadCandidateAttempts,
+    customRules.lookup,
   );
-  const resolver = new Resolver(pages, config.username, config.enabledGroups);
+  const resolver = new Resolver(pages, config.username, config.enabledGroups, customRules.lookup);
   const editor = new Editor(session, pages, {
     verify: config.verifyEdits,
     verifyDelayMs: config.verifyDelayMs,
@@ -58,6 +62,10 @@ async function main() {
   });
 
   const albumArt = (artist: string, album: string) => api.albumArt(artist, album);
+
+  // One per process, shared by every executor: the worker, an approval click and a slash command
+  // are otherwise three unordered writers against the same account.
+  const writeLock = new WriteLock();
 
   const proposals = new Proposals({
     botToken: config.discordBotToken,
@@ -74,6 +82,7 @@ async function main() {
       writeDelayMs: config.writeDelayMs,
       digestEvery: config.digestEvery,
       albumArt,
+      writeLock,
     }),
     proposals,
     freshToken: () => session.freshCsrfToken(`/user/${config.username}/library`),
@@ -96,6 +105,7 @@ async function main() {
     reporter,
     albumArt,
     approvals,
+    writeLock,
   });
 
   console.log(
@@ -126,17 +136,64 @@ async function main() {
     return;
   }
 
-  // Gateway first in approval mode: a proposal posted before the client is listening has live
-  // buttons nothing would answer.
+  /**
+   * Resolves and writes one named entity through the ordinary resolver and executor, so the ledger
+   * row, dedupe, back-off, verification, album art and the automatic-edit rule all behave exactly as
+   * they do for a catalogue match. Shares the write lock, so it queues behind the worker.
+   */
+  const applyOneEntity = async (rule: {
+    kind: 'track' | 'album';
+    artist: string;
+    fromTitle: string;
+  }): Promise<string> => {
+    const executor = new Executor(db, editor, albumEditor, reporter, {
+      dryRun: config.dryRun,
+      maxEditsPerRun: config.maxEditsPerRun,
+      writeDelayMs: config.writeDelayMs,
+      digestEvery: config.digestEvery,
+      albumArt,
+      writeLock,
+      onApplied: (tags, entity) => {
+        if (tags.includes('custom')) customRules.recordApplied(entity.kind, entity.artist, entity.title);
+      },
+    });
+
+    const candidate = { kind: rule.kind, artist: rule.artist, title: rule.fromTitle };
+    const { skips } = await resolver.resolve([candidate], {
+      onGroup: async (group) => {
+        await executor.applyGroup(group, new Set());
+      },
+    });
+    if (skips.length > 0) return `Not applied yet: ${skips[0]!.reason}`;
+
+    const s = executor.streamedSummary;
+    if (s.applied === 0 && s.skippedByLedger > 0) return 'Already corrected earlier.';
+    if (s.applied === 0) return 'Nothing to change — the library page already reads as clean.';
+    if (s.failed > 0) return `Applied ${s.applied}, failed ${s.failed}.`;
+    return `Applied now: ${s.applied} write(s), ${s.verified} verified.`;
+  };
+
+  // Not gated on approval mode: status, stats, pause and the reset commands are just as useful
+  // unattended, and tying the whole surface to the gate left an unattended deploy with no commands.
+  const { discordBotToken, discordOwnerId, discordGuildId } = config;
+
+  // In approval mode this must come before the worker: a proposal posted before the client is
+  // listening has live buttons nothing would answer.
   let gateway: Gateway | undefined;
-  if (config.approvalMode) {
+  if (
+    discordBotToken !== undefined &&
+    discordOwnerId !== undefined &&
+    discordGuildId !== undefined
+  ) {
     gateway = new Gateway({
-      botToken: config.discordBotToken!,
-      ownerId: config.discordOwnerId!,
-      guildId: config.discordGuildId!,
+      botToken: discordBotToken,
+      ownerId: discordOwnerId,
+      guildId: discordGuildId,
       commands: new Commands({
         db,
         approvals,
+        customRules,
+        applyNow: (rule) => applyOneEntity(rule),
         approvalMode: config.approvalMode,
         dryRun: config.dryRun,
         channelId: config.discordChannelId,
