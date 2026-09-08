@@ -25,6 +25,7 @@ const envSchema = z.object({
   MAX_EDITS_PER_RUN: z.string().default('250'),
   WRITE_DELAY_MS: z.string().default('3000'),
   PAGE_DELAY_MS: z.string().default('15000'),
+  PAGE_DELAY_JITTER_MS: z.string().default('5000'),
   VERIFY_EDITS: z.string().default('true'),
   VERIFY_DELAY_MS: z.string().default('2000'),
   VERIFY_ATTEMPTS: z.string().default('3'),
@@ -43,6 +44,7 @@ export interface Config {
   maxEditsPerRun: number;
   writeDelayMs: number;
   pageDelayMs: number;
+  pageDelayJitterMs: number;
   verifyEdits: boolean;
   verifyDelayMs: number;
   verifyAttempts: number;
@@ -108,6 +110,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     maxEditsPerRun: parsePositiveInt(e.MAX_EDITS_PER_RUN, 'MAX_EDITS_PER_RUN'),
     writeDelayMs: parsePositiveInt(e.WRITE_DELAY_MS, 'WRITE_DELAY_MS'),
     pageDelayMs: parsePositiveInt(e.PAGE_DELAY_MS, 'PAGE_DELAY_MS'),
+    pageDelayJitterMs: parsePositiveInt(e.PAGE_DELAY_JITTER_MS, 'PAGE_DELAY_JITTER_MS'),
     verifyEdits: parseBool(e.VERIFY_EDITS, 'VERIFY_EDITS'),
     verifyDelayMs: parsePositiveInt(e.VERIFY_DELAY_MS, 'VERIFY_DELAY_MS'),
     verifyAttempts: parsePositiveInt(e.VERIFY_ATTEMPTS, 'VERIFY_ATTEMPTS'),

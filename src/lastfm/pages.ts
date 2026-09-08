@@ -10,6 +10,8 @@ export interface PagesOptions {
   log?: (msg: string) => void;
   /** Spacing between library page fetches; the web pages throttle far sooner than the API. */
   minIntervalMs?: number;
+  jitterMs?: number;
+  random?: () => number;
 }
 
 /** Last.fm soft-throttles with HTTP 200 and an HTML page, so status alone cannot detect it. */
@@ -127,7 +129,11 @@ export class LibraryPages {
   ) {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.log = opts.log ?? ((m) => console.log(m));
-    this.limiter = new RateLimiter(opts.minIntervalMs ?? 15_000, { sleep: this.sleep });
+    this.limiter = new RateLimiter(
+      opts.minIntervalMs ?? 15_000,
+      { sleep: this.sleep, ...(opts.random ? { random: opts.random } : {}) },
+      opts.jitterMs ?? 5_000,
+    );
   }
 
   private throttledUntil = 0;

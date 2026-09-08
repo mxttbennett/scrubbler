@@ -40,7 +40,10 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
   pages with an HTTP `200` page reading "You're requesting too many pages" — no `429`, no
   `Retry-After`. `LibraryPages` owns a 1.5s rate limiter and `isThrottled()`; never bypass either.
   The JSON API and the web pages are separate rate-limit domains, and the web one is far tighter:
-  4 req/s is fine for the API, 1.5s spacing still got throttled on the pages, so the default is 15s.
+  4 req/s is fine for the API, 1.5s spacing still got throttled on the pages, so the default is
+  15s with 5s of jitter. The jitter is **not** camouflage — the User-Agent names this service. It
+  decorrelates the cadence from a fixed rate-limit window and stops requests re-synchronising after
+  a shared backoff.
 - **Never skip an edit because an automatic-edit rule exists.** A rule created without "apply to all
   past scrobbles" corrects only future ones, so a still-dirty title is evidence the edit is *needed*.
   Rules are read for reporting only; `applied_edits` is the sole dedupe.
