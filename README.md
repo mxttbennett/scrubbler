@@ -20,7 +20,7 @@ So the service uses each transport for what it is good at:
 | Stage | Transport | Why |
 |---|---|---|
 | **Sweep** — find candidates | Read API (`user.getTopAlbums`, `user.getTopTracks`) | ~250 requests enumerates every distinct entity. Cheap and official. |
-| **Resolve** — build the edit | Scrape the library page | The API never returns `albumartist`, which the edit form requires to match exactly. |
+| **Resolve** — build the edit | Scrape the library page (`+noredirect`, paced) | The API never returns `albumartist`, which the edit form requires to match exactly. |
 | **Write** | `POST /user/<you>/library/edit-track` | The only way to edit a scrobble. |
 
 Each write sets `edit_all` (apply to all past scrobbles of that exact tuple) and

@@ -6,6 +6,7 @@ import {
   extractFormAction,
   extractScrobbleRows,
   hasRealChartlist,
+  isSettledEmpty,
   isThrottled,
   pageCount,
   trackLibraryPath,
@@ -35,10 +36,9 @@ describe('URL construction', () => {
     expect(p).toBe('/user/u/library/music/+noredirect/Fleetwood+Mac/_/Silver+Springs');
   });
 
-  it('leaves +noredirect off album URLs, which is unproven for that shape', () => {
-    const p = albumLibraryPath('u', 'Fleetwood Mac', 'Rumours');
-    expect(p).toBe('/user/u/library/music/Fleetwood+Mac/Rumours');
-    expect(p).not.toContain('+noredirect');
+  it('puts +noredirect on album URLs too, because the plain form 301s to a lowercased name', () => {
+    const p = albumLibraryPath('u', 'Fleetwood Mac', 'Rumours (Deluxe Edition)');
+    expect(p).toBe('/user/u/library/music/+noredirect/Fleetwood+Mac/Rumours+(Deluxe+Edition)');
   });
 });
 
@@ -128,5 +128,19 @@ describe('isThrottled', () => {
       false,
     );
     expect(isThrottled('')).toBe(false);
+  });
+});
+
+describe('isSettledEmpty', () => {
+  it('treats a rendered page with no chartlist as genuinely empty, not still loading', () => {
+    expect(isSettledEmpty('<table class="table"></table>')).toBe(true);
+  });
+
+  it('does not call a placeholder page empty, since that one is worth retrying', () => {
+    expect(isSettledEmpty('<table class="chartlist chartlist__placeholder">')).toBe(false);
+  });
+
+  it('does not call a real chartlist empty', () => {
+    expect(isSettledEmpty('<table class="chartlist chartlist--with-album">')).toBe(false);
   });
 });

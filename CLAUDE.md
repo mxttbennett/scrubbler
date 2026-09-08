@@ -24,6 +24,9 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
   full-segment anchoring distinguishes `(Live)` from `(Live in Rotterdam 1984)`. The upstream
   userscript's `detectSuffixPatterns` heuristic is the anti-pattern: it works only because a human
   ticks each box.
+- **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
+  canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
+  stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.
 - **Group into 4-tuples before computing the change.** The `*_original` 4-tuple is the edit's WHERE
   clause, so two POSTs against one tuple cannot both land — the first rewrites what the second
   selects on. `Resolver.fold` merges track and album cleanups for a tuple into one request.

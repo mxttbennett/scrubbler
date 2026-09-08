@@ -32,11 +32,18 @@ export function trackLibraryPath(user: string, artist: string, track: string): s
 }
 
 export function albumLibraryPath(user: string, artist: string, album: string): string {
-  return `/user/${user}/library/music/${encodePathSegment(artist)}/${encodePathSegment(album)}`;
+  // Without +noredirect Last.fm 301s to a lowercased album name, and a casing-only difference
+  // makes the *_original tuple stop matching.
+  return `/user/${user}/library/music/+noredirect/${encodePathSegment(artist)}/${encodePathSegment(album)}`;
 }
 
 export function hasRealChartlist(html: string): boolean {
   return /<table[^>]*class="[^"]*\bchartlist\b(?![^"]*chartlist__placeholder)[^"]*"/.test(html);
+}
+
+/** The placeholder skeleton is the only "still loading" signal; without it the page is settled. */
+export function isSettledEmpty(html: string): boolean {
+  return html !== '' && !html.includes('chartlist__placeholder') && !hasRealChartlist(html);
 }
 
 export function pageCount(html: string): number {
@@ -140,6 +147,9 @@ export class LibraryPages {
       const html = res.status === 200 ? await res.text() : (await res.body?.cancel(), '');
 
       if (res.status === 200 && hasRealChartlist(html)) return html;
+      // A redirect is a definitive answer, and a settled page with no chartlist is really empty.
+      if (res.status >= 300 && res.status < 400) return '';
+      if (res.status === 200 && !isThrottled(html) && isSettledEmpty(html)) return '';
 
       const throttled = res.status === 429 || isThrottled(html);
       if (throttled) this.throttledUntil = Date.now() + THROTTLED_BACKOFF_MS;
