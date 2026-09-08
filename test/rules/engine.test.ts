@@ -378,3 +378,55 @@ describe('remaster word orders', () => {
     expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
   });
 });
+
+describe('compound segments — every part must be a known marker', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)', 'album'],
+    ["Sinatra's Swingin' Session!!! And More (Remastered / Expanded Edition)", 'album'],
+    ['Freedom of Choice (2009 Remaster; Deluxe Edition)', 'album'],
+    ['Garbage (20th Anniversary Deluxe Edition/Remastered)', 'album'],
+    ['Goat (Remaster / Reissue)', 'album'],
+    ['Christmas Portrait (Special Edition/Reissue)', 'album'],
+    ['My Generation (50th Anniversary / Super Deluxe)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  it('names every rule that fired, not just the first', () => {
+    const r = cleanTitle('Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)', 'album', DEFAULT_ON);
+
+    expect(r?.groups).toEqual(['edition', 'remaster']);
+  });
+
+  /**
+   * One unrecognised part and the whole segment is left alone. This is what keeps the compound rule
+   * from degrading into a substring match — the property the entire catalogue depends on.
+   */
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Album (Deluxe Edition; Live in Tokyo)', 'album'],
+    ['Album (Remastered; Taylor\'s Version)', 'album'],
+    ["Dick's Picks Vol. 3: Hollywood Sportatorium, Pembroke Pines, FL 5/22/77", 'album'],
+    ['AC/DC', 'album'],
+    ['Fabric 01 (DJ Mix)', 'album'],
+    ["Sweet Bonnie Brown / It's Just Too Much - Live", 'track'],
+    ['Blues For Allah / Sand Castles & Glass Camels / Unusual Occurrences In The Desert', 'track'],
+    ['White Light/White Heat', 'track'],
+    ['Help on the Way / Slipknot!', 'track'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+
+  it('refuses a compound with an empty part, so a trailing separator changes nothing', () => {
+    expect(cleanTitle('Album (Remastered;)', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Album (/Remastered)', 'album', DEFAULT_ON)).toBeNull();
+  });
+
+  it('still requires the whole segment, so a marker plus prose is untouched', () => {
+    expect(cleanTitle('Album (Remastered at Abbey Road)', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Album (Deluxe Edition Sampler)', 'album', DEFAULT_ON)).toBeNull();
+  });
+});
