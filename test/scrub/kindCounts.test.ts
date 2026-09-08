@@ -44,7 +44,7 @@ function trackEdit(track: string): PlannedEdit {
   };
 }
 
-function albumEdit(): PlannedAlbumEdit {
+function albumEdit(trackNames?: string[]): PlannedAlbumEdit {
   return {
     artist: 'Nirvana',
     from: 'In Utero (Deluxe Edition)',
@@ -53,6 +53,7 @@ function albumEdit(): PlannedAlbumEdit {
     action: '/library/edit-album',
     refererPath: '/x',
     groups: ['edition'],
+    ...(trackNames === undefined ? {} : { trackNames }),
   };
 }
 
@@ -94,7 +95,10 @@ function executor(
       },
     } as never,
     reporter,
-    { ...OPTS, ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }) },
+    {
+      ...OPTS,
+      ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }),
+    },
   );
 }
 
@@ -112,9 +116,9 @@ describe('per-run counts by kind', () => {
 
   it('records how many tracks the album rename covered', async () => {
     const s = spy();
-    const e = executor(s.reporter, { albumDetails: detailsOf(['a', 'b', 'c', 'd'], 52) });
+    const e = executor(s.reporter, { albumDetails: detailsOf([], 52) });
 
-    await e.applyOneAlbum(albumEdit());
+    await e.applyOneAlbum(albumEdit(['a', 'b', 'c', 'd']));
 
     expect(e.streamedSummary.byKind.album.tracksCovered).toBe(4);
     expect(e.streamedSummary.byKind.album.scrobblesCovered).toBe(52);
@@ -164,15 +168,15 @@ describe('per-run counts by kind', () => {
 describe('album corrections name their tracks again', () => {
   it('reports the track list the one-request rename covered', async () => {
     const s = spy();
-    const e = executor(s.reporter, {
-      albumDetails: detailsOf(['Serve the Servants', 'Heart-Shaped Box', 'Rape Me'], 61),
-    });
+    const e = executor(s.reporter, { albumDetails: detailsOf([], 61) });
 
-    await e.applyOneAlbum(albumEdit());
+    await e.applyOneAlbum(
+      albumEdit(['Serve the Servants', 'Heart-Shaped Box', 'Rape Me']),
+    );
 
     expect(s.items).toHaveLength(1);
     expect(s.items[0]!.scrobbles).toBe(61);
-    expect(s.items[0]!.trackNames).toEqual([
+    expect(s.items[0]!.scrobbledTracks).toEqual([
       'Serve the Servants',
       'Heart-Shaped Box',
       'Rape Me',
@@ -185,13 +189,13 @@ describe('album corrections name their tracks again', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(s.items[0]!.trackNames).toBeUndefined();
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
     expect(s.items[0]!.scrobbles).toBeUndefined();
   });
 });
 
-describe('the scrobble count is read before the write', () => {
-  it('asks for the ORIGINAL title, not the renamed one', async () => {
+describe('the two album lookups', () => {
+  it('asks the ORIGINAL title first, then the canonical one', async () => {
     const s = spy();
     const asked: string[] = [];
     const e = executor(s.reporter, {
@@ -203,11 +207,12 @@ describe('the scrobble count is read before the write', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    // Once the album is renamed the old title has no scrobbles left to count.
-    expect(asked).toEqual(['In Utero (Deluxe Edition)']);
+    // The original for the scrobble count (it has none once renamed), then the canonical name for
+    // the track list, which Last.fm only catalogues under the clean title.
+    expect(asked).toEqual(['In Utero (Deluxe Edition)', 'In Utero']);
   });
 
-  it('reads it before the POST, not after', async () => {
+  it('reads the scrobble count before the POST and the track list after', async () => {
     const order: string[] = [];
     const s = spy();
     const e = new Executor(
@@ -231,7 +236,7 @@ describe('the scrobble count is read before the write', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(order).toEqual(['lookup', 'post']);
+    expect(order).toEqual(['lookup', 'post', 'lookup']);
   });
 
   it('still corrects when the lookup fails, since the count is only reporting', async () => {
@@ -246,6 +251,77 @@ describe('the scrobble count is read before the write', () => {
 
     expect(e.streamedSummary.byKind.album.applied).toBe(1);
     expect(s.items[0]!.scrobbles).toBeUndefined();
-    expect(s.items[0]!.trackNames).toBeUndefined();
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
+  });
+});
+
+  it('prefers the canonical track list, which the cruft-laden title does not carry', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async (_artist, album) =>
+        // Art still comes from the canonical name; the scrobble count from the original.
+        album === 'In Utero'
+          ? { imageUrl: 'art.jpg', trackNames: [], scrobbles: 61 }
+          : { imageUrl: undefined, trackNames: [], scrobbles: 37 },
+    });
+
+    await e.applyOneAlbum(albumEdit(['Serve the Servants', 'Scentless Apprentice']));
+
+    expect(s.items[0]!.scrobbledTracks).toEqual([
+      'Serve the Servants',
+      'Scentless Apprentice',
+    ]);
+    // …but the count still comes from the original, where the scrobbles actually were.
+    expect(s.items[0]!.scrobbles).toBe(37);
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(2);
+    expect(e.streamedSummary.byKind.album.scrobblesCovered).toBe(37);
+  });
+
+  it('takes the list from the page, never from the API release list', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      // The API would offer these; they must not win over what the page actually listed.
+      albumDetails: async () => ({
+        imageUrl: undefined,
+        trackNames: ['not', 'these'],
+        scrobbles: 9,
+      }),
+    });
+
+    await e.applyOneAlbum(albumEdit(['a', 'b', 'c']));
+
+    expect(s.items[0]!.scrobbledTracks).toEqual(['a', 'b', 'c']);
+  });
+
+describe('the card names only tracks that were actually scrobbled', () => {
+  it('drops release tracks with no plays, and counts the rest', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({ imageUrl: undefined, trackNames: [], scrobbles: 1 }),
+    });
+
+    // What the album's own library page lists — including a name the API's release list omits.
+    await e.applyOneAlbum(
+      albumEdit(["Franklin's Tower", "Franklin's Tower - 2013 Remaster"]),
+    );
+
+    expect(s.items[0]!.scrobbledTracks).toEqual([
+      "Franklin's Tower",
+      "Franklin's Tower - 2013 Remaster",
+    ]);
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(2);
+  });
+
+  it('omits the field entirely when none of the release tracks were played', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({ imageUrl: undefined, trackNames: ['a', 'b'], scrobbles: 0 }),
+    });
+
+    // The page listed nothing, so the release list is not substituted in its place.
+    await e.applyOneAlbum(albumEdit());
+
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(0);
   });
 });

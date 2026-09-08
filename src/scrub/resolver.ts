@@ -1,5 +1,5 @@
 import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.js';
-import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
+import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractAlbumTrackNames, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { CustomRuleLookup } from '../rules/customRules.js';
 import type { GroupName } from '../rules/markers.js';
@@ -141,6 +141,8 @@ export class Resolver {
     );
     if (!cleaned) return { reason: 'album title is already clean on the library page' };
 
+    // Free: the same HTML the edit form came from lists the tracks scrobbled under this name.
+    const trackNames = extractAlbumTrackNames(html);
     const edit: PlannedAlbumEdit = {
       artist: form.album_artist_name,
       from: form.album_name,
@@ -149,6 +151,7 @@ export class Resolver {
       action: form.action,
       refererPath: path,
       groups: cleaned.groups,
+      ...(trackNames.length === 0 ? {} : { trackNames }),
     };
     return { edit, reason: '' };
   }

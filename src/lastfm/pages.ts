@@ -84,6 +84,21 @@ export function extractScrobbleRows(html: string): ScrobbleRow[] {
   return rows;
 }
 
+/**
+ * The tracks the user has scrobbled under this album name, read off the album's own library page.
+ * Not the release track list: that comes from the API, omits anything Last.fm has not catalogued
+ * (a bonus track, an oddly-named remaster) and includes songs never played. These are the rows a
+ * rename actually moves.
+ */
+export function extractAlbumTrackNames(html: string): string[] {
+  const names = new Set<string>();
+  for (const m of html.matchAll(/\/library\/music\/[^"'?&]+\/_\/([^"'?&]+)/g)) {
+    const name = decodeEntities(decodeURIComponent(m[1]!.replace(/\+/g, ' ')));
+    if (name !== '') names.add(name);
+  }
+  return [...names];
+}
+
 export function extractFormAction(html: string): string | undefined {
   const form = /<form[^>]*data-edit-scrobble[^>]*>/.exec(html);
   if (!form) return undefined;

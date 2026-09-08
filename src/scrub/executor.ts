@@ -193,8 +193,8 @@ export class Executor {
     }
     if (this.stopRequested) return;
 
-    // Before the write: the original title keeps no scrobbles once it has been renamed. Swallowed
-    // because this is reporting only — a missing count must never stop a correction.
+    // Before the write, and for the ORIGINAL title: those scrobbles move to the new name the moment
+    // the rename lands. Swallowed because this is reporting only and must never stop a correction.
     const before = await this.opts
       .albumDetails?.(edit.artist, edit.from)
       .catch(() => undefined);
@@ -203,9 +203,21 @@ export class Executor {
       const outcome = await this.locked(() => this.albumEditor.apply(edit));
       summary.applied++;
       summary.byKind.album.applied++;
-      summary.byKind.album.tracksCovered += before?.trackNames.length ?? 0;
+
+      // The track list comes from the POST-edit name: Last.fm catalogues a release under its
+      // canonical title, so asking about the cruft-laden one returns a play count and no tracks.
+      // Same lookup the art already needed, so this costs no extra request.
+      const after = await this.opts
+        .albumDetails?.(edit.artist, edit.to)
+        .catch(() => undefined);
+      const imageUrl = after?.imageUrl ?? (await this.opts.albumArt?.(edit.artist, edit.to));
+
+      // The album's own library page, which the resolver already fetched, lists exactly the tracks
+      // scrobbled under the old name — including any the API's release list never knew about.
+      const scrobbledTracks = edit.trackNames ?? [];
+
+      summary.byKind.album.tracksCovered += scrobbledTracks.length;
       summary.byKind.album.scrobblesCovered += before?.scrobbles ?? 0;
-      const imageUrl = await this.opts.albumArt?.(edit.artist, edit.to);
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
       this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
@@ -225,9 +237,7 @@ export class Executor {
             groups: edit.groups,
             outcome: outcome === 'applied' ? 'applied' : outcome,
             ...(imageUrl === undefined ? {} : { imageUrl }),
-            ...(before === undefined || before.trackNames.length === 0
-              ? {}
-              : { trackNames: before.trackNames }),
+            ...(scrobbledTracks.length === 0 ? {} : { scrobbledTracks }),
             ...(before?.scrobbles === undefined ? {} : { scrobbles: before.scrobbles }),
           },
         ],
