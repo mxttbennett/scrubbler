@@ -1,6 +1,6 @@
 {
   "name": "scrubbler",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "scrubbler — headless Last.fm metadata cleaner",
   "type": "module",
   "main": "dist/index.js",

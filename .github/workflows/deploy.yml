@@ -1,5 +1,11 @@
 name: deploy
 
+# The ref is the whole point of the title: dispatching a tag deploys that release, so the run list
+# reads "deploy v1.1.0" rather than three identical "deploy" rows. run-name is evaluated before any
+# job starts, so it cannot read package.json — the ref is the most precise thing available here, and
+# the version that actually came up is written to the run summary by the last step instead.
+run-name: deploy ${{ github.ref_name }}
+
 # Deliberately NOT `push: [main]`, unlike the sibling feed1 service. A merge here widens what the
 # service rewrites on a real Last.fm account, and those edits are irreversible — the manual trigger
 # is the human beat before that happens. See deploy/README.md.
@@ -86,3 +92,21 @@ jobs:
           # proves this build booted. It names the version, so this is also the deploy's receipt.
           journalctl -u scrubbler --since '-2 min' --no-pager | grep -F 'starting | user' | tail -1
           EOF
+
+      # Read back from the box rather than from package.json: this is what is actually running, so a
+      # half-applied deploy cannot report the version it intended to ship.
+      - name: Record the live version in the run summary
+        run: |
+          set -euo pipefail
+          line=$(ssh -i ~/.ssh/id_ed25519 "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "journalctl -u scrubbler --since '-5 min' --no-pager | grep -F 'starting | user' | tail -1")
+          version=$(printf '%s' "$line" | sed -n 's/.*scrubbler \([0-9][^ ]*\) starting.*/\1/p')
+          {
+            echo "### Deployed"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| ref | \`${{ github.ref_name }}\` |"
+            echo "| version live on the box | \`${version:-unknown}\` |"
+            echo "| commit | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -7,6 +7,14 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.1.1] - 2026-09-08
+
+- The deploy workflow's run is now titled after the ref it is deploying, so the Actions list reads
+  `deploy v1.1.0` instead of three identical `deploy` rows. Dispatch a tag to see it.
+- Each deploy also records the version that actually came up in its run summary, read back from the
+  service's startup line on the box rather than from `package.json` — a half-applied deploy cannot
+  report the version it meant to ship.
+
 ## [1.1.0] - 2026-09-08
 
 - Rule groups now have a **tier** instead of being on or off: `auto` applies as before, `gated` fires
