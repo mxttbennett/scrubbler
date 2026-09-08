@@ -70,16 +70,6 @@ export interface AlbumDetails {
   scrobbles: number | undefined;
 }
 
-export interface TrackInfo {
-  track?: { name?: string; userplaycount?: string | number };
-}
-
-/** A track the user has actually played, with its play count. */
-export interface ScrobbledTrack {
-  name: string;
-  plays: number;
-}
-
 const SIZE_PREFERENCE = ['extralarge', 'large', 'medium'] as const;
 
 /** Largest available art, or undefined — obscure releases legitimately have none. */

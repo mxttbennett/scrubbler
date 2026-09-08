@@ -63,8 +63,6 @@ async function main() {
 
   const albumArt = (artist: string, album: string) => api.albumArt(artist, album);
   const albumDetails = (artist: string, album: string) => api.albumDetails(artist, album);
-  const scrobbledTracks = (artist: string, trackNames: readonly string[]) =>
-    api.scrobbledTracks(artist, trackNames);
 
   // One per process, shared by every executor: the worker, an approval click and a slash command
   // are otherwise three unordered writers against the same account.
@@ -86,7 +84,6 @@ async function main() {
       digestEvery: config.digestEvery,
       albumArt,
       albumDetails,
-      scrobbledTracks,
       writeLock,
     }),
     proposals,
@@ -110,7 +107,6 @@ async function main() {
     reporter,
     albumArt,
     albumDetails,
-    scrobbledTracks,
     approvals,
     writeLock,
   });
@@ -160,7 +156,6 @@ async function main() {
       digestEvery: config.digestEvery,
       albumArt,
       albumDetails,
-      scrobbledTracks,
       writeLock,
       onApplied: (tags, entity) => {
         if (tags.includes('custom')) customRules.recordApplied(entity.kind, entity.artist, entity.title);

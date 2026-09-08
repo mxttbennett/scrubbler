@@ -272,12 +272,7 @@ describe('album cards name the tracks a single request covered', () => {
           ],
           groups: ['edition'],
           outcome: 'verified',
-          scrobbledTracks: [
-            { name: 'Serve the Servants', plays: 12 },
-            { name: 'Heart-Shaped Box', plays: 9 },
-            { name: 'Rape Me', plays: 8 },
-            { name: 'Dumb', plays: 8 },
-          ],
+          scrobbledTracks: ['Serve the Servants', 'Heart-Shaped Box', 'Rape Me', 'Dumb'],
           scrobbles: 37,
         },
       ],

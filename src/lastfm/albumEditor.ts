@@ -19,7 +19,11 @@ export interface PlannedAlbumEdit {
   action: string;
   refererPath: string;
   groups: string[];
-
+  /**
+   * The tracks scrobbled under the ORIGINAL album name, read off its library page. A whole-album
+   * rename is one POST, so this is the only record of which rows it moved.
+   */
+  trackNames?: string[];
 }
 
 export interface AlbumEditorOptions {

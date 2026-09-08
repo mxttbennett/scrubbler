@@ -11,7 +11,7 @@ import { Executor } from './executor.js';
 import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
 import type { WriteLock } from '../core/writeLock.js';
-import type { AlbumDetails, ScrobbledTrack } from '../lastfm/types.js';
+import type { AlbumDetails } from '../lastfm/types.js';
 import type { Approvals } from './approvals.js';
 import type { Candidate } from './types.js';
 
@@ -26,7 +26,6 @@ export interface WorkerDeps {
   reporter: Reporter;
   albumArt: (artist: string, album: string) => Promise<string | undefined>;
   albumDetails?: (artist: string, album: string) => Promise<AlbumDetails>;
-  scrobbledTracks?: (artist: string, trackNames: readonly string[]) => Promise<ScrobbledTrack[]>;
   /** Always present: the unattended path needs it to drain a queue left by an earlier mode. */
   approvals: Approvals;
   writeLock?: WriteLock;
@@ -50,9 +49,6 @@ export class ScrubWorker {
   private readonly albumDetails:
     | ((artist: string, album: string) => Promise<AlbumDetails>)
     | undefined;
-  private readonly scrobbledTracks:
-    | ((artist: string, trackNames: readonly string[]) => Promise<ScrobbledTrack[]>)
-    | undefined;
   private readonly approvals: Approvals;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
@@ -68,7 +64,6 @@ export class ScrubWorker {
     this.reporter = deps.reporter;
     this.albumArt = deps.albumArt;
     this.albumDetails = deps.albumDetails;
-    this.scrobbledTracks = deps.scrobbledTracks;
     this.approvals = deps.approvals;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
@@ -128,7 +123,6 @@ export class ScrubWorker {
       sleep: this.sleep,
       albumArt: this.albumArt,
       ...(this.albumDetails === undefined ? {} : { albumDetails: this.albumDetails }),
-      ...(this.scrobbledTracks === undefined ? {} : { scrobbledTracks: this.scrobbledTracks }),
       ...(this.writeLock === undefined ? {} : { writeLock: this.writeLock }),
     });
     this.executor = executor;

@@ -38,7 +38,7 @@ export interface Correction {
    * Set on album corrections only: the tracks of this album the user has actually played, with
    * counts. Deliberately not the release track list — a rename does not touch a song never scrobbled.
    */
-  scrobbledTracks?: { name: string; plays: number }[];
+  scrobbledTracks?: string[];
   /** The user's scrobbles under the ORIGINAL album title, read before the write. */
   scrobbles?: number;
 }
@@ -201,7 +201,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
     if (covered.length > 0) {
       fields.push({
         name: `scrobbled tracks (${covered.length})`,
-        value: trackList(covered.map((t) => ({ ...c, track: `${t.name} (${t.plays})` }))),
+        value: trackList(covered.map((track) => ({ ...c, track }))),
       });
     }
     if (c.scrobbles !== undefined) {
