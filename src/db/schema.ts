@@ -19,13 +19,24 @@ export const appliedEdits = sqliteTable(
     artistName: text('artist_name').notNull(),
     albumName: text('album_name').notNull(),
     albumArtistName: text('album_artist_name').notNull(),
+    /** Album rows carry '' for the track fields; the unique index keeps them distinct from tracks. */
+    kind: text('kind', { enum: ['track', 'album'] }).notNull().default('track'),
     groups: text('groups').notNull(),
     /** Kept so an interrupted resolution can be resumed without re-scraping every library page. */
     timestamp: text('timestamp'),
     action: text('action'),
     refererPath: text('referer_path'),
     status: text('status', {
-      enum: ['applied', 'verified', 'unverified', 'failed', 'skipped', 'planned'],
+      enum: [
+        'applied',
+        'verified',
+        'unverified',
+        'failed',
+        'skipped',
+        'planned',
+        'awaiting_approval',
+        'ignored',
+      ],
     }).notNull(),
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
@@ -63,6 +74,14 @@ export const sweepState = sqliteTable('sweep_state', {
   lastSweepEditCount: integer('last_sweep_edit_count').notNull().default(0),
   /** Newest scrobble already examined; null forces a full sweep. */
   lastScrobbleUts: integer('last_scrobble_uts'),
+  /** Live, unlike the mode itself: read at each candidate boundary so /scrub pause needs no restart. */
+  paused: integer('paused', { mode: 'boolean' }).notNull().default(false),
+  phase: text('phase', { enum: ['idle', 'sweeping', 'resolving', 'applying'] })
+    .notNull()
+    .default('idle'),
+  candidatesDone: integer('candidates_done').notNull().default(0),
+  candidatesTotal: integer('candidates_total').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }),
 });
 
 /**
@@ -83,4 +102,65 @@ export const deadCandidates = sqliteTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('dead_candidates_entity').on(t.kind, t.artist, t.title)],
+);
+
+/**
+ * One row per proposed change awaiting a decision. `id` is what a button's custom_id carries, so a
+ * row must exist before the message is posted — hence the `pending_post` status, which is never
+ * actionable and never blocks a write.
+ */
+export const approvals = sqliteTable(
+  'approvals',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** sha256 over kind plus the group's sorted original tuple keys; a changed group is a new key. */
+    groupKey: text('group_key').notNull(),
+    messageId: text('message_id'),
+    channelId: text('channel_id'),
+    artist: text('artist').notNull(),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    sharedField: text('shared_field'),
+    sharedFrom: text('shared_from'),
+    sharedTo: text('shared_to'),
+    itemCount: integer('item_count').notNull().default(1),
+    status: text('status', {
+      enum: ['pending_post', 'pending', 'approved', 'ignored', 'expired', 'superseded'],
+    }).notNull(),
+    decidedBy: text('decided_by'),
+    createdAt: createdAt(),
+    decidedAt: integer('decided_at', { mode: 'timestamp_ms' }),
+  },
+  (t) => [
+    uniqueIndex('approvals_group_key').on(t.groupKey),
+    index('approvals_status').on(t.status),
+    index('approvals_message').on(t.messageId),
+  ],
+);
+
+export const approvalEdits = sqliteTable(
+  'approval_edits',
+  {
+    approvalId: integer('approval_id').notNull(),
+    appliedEditId: integer('applied_edit_id').notNull(),
+  },
+  (t) => [uniqueIndex('approval_edits_pair').on(t.approvalId, t.appliedEditId)],
+);
+
+/**
+ * Entities the user rejected. Deliberately separate from `skipped` (rewritten every pass) and
+ * `dead_candidates` (the service's own learned emptiness): only `/scrub unignore` may remove one, so
+ * a re-resolution must not be able to overwrite the decision.
+ */
+export const ignored = sqliteTable(
+  'ignored',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    artist: text('artist').notNull(),
+    title: text('title').notNull(),
+    reason: text('reason').notNull(),
+    decidedBy: text('decided_by'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('ignored_entity').on(t.kind, t.artist, t.title)],
 );

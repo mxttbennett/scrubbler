@@ -40,7 +40,7 @@ function edit(): PlannedEdit {
 }
 
 function executor(d: ReturnType<typeof db>) {
-  return new Executor(d, {} as never, silentReporter, {
+  return new Executor(d, {} as never, {} as never, silentReporter, {
     dryRun: false,
     maxEditsPerRun: 100,
     writeDelayMs: 0,
@@ -128,6 +128,7 @@ describe('streaming writes during resolution', () => {
           return 'verified' as const;
         },
       } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );
@@ -150,6 +151,7 @@ describe('streaming writes during resolution', () => {
     const e = new Executor(
       d,
       { apply: async () => { calls++; return 'verified' as const; } } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 2, writeDelayMs: 0, digestEvery: 1 },
     );
@@ -171,6 +173,7 @@ describe('streaming writes during resolution', () => {
     const e = new Executor(
       d,
       { apply: async () => { calls++; return 'verified' as const; } } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );

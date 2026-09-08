@@ -62,7 +62,7 @@ export class ScrubWorker {
       `existing automatic-edit rules: ${rules.albumCount} album, ${rules.trackCount} track${rules.partial ? ' (partial read)' : ''}`,
     );
 
-    const executor = new Executor(this.db, this.editor, this.reporter, {
+    const executor = new Executor(this.db, this.editor, this.albumEditor, this.reporter, {
       dryRun: this.config.dryRun,
       maxEditsPerRun: this.config.maxEditsPerRun,
       writeDelayMs: this.config.writeDelayMs,
@@ -109,29 +109,12 @@ export class ScrubWorker {
         await executor.applyOne(edit, rules.keys);
       },
       onAlbumEdit: async (albumEdit) => {
-        try {
-          const outcome = await this.albumEditor.apply(albumEdit);
-          albumApplied++;
-          await this.reporter.corrections(
-            [
-              {
-                artist: albumEdit.artist,
-                track: '(whole album)',
-                album: albumEdit.from,
-                changes: [{ field: 'album_name', from: albumEdit.from, to: albumEdit.to }],
-                groups: albumEdit.groups,
-                outcome,
-              },
-            ],
-            executor.streamedSummary,
-          );
-        } catch (error) {
-          albumFailed++;
-          await this.reporter.report(error, `album edit ${albumEdit.artist} — ${albumEdit.from}`);
-        }
-        await this.sleep(this.config.writeDelayMs);
+        executor.checkpointAlbum(albumEdit);
+        const before = executor.streamedSummary.applied;
+        await executor.applyOneAlbum(albumEdit);
+        if (executor.streamedSummary.applied > before) albumApplied++;
+        else if (executor.streamedSummary.failed > 0) albumFailed = executor.streamedSummary.failed;
       },
-      shouldStop: () => this.stopped,
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
         console.log(
