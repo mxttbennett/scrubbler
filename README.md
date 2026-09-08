@@ -157,7 +157,7 @@ Everything goes to journald (`journalctl -u scrubbler -f`). Set `DISCORD_BOT_TOK
 `DISCORD_CHANNEL_ID` and it also posts:
 
 - **one embed per correction** by default, with the old title struck through above the new one, the
-  rule that fired, and running totals in the footer. Set `DIGEST_EVERY` above 1 to batch them into a
+  rule that fired, how many of your scrobbles it moved, and running totals in the footer. Set `DIGEST_EVERY` above 1 to batch them into a
   code-fenced digest instead, which is quieter for a large backfill;
 - a **summary embed** at the end of each sweep, with tuple / applied / verified / unverified /
   failed counts;

@@ -251,6 +251,39 @@ describe('embed titles name the subject and count, not the artist', () => {
   });
 });
 
+describe('a track card carries its scrobble count', () => {
+  const base = {
+    artist: 'The Guess Who',
+    kind: 'track' as const,
+    track: 'American Woman - 2024 Remaster',
+    album: 'American Woman',
+    changes: [
+      { field: 'track_name', from: 'American Woman - 2024 Remaster', to: 'American Woman' },
+    ],
+    groups: ['remaster'],
+    outcome: 'verified' as const,
+  };
+
+  it('shows how many scrobbles the edit moved', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([{ ...base, scrobbles: 606 }], TOTALS);
+    expect(sent[0]!.fields?.find((f) => f.name === 'scrobbles affected')?.value).toBe('606');
+  });
+
+  it('omits the field when the count is unknown, rather than showing a zero', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([base], TOTALS);
+    expect(sent[0]!.fields?.find((f) => f.name === 'scrobbles affected')).toBeUndefined();
+  });
+
+  /** A track genuinely played zero times can still be dirty; 0 is a real answer, not a missing one. */
+  it('shows a real zero', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([{ ...base, scrobbles: 0 }], TOTALS);
+    expect(sent[0]!.fields?.find((f) => f.name === 'scrobbles affected')?.value).toBe('0');
+  });
+});
+
 describe('album cards name the tracks a single request covered', () => {
   it('titles the card with the track count, not the one-item group size', async () => {
     const sent: DiscordEmbed[] = [];

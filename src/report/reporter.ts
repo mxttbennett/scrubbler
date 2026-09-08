@@ -40,7 +40,7 @@ export interface Correction {
    * counts. Deliberately not the release track list — a rename does not touch a song never scrobbled.
    */
   scrobbledTracks?: string[];
-  /** The user's scrobbles under the ORIGINAL album title, read before the write. */
+  /** The user's scrobbles under the ORIGINAL title, read before the write. */
   scrobbles?: number;
 }
 

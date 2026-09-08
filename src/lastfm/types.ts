@@ -63,6 +63,14 @@ export interface AlbumInfo {
   };
 }
 
+export interface TrackInfo {
+  track?: {
+    name: string;
+    /** Present only when the request names a username; a string, like every numeric API field. */
+    userplaycount?: string | number;
+  };
+}
+
 /** What one album.getinfo call yields: art, the release track list, and the user's play count. */
 export interface AlbumDetails {
   imageUrl: string | undefined;
