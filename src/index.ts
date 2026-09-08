@@ -11,7 +11,7 @@ import { Commands } from './report/commands.js';
 import { Discord } from './report/discord.js';
 import { Gateway } from './report/gateway.js';
 import { Proposals } from './report/proposals.js';
-import { ConsoleAndDiscordReporter } from './report/reporter.js';
+import { ConsoleAndDiscordReporter, libraryLinks } from './report/reporter.js';
 import { Approvals } from './scrub/approvals.js';
 import { Executor } from './scrub/executor.js';
 import { CustomRules } from './rules/customRules.js';
@@ -29,7 +29,12 @@ async function main() {
     botToken: config.discordBotToken,
     channelId: config.discordChannelId,
   });
-  const reporter = new ConsoleAndDiscordReporter(discord);
+  const reporter = new ConsoleAndDiscordReporter(
+    discord,
+    undefined,
+    undefined,
+    libraryLinks(config.username),
+  );
   const session = new Session(
     { username: config.username, password: config.password, userAgent: config.userAgent },
     { statePath: sessionStatePath(config.dbPath) },
@@ -88,6 +93,7 @@ async function main() {
     }),
     proposals,
     freshToken: () => session.freshCsrfToken(`/user/${config.username}/library`),
+    links: libraryLinks(config.username),
     stillThere: async (item) => {
       const { gone } = await pages.fetchOutcome(item.edit.refererPath);
       return !gone;
