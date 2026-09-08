@@ -4,6 +4,7 @@ import { schema } from '../db/index.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
+import type { RunTotals } from '../report/reporter.js';
 import { type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
@@ -13,6 +14,7 @@ export interface ExecutorOptions {
   dryRun: boolean;
   maxEditsPerRun: number;
   writeDelayMs: number;
+  digestEvery: number;
   sleep?: (ms: number) => Promise<void>;
 }
 
@@ -83,6 +85,20 @@ export class Executor {
       samples: [],
     };
 
+    const totals = (): RunTotals => ({
+      planned: summary.planned,
+      applied: summary.applied,
+      verified: summary.verified,
+      unverified: summary.unverified,
+      failed: summary.failed,
+    });
+    const pending: string[] = [];
+    const flush = async () => {
+      if (pending.length === 0) return;
+      await this.reporter.digest([...pending], totals(), this.opts.dryRun);
+      pending.length = 0;
+    };
+
     let writes = 0;
     for (const edit of edits) {
       if (changedFields(edit).length === 0) continue;
@@ -105,6 +121,8 @@ export class Executor {
 
       if (this.opts.dryRun) {
         this.upsert(edit, 'planned', existing?.attempts ?? 0, null);
+        pending.push(this.editor.describe(edit));
+        if (pending.length >= this.opts.digestEvery) await flush();
         continue;
       }
 
@@ -120,19 +138,23 @@ export class Executor {
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+        pending.push(`${outcome === 'unverified' ? '? ' : '  '}${this.editor.describe(edit)}`);
       } catch (error) {
         writes++;
         summary.failed++;
         const message = error instanceof Error ? error.message : String(error);
         this.upsert(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
+        pending.push(`! ${this.editor.describe(edit)} — ${message}`);
         if (!(error instanceof EditRejectedError)) {
           await this.reporter.report(error, `edit ${edit.original.artist_name}`);
         }
       }
 
+      if (pending.length >= this.opts.digestEvery) await flush();
       await this.sleep(this.opts.writeDelayMs);
     }
 
+    await flush();
     return summary;
   }
 

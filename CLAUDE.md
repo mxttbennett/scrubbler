@@ -12,7 +12,7 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 | `src/lastfm/` | read API client, web session + cookie jar, page parsing, the edit writer |
 | `src/scrub/` | planner (sweep), resolver (candidates → tuples), executor, worker loop |
 | `src/db/` | Drizzle schema; migrations in `drizzle/` applied at startup |
-| `src/report/` | journald logging + Discord webhook |
+| `src/report/` | journald logging + REST-only Discord bot (no gateway, so it shows offline) |
 
 ## Invariants
 

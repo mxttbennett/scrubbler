@@ -4,7 +4,8 @@ import { LastfmApi } from './lastfm/api.js';
 import { Editor } from './lastfm/editor.js';
 import { LibraryPages } from './lastfm/pages.js';
 import { Session, sessionStatePath } from './lastfm/session.js';
-import { Reporter } from './report/reporter.js';
+import { Discord } from './report/discord.js';
+import { ConsoleAndDiscordReporter } from './report/reporter.js';
 import { Planner } from './scrub/planner.js';
 import { Resolver } from './scrub/resolver.js';
 import { ScrubWorker } from './scrub/worker.js';
@@ -14,7 +15,11 @@ async function main() {
   const db = createDb(config.dbPath);
   runMigrations(db);
 
-  const reporter = new Reporter(config.discordWebhookUrl);
+  const discord = new Discord({
+    botToken: config.discordBotToken,
+    channelId: config.discordChannelId,
+  });
+  const reporter = new ConsoleAndDiscordReporter(discord);
   const session = new Session(
     { username: config.username, password: config.password, userAgent: config.userAgent },
     { statePath: sessionStatePath(config.dbPath) },
@@ -36,7 +41,8 @@ async function main() {
 
   console.log(
     `scrobble-scrubber starting | user ${config.username} | dryRun ${String(config.dryRun)}` +
-      ` | groups ${[...config.enabledGroups].sort().join(',')}`,
+      ` | groups ${[...config.enabledGroups].sort().join(',')}` +
+      ` | discord ${discord.enabled ? 'on' : 'off'}`,
   );
 
   if (process.argv.includes('--once')) {

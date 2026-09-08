@@ -108,6 +108,23 @@ npm test
 Deployment is manual for now — see [deploy/README.md](deploy/README.md) for the rsync + systemd
 steps, the pre-deploy snapshot, and what rollback can and cannot undo.
 
+## Reporting
+
+Everything goes to journald (`journalctl -u scrobble-scrubber -f`). Set `DISCORD_BOT_TOKEN` and
+`DISCORD_CHANNEL_ID` and it also posts:
+
+- a **digest embed every `DIGEST_EVERY` corrections** while a sweep runs, listing that batch with
+  running totals — so a long backfill is watchable without one message per edit;
+- a **summary embed** at the end of each sweep, with tuple / applied / verified / unverified /
+  failed counts;
+- an **error embed** for anything that fails, immediately.
+
+Failed writes are prefixed `!` in a digest and unverified ones `?`, so the batch reads at a glance.
+
+It posts over the REST API with no gateway connection, so **the bot shows as offline** in Discord's
+member list. That is deliberate: this service only ever posts, so a websocket would be a process to
+supervise for no benefit. Reporting is best-effort throughout and never fails a sweep.
+
 ## Seeing what it would change
 
 `npm run report` sweeps the API and prints every planned change without scraping or writing

@@ -1,44 +1,68 @@
-const CHUNK = 1900;
+import { COLOR, Discord, fenceLines } from './discord.js';
 
-export class Reporter {
+export interface RunTotals {
+  applied: number;
+  verified: number;
+  unverified: number;
+  failed: number;
+  planned: number;
+}
+
+export interface Reporter {
+  digest(lines: string[], totals: RunTotals, dryRun: boolean): Promise<void>;
+  summary(headline: string, lines: string[], totals: RunTotals): Promise<void>;
+  report(error: unknown, context: string): Promise<void>;
+}
+
+export class ConsoleAndDiscordReporter implements Reporter {
   constructor(
-    private readonly webhookUrl: string | undefined,
-    private readonly log: (msg: string) => void = (m) => console.error(m),
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly discord: Discord,
+    private readonly log: (msg: string) => void = (m) => console.log(m),
+    private readonly logError: (msg: string) => void = (m) => console.error(m),
   ) {}
 
+  async digest(lines: string[], totals: RunTotals, dryRun: boolean): Promise<void> {
+    for (const line of lines) this.log(`  ${line}`);
+    await this.discord.send({
+      title: dryRun
+        ? `Would correct ${lines.length} — dry run`
+        : `Corrected ${lines.length}`,
+      color: dryRun ? COLOR.dryRun : COLOR.applied,
+      description: fenceLines(lines),
+      footer: { text: progressText(totals, dryRun) },
+    });
+  }
+
+  async summary(headline: string, lines: string[], totals: RunTotals): Promise<void> {
+    this.log(headline);
+    for (const line of lines) this.log(line);
+    await this.discord.send({
+      title: headline,
+      color: totals.failed > 0 ? COLOR.failed : COLOR.done,
+      ...(lines.length > 0 ? { description: fenceLines(lines) } : {}),
+      fields: [
+        { name: 'Tuples', value: String(totals.planned), inline: true },
+        { name: 'Applied', value: String(totals.applied), inline: true },
+        { name: 'Verified', value: String(totals.verified), inline: true },
+        { name: 'Unverified', value: String(totals.unverified), inline: true },
+        { name: 'Failed', value: String(totals.failed), inline: true },
+      ],
+    });
+  }
+
   async report(error: unknown, context: string): Promise<void> {
-    await this.post(this.format(error, context));
+    const detail =
+      error instanceof Error ? (error.stack ?? error.message) : String(error);
+    this.logError(`[${context}] ${detail}`);
+    await this.discord.send({
+      title: `Failed: ${context}`,
+      color: COLOR.failed,
+      description: '```\n' + detail.slice(0, 1500) + '\n```',
+    });
   }
+}
 
-  async summary(lines: string[]): Promise<void> {
-    if (lines.length === 0) return;
-    const text = lines.join('\n');
-    console.log(text);
-    await this.post(text);
-  }
-
-  private async post(text: string): Promise<void> {
-    if (this.webhookUrl === undefined) return;
-    try {
-      for (let i = 0; i < text.length; i += CHUNK) {
-        await this.fetchImpl(this.webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: '```\n' + text.slice(i, i + CHUNK) + '\n```' }),
-        });
-      }
-    } catch {
-      // reporting must never take the service down
-    }
-  }
-
-  private format(error: unknown, context: string): string {
-    if (error instanceof Error) {
-      this.log(`[${context}] ${error.stack ?? error.message}`);
-      return `[${context}] ${error.message}`;
-    }
-    this.log(`[${context}] ${String(error)}`);
-    return `[${context}] ${String(error)}`;
-  }
+function progressText(t: RunTotals, dryRun: boolean): string {
+  if (dryRun) return `${t.planned} tuples planned so far · nothing written`;
+  return `${t.applied} applied · ${t.verified} verified · ${t.unverified} unverified · ${t.failed} failed`;
 }

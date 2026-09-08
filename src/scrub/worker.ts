@@ -62,6 +62,7 @@ export class ScrubWorker {
       dryRun: this.config.dryRun,
       maxEditsPerRun: this.config.maxEditsPerRun,
       writeDelayMs: this.config.writeDelayMs,
+      digestEvery: this.config.digestEvery,
       sleep: this.sleep,
     });
     executor.recordSkips(skips);
@@ -76,15 +77,24 @@ export class ScrubWorker {
       })
       .run();
 
-    await this.reporter.summary([
-      this.config.dryRun ? 'scrobble-scrubber DRY RUN' : 'scrobble-scrubber sweep',
-      `candidates ${candidates.length} | tuples ${summary.planned} | applied ${summary.applied}` +
-        ` | verified ${summary.verified} | unverified ${summary.unverified}` +
-        ` | failed ${summary.failed} | already done ${summary.skippedByLedger}` +
-        ` | also had a rule ${summary.alsoHasRule}` +
-        (summary.capped ? ' | CAPPED' : ''),
-      ...summary.samples.map((s) => `  ${s}`),
-    ]);
+    await this.reporter.summary(
+      this.config.dryRun ? 'Dry run complete — nothing written' : 'Sweep complete',
+      [
+        `candidates      ${candidates.length}`,
+        `distinct tuples ${summary.planned}`,
+        `already done    ${summary.skippedByLedger}`,
+        `also had a rule ${summary.alsoHasRule}`,
+        `skipped         ${skips.length}`,
+        ...(summary.capped ? [`CAPPED at MAX_EDITS_PER_RUN`] : []),
+      ],
+      {
+        planned: summary.planned,
+        applied: summary.applied,
+        verified: summary.verified,
+        unverified: summary.unverified,
+        failed: summary.failed,
+      },
+    );
   }
 
   private async loop(): Promise<void> {

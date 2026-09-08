@@ -17,7 +17,9 @@ const envSchema = z.object({
   LASTFM_PASSWORD: z.string().min(1),
   LASTFM_API_KEY: z.string().min(1),
   DB_PATH: z.string().default('.data/scrobble-scrubber.sqlite'),
-  DISCORD_WEBHOOK_URL: z.string().optional(),
+  DISCORD_BOT_TOKEN: z.string().optional(),
+  DISCORD_CHANNEL_ID: z.string().optional(),
+  DIGEST_EVERY: z.string().default('25'),
   DRY_RUN: z.string().default('true'),
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
   RULES_EXPERIMENTAL_ENABLED: z.string().default(''),
@@ -37,7 +39,9 @@ export interface Config {
   password: string;
   apiKey: string;
   dbPath: string;
-  discordWebhookUrl: string | undefined;
+  discordBotToken: string | undefined;
+  discordChannelId: string | undefined;
+  digestEvery: number;
   dryRun: boolean;
   enabledGroups: Set<GroupName>;
   sweepIntervalMs: number;
@@ -103,7 +107,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     password: e.LASTFM_PASSWORD,
     apiKey: e.LASTFM_API_KEY,
     dbPath: e.DB_PATH,
-    discordWebhookUrl: e.DISCORD_WEBHOOK_URL,
+    discordBotToken: e.DISCORD_BOT_TOKEN,
+    discordChannelId: e.DISCORD_CHANNEL_ID,
+    digestEvery: parsePositiveInt(e.DIGEST_EVERY, 'DIGEST_EVERY'),
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
     enabledGroups,
     sweepIntervalMs: parsePositiveInt(e.SWEEP_INTERVAL_MS, 'SWEEP_INTERVAL_MS'),
