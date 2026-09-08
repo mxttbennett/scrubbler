@@ -70,6 +70,9 @@ describe('resolution checkpointing', () => {
     expect(carried[0]!.original.track_name).toBe('Disorder - 2019 Digital Master');
     expect(carried[0]!.next.track_name).toBe('Disorder');
     expect(carried[0]!.groups).toEqual(['remaster']);
+    // verification re-reads this path; the write endpoint has no chartlist and can never confirm
+    expect(carried[0]!.refererPath).toBe('/user/u/library/music/+noredirect/Joy+Division/_/Disorder');
+    expect(carried[0]!.refererPath).not.toContain('edit-track');
   });
 
   it('does not resume a tuple that already succeeded', () => {
@@ -98,6 +101,15 @@ describe('resolution checkpointing', () => {
     const e = executor(d);
     e.checkpoint(edit());
     d.update(schema.appliedEdits).set({ timestamp: null, action: null }).run();
+
+    expect(e.resumable('fresh-token')).toEqual([]);
+  });
+
+  it('skips a planned row with no referer path, which could never be verified', () => {
+    const d = db();
+    const e = executor(d);
+    e.checkpoint(edit());
+    d.update(schema.appliedEdits).set({ refererPath: null }).run();
 
     expect(e.resumable('fresh-token')).toEqual([]);
   });

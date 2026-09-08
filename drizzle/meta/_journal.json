@@ -15,6 +15,13 @@
       "when": 1788833090476,
       "tag": "0001_resume_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788833788810,
+      "tag": "0002_resume_referer",
+      "breakpoints": true
     }
   ]
 }

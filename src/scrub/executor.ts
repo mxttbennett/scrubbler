@@ -61,7 +61,7 @@ export class Executor {
 
     const out: PlannedEdit[] = [];
     for (const r of rows) {
-      if (r.timestamp === null || r.action === null) continue;
+      if (r.timestamp === null || r.action === null || r.refererPath === null) continue;
       out.push({
         original: {
           track_name: r.trackNameOriginal,
@@ -78,7 +78,7 @@ export class Executor {
         timestamp: r.timestamp,
         csrfToken,
         action: r.action,
-        refererPath: r.action.split('?')[0] ?? r.action,
+        refererPath: r.refererPath,
         groups: r.groups === '' ? [] : (r.groups.split(',') as PlannedEdit['groups']),
       });
     }
@@ -228,6 +228,7 @@ export class Executor {
       groups: edit.groups.join(','),
       timestamp: edit.timestamp,
       action: edit.action,
+      refererPath: edit.refererPath,
       status: status as 'applied' | 'verified' | 'unverified' | 'failed' | 'skipped' | 'planned',
       attempts,
       lastError,

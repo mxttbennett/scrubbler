@@ -1,0 +1,1 @@
+ALTER TABLE `applied_edits` ADD `referer_path` text;

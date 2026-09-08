@@ -23,6 +23,7 @@ export const appliedEdits = sqliteTable(
     /** Kept so an interrupted resolution can be resumed without re-scraping every library page. */
     timestamp: text('timestamp'),
     action: text('action'),
+    refererPath: text('referer_path'),
     status: text('status', {
       enum: ['applied', 'verified', 'unverified', 'failed', 'skipped', 'planned'],
     }).notNull(),
