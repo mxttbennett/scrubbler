@@ -105,6 +105,12 @@ npm test
 Deployment is manual for now — see [deploy/README.md](deploy/README.md) for the rsync + systemd
 steps, the pre-deploy snapshot, and what rollback can and cannot undo.
 
+## Seeing what it would change
+
+`npm run report` sweeps the API and prints every planned change without scraping or writing
+anything, to `/tmp/sweep-report.{txt,json}`. Safe to run at any time, and the right way to review
+the diff before setting `DRY_RUN=false`.
+
 ## Inspecting what it did
 
 ```sh
