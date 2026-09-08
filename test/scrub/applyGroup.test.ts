@@ -12,6 +12,7 @@ function spyReporter() {
     group: async (g: CorrectionGroup) => void groups.push(g),
     summary: async () => {},
     report: async () => {},
+    shadow: async () => {},
   };
   return { groups, loose, reporter };
 }

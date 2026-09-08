@@ -15,6 +15,7 @@ import { ConsoleAndDiscordReporter, libraryLinks } from './report/reporter.js';
 import { Approvals } from './scrub/approvals.js';
 import { Executor } from './scrub/executor.js';
 import { CustomRules } from './rules/customRules.js';
+import { ShadowStore } from './scrub/shadowStore.js';
 import { Planner } from './scrub/planner.js';
 import { Resolver } from './scrub/resolver.js';
 import { ScrubWorker } from './scrub/worker.js';
@@ -45,6 +46,7 @@ async function main() {
   });
   const api = new LastfmApi(config.apiKey, { username: config.username });
   const customRules = new CustomRules(db);
+  const shadowStore = new ShadowStore(db);
   const planner = new Planner(
     api,
     config.username,
@@ -52,6 +54,7 @@ async function main() {
     db,
     config.deadCandidateAttempts,
     customRules.lookup,
+    config.shadowMode ? (hit) => void shadowStore.record(hit) : undefined,
   );
   const resolver = new Resolver(pages, config.username, config.enabledGroups, customRules.lookup);
   const editor = new Editor(session, pages, {
@@ -114,6 +117,7 @@ async function main() {
     albumArt,
     albumDetails,
     approvals,
+    ...(config.shadowMode ? { shadowStore } : {}),
     writeLock,
   });
 
@@ -206,6 +210,9 @@ async function main() {
         applyNow: (rule) => applyOneEntity(rule),
         approvalMode: config.approvalMode,
         dryRun: config.dryRun,
+        shadowStore,
+        shadowMode: config.shadowMode,
+        enabledRules: config.enabledGroups,
         channelId: config.discordChannelId,
         guildId: config.discordGuildId,
       }),

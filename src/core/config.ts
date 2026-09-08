@@ -24,6 +24,8 @@ const envSchema = z.object({
   APPROVAL_MODE: z.string().default('false'),
   APPROVAL_TTL_HOURS: z.string().default('168'),
   GATEWAY_ALERT_MINUTES: z.string().default('15'),
+  SHADOW_MODE: z.string().default('false'),
+  SHADOW_MAX_PER_SWEEP: z.string().default('50'),
   DIGEST_EVERY: z.string().default('1'),
   DRY_RUN: z.string().default('true'),
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
@@ -55,6 +57,10 @@ export interface Config {
   approvalMode: boolean;
   approvalTtlHours: number;
   gatewayAlertMinutes: number;
+  /** Off by default, like DRY_RUN and APPROVAL_MODE: it changes what the channel shows. */
+  shadowMode: boolean;
+  /** 0 records without posting, which is a legitimate record-only mode rather than an error. */
+  shadowMaxPerSweep: number;
   digestEvery: number;
   dryRun: boolean;
   enabledGroups: Set<GroupName>;
@@ -149,6 +155,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     approvalMode,
     approvalTtlHours: parsePositiveInt(e.APPROVAL_TTL_HOURS, 'APPROVAL_TTL_HOURS'),
     gatewayAlertMinutes: parsePositiveInt(e.GATEWAY_ALERT_MINUTES, 'GATEWAY_ALERT_MINUTES'),
+    shadowMode: parseBool(e.SHADOW_MODE, 'SHADOW_MODE'),
+    shadowMaxPerSweep: parsePositiveInt(e.SHADOW_MAX_PER_SWEEP, 'SHADOW_MAX_PER_SWEEP'),
     digestEvery: parsePositiveInt(e.DIGEST_EVERY, 'DIGEST_EVERY'),
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
     enabledGroups,
