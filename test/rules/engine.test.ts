@@ -82,6 +82,13 @@ describe('cleanTitle — recall (must strip)', () => {
     ['Marquee Moon (Expanded & Remastered)', 'Marquee Moon'],
     ['Kid A (Japanese Edition)', 'Kid A'],
     ['Pet Sounds (Reissue)', 'Pet Sounds'],
+    ['Out of the Blue (40th Anniversary Remaster)', 'Out of the Blue'],
+    ['Oh, Inverted World (20th Anniversary Remaster)', 'Oh, Inverted World'],
+    ['Badmotorfinger (25th Anniversary Remaster)', 'Badmotorfinger'],
+    ['The Soft Machine (Remastered And Expanded)', 'The Soft Machine'],
+    ['Alchemy (Remastered & Expanded Edition)', 'Alchemy'],
+    ['B-2 Unit (2019 Remastering)', 'B-2 Unit'],
+    ['Brushfire Fairytales [Remastered (Bonus Version)]', 'Brushfire Fairytales'],
   ];
 
   it.each(albums)('strips album %s -> %s', (input, expected) => {
@@ -106,6 +113,13 @@ describe('cleanTitle — recall (must strip)', () => {
     expect(cleanTitle('Nevermind (Deluxe Edition)', 'album', DEFAULT_ON)?.groups).toEqual([
       'edition',
     ]);
+  });
+
+  /** `groups` is persisted and reported, so an existing hit must not silently change its tag. */
+  it('keeps an ampersand pair on remaster, not edition', () => {
+    expect(cleanTitle('Marquee Moon (Expanded & Remastered)', 'album', DEFAULT_ON)?.groups).toEqual(
+      ['remaster'],
+    );
   });
 });
 
@@ -421,6 +435,10 @@ describe('compound segments — every part must be a known marker', () => {
     ['Goat (Remaster / Reissue)', 'album'],
     ['Christmas Portrait (Special Edition/Reissue)', 'album'],
     ['My Generation (50th Anniversary / Super Deluxe)', 'album'],
+    // A segment's own trailing tail is a compound too: nested bracket, and dash-joined.
+    ['Brushfire Fairytales [Remastered (Bonus Version)]', 'album'],
+    ['Album (Deluxe Edition - Remaster)', 'album'],
+    ['Album (Remaster - Deluxe)', 'album'],
   ];
 
   it.each(STRIPPED)('strips %s', (title, field) => {
@@ -447,6 +465,13 @@ describe('compound segments — every part must be a known marker', () => {
     ['Blues For Allah / Sand Castles & Glass Camels / Unusual Occurrences In The Desert', 'track'],
     ['White Light/White Heat', 'track'],
     ['Help on the Way / Slipknot!', 'track'],
+    // The all-parts rule still governs a nested or dash-joined tail: one unknown part and it stays.
+    ['Album (Remastered (at Abbey Road))', 'album'],
+    ['Album [Deluxe (Sampler)]', 'album'],
+    ['Album (Live in Tokyo - Remaster)', 'album'],
+    ['Album (Original Mix - 2011)', 'album'],
+    ['Album (Pt. II - Remaster)', 'album'],
+    ['Album (Remastered - at Abbey Road)', 'album'],
   ];
 
   it.each(KEPT)('leaves %s alone', (title, field) => {
@@ -506,6 +531,79 @@ describe('edition word orders', () => {
     expect(cleanTitle('Album (45th Anniversary / Super Deluxe)', 'album', DEFAULT_ON)?.clean).toBe(
       'Album',
     );
+  });
+});
+
+/**
+ * The corpus fixture only kept titles that already had a *space-preceded* delimiter, so it contains
+ * no `Word(Marker)` at all and the verdict snapshot cannot see this change. These cases are the net.
+ */
+describe('a delimiter needs no leading space', () => {
+  const STRIPPED: [string, string][] = [
+    ['Come My Fanatics(Remaster)', 'Come My Fanatics'],
+    ['Nevermind(Deluxe Edition)', 'Nevermind'],
+    ['Blue Lines(2012 Remaster)', 'Blue Lines'],
+    ['Album[Remastered]', 'Album'],
+  ];
+
+  it.each(STRIPPED)('strips %s -> %s', (input, expected) => {
+    expect(cleanTitle(input, 'album', DEFAULT_ON)?.clean).toBe(expected);
+  });
+
+  const KEPT = [
+    "(What's the Story) Morning Glory?",
+    'Bl(A)ck',
+    'R(evolution)',
+    'Ph(enomena)',
+    'Alive(2007)',
+    'Untitled(1)',
+    'Song(Live in Tokyo)',
+    'Album(Remastered at Abbey Road)',
+    'Album(Deluxe Edition Sampler)',
+    "1989(Taylor's Version)",
+    'Karn Evil 9(Reprise)',
+    'Sunset(Interlude)',
+    'Fabric 01(DJ Mix)',
+    'X(Remastered)',
+    '!!!(Remastered)',
+  ];
+
+  it.each(KEPT)('leaves %s alone in either field', (title) => {
+    expect(cleanTitle(title, 'album', EVERYTHING)).toBeNull();
+    expect(cleanTitle(title, 'track', EVERYTHING)).toBeNull();
+  });
+
+  /** The one real-library population the bracket half reaches: chained brackets, no marker in either. */
+  const SYRO = [
+    'minipops 67 [120.2][source field mix]',
+    'CIRCLONT6A [141.98][syrobonkus mix]',
+    'CIRCLONT14 [152.97][shrymoming mix]',
+    'PAPAT4 [155][pineal mix]',
+    'syro u473t8+e [141.98][piezoluminescence mix]',
+    's950tx16wasr10 [163.97][earth portal mix]',
+    'XMAS_EVET10 [120][thanaton3 mix]',
+  ];
+
+  it.each(SYRO)('leaves the chained-bracket track %s alone', (title) => {
+    expect(cleanTitle(title, 'track', EVERYTHING)).toBeNull();
+  });
+});
+
+/**
+ * Cruft the closed catalogue deliberately declines, because the trailing segment carries genuine
+ * content. Asserted so a future widening that reaches them fails here instead of silently editing.
+ */
+describe('a segment with unnamed words is left alone, however marker-ish', () => {
+  const KEPT = [
+    'In The Court Of The Crimson King (Expanded & Remastered Original Album Mix)',
+    'Odessey and Oracle (Mono Remastered)',
+    'Waltz For Debby (Original Jazz Classics Remaster 2010)',
+    'Christmas Jollies (Tom Moulton Remix;2022 - Remaster)',
+    'Maiden Voyage (Remastered 1999/Rudy Van Gelder Edition)',
+  ];
+
+  it.each(KEPT)('leaves %s alone even with every group on', (title) => {
+    expect(cleanTitle(title, 'album', EVERYTHING)).toBeNull();
   });
 });
 
