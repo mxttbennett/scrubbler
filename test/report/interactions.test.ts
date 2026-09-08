@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Gateway, NOT_OWNER, UNKNOWN_ID } from '../../src/report/gateway.js';
-import { approveId, ignoreId, parseCustomId } from '../../src/report/proposals.js';
+import { approveId, ignoreId, parseCustomId, stripId } from '../../src/report/proposals.js';
 
 const OWNER = '1111';
 const STRANGER = '2222';
@@ -8,6 +8,7 @@ const STRANGER = '2222';
 interface Calls {
   approve: [number, string][];
   ignore: [number, string][];
+  strip: [number, string][];
   approveAll: string[];
   replies: string[];
   followUps: string[];
@@ -19,6 +20,7 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
   const calls: Calls = {
     approve: [],
     ignore: [],
+    strip: [],
     approveAll: [],
     replies: [],
     followUps: [],
@@ -35,6 +37,11 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
         calls.approve.push([id, user]);
         if (opts.throws === true) throw new Error('boom');
         return { outcome: opts.outcome ?? 'approved', detail: '1 edit(s) applied' };
+      },
+      strip: async (id, user) => {
+        calls.order.push('strip');
+        calls.strip.push([id, user]);
+        return { outcome: opts.outcome ?? 'approved', detail: 'nothing to remove' };
       },
       ignore: async (id, user) => {
         calls.order.push('ignore');
@@ -151,6 +158,7 @@ describe('Gateway health', () => {
       decisions: {
         approve: async () => ({ outcome: 'approved', detail: '' }),
         ignore: async () => ({ outcome: 'ignored', detail: '' }),
+        strip: async () => ({ outcome: 'approved', detail: 'stripped' }),
         approveAll: async () => ({ approved: 0, failed: 0 }),
       },
       alert: async (_error, context) => void alerts.push(context),
@@ -167,5 +175,39 @@ describe('Gateway health', () => {
     await gateway.checkHealth();
     await gateway.checkHealth();
     expect(alerts).toEqual(['discord gateway']);
+  });
+});
+
+describe('the Strip button', () => {
+  it('routes to the strip decision, not to ignore', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction(stripId(7), OWNER, calls));
+
+    expect(calls.strip).toEqual([[7, OWNER]]);
+    expect(calls.approve).toEqual([]);
+    expect(calls.ignore).toEqual([]);
+  });
+
+  it('defers first, like the other buttons', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction(stripId(7), OWNER, calls));
+
+    expect(calls.order).toEqual(['defer', 'strip']);
+  });
+
+  it('is owner-gated and does no work', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction(stripId(7), STRANGER, calls));
+
+    expect(calls.strip).toEqual([]);
+    expect(calls.replies).toEqual([NOT_OWNER]);
+  });
+
+  /** Nothing was removed, so the card stays live and the reason is explained privately. */
+  it('explains a no-op rather than retiring the card', async () => {
+    const { gateway, calls } = harness({ outcome: 'no-op' });
+    await gateway.onInteraction(buttonInteraction(stripId(7), OWNER, calls));
+
+    expect(calls.followUps.join(' ')).toContain('nothing to remove');
   });
 });

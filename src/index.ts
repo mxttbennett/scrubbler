@@ -106,6 +106,8 @@ async function main() {
     },
     albumArt,
     ttlHours: config.approvalTtlHours,
+    enabledGroups: config.enabledGroups,
+    overrides: customRules.lookup,
   });
 
   const worker = new ScrubWorker({

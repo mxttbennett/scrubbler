@@ -113,7 +113,7 @@ startup error, so a typo cannot silently disable a group.
 | Tier | What it does |
 |---|---|
 | `auto` | Fires and applies, reporting afterwards |
-| `gated` | Fires, but every candidate becomes a Discord card with **Apply** / **Never**; nothing is written until you click |
+| `gated` | Fires, but every candidate becomes a Discord card with **Apply** / **Never** (and **Strip** for a rewriting rule); nothing is written until you click |
 | `off` | Never fires. Set `SHADOW_MODE=true` to see what it *would* catch, for free and with no decisions |
 
 ```sh
@@ -221,13 +221,19 @@ ever act on.
 
 By default the service corrects unattended and tells you what it did. Set `APPROVAL_MODE=true` and
 it instead asks first: every candidate becomes one Discord card with **Apply** and **Never**
-buttons, and nothing is written until you click.
+buttons — and a third, **Strip**, when the rule that matched *rewrites* a label rather than removing
+it. Nothing is written until you click.
 
 One card per *candidate*, not per scrobble — if eleven tracks on an album share the same removable
 suffix, that is one decision, not eleven. The card shows the artist, the change, the track list and
 the rule that matched, with the cover art of the album as it *will* be.
 
 - **Apply** writes the edits and creates the automatic-edit rule, then stamps the card `Applied`.
+- **Strip** applies the same edit with the label *removed* instead of standardised, and stamps the
+  card `Applied — label removed`. It appears only for a rewriting rule — today `live-track` — because
+  that is the only case where removal is a third outcome; where the proposal is already a removal,
+  Apply is it. The decision is per card and remembers nothing, so the next one still asks. If there
+  turns out to be nothing to remove the card stays live and says so.
 - **Never** records the entity on the ignore list, so it is not proposed again. Only
   `/scrub unignore` lifts that.
 - Untouched for `APPROVAL_TTL_HOURS` (a week by default), a card becomes `Expired` and its edits go

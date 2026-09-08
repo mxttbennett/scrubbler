@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { GroupName } from '../../src/rules/markers.js';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
-import { Approvals } from '../../src/scrub/approvals.js';
+import { Approvals, buttonsFor } from '../../src/scrub/approvals.js';
 import { Executor } from '../../src/scrub/executor.js';
 import { Planner } from '../../src/scrub/planner.js';
 import { toAlbumGroup, toGroup, type PlannedEdit } from '../../src/scrub/types.js';
@@ -104,6 +105,7 @@ function harness(
       return 'token' in opts ? opts.token : 'fresh-token';
     },
     ttlHours: opts.ttlHours ?? 168,
+    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
     log: () => {},
   });
   return { d, executor, approvals, state, ...t };
@@ -236,6 +238,7 @@ describe('Approvals.approve', () => {
       stillThere: async (item) =>
         item.kind === 'track' && item.edit.original.track_name !== 'Left of the Dial',
       ttlHours: 168,
+      enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
       log: () => {},
     });
 
@@ -403,6 +406,7 @@ describe('reported corrections', () => {
       proposals: t.transport,
       freshToken: async () => 'fresh-token',
       ttlHours: 168,
+      enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
       log: () => {},
     });
 
@@ -412,5 +416,124 @@ describe('reported corrections', () => {
 
     expect(seen.flat()).toHaveLength(1);
     expect(seen.flat()[0]!.outcome).toBe('verified');
+  });
+});
+
+/**
+ * Strip applies the answer the card did *not* propose: the live label removed rather than
+ * standardised. It reuses the ordinary executor, so the only new behaviour is the recomputation.
+ */
+describe('Approvals.strip', () => {
+  function liveEdit(track: string): PlannedEdit {
+    const original = {
+      track_name: `${track} (Live)`,
+      artist_name: 'Nirvana',
+      album_name: 'Unplugged',
+      album_artist_name: 'Nirvana',
+    };
+    return {
+      original,
+      next: { ...original, track_name: `${track} - Live` },
+      csrfToken: 'stale-token',
+      timestamp: '1772659220',
+      action: '/user/u/library/edit-track?edited-variation=library-track-scrobble',
+      refererPath: `/user/u/library/music/+noredirect/Nirvana/_/${track}`,
+      groups: ['live-track'],
+    };
+  }
+
+  it('applies the removed form, not the proposed rewrite', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
+
+    const result = await h.approvals.strip(1, OWNER);
+
+    expect(result.outcome).toBe('approved');
+    const rows = h.d.select().from(schema.appliedEdits).all();
+    expect(rows[0]!.trackName).toBe('All Apologies');
+    expect(rows[0]!.status).toBe('verified');
+  });
+
+  it('claims like approve, so a double click writes once', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
+
+    const [first, second] = await Promise.all([
+      h.approvals.strip(1, OWNER),
+      h.approvals.strip(1, OWNER),
+    ]);
+
+    expect([first.outcome, second.outcome].filter((o) => o === 'approved')).toHaveLength(1);
+    expect(h.state.applied).toHaveLength(1);
+  });
+
+  /** A group that already strips resolves the same either way, which is what makes a mixed card safe. */
+  it('applies a non-normalizing member unchanged', async () => {
+    const h = harness();
+    // `edition` does not normalize, so a strip recomputes the same answer it already proposed.
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Unsatisfied')]));
+
+    const before = h.d.select().from(schema.appliedEdits).all();
+    expect(before.every((r) => r.status === 'awaiting_approval')).toBe(true);
+
+    const result = await h.approvals.strip(1, OWNER);
+
+    expect(result.outcome).toBe('approved');
+    expect(h.state.applied).toHaveLength(1);
+  });
+
+  /**
+   * The blocker this exists for: a no-op discovered after the rows were flipped to `planned` would
+   * leave them writable by applyCarried with no approval at all, so the bail must precede the flip.
+   */
+  it('returns the card to pending and leaves every row awaiting_approval', async () => {
+    const h = harness();
+    const tooShort = liveEdit('X');
+    await h.approvals.propose(toGroup('Nirvana', [tooShort]));
+
+    const result = await h.approvals.strip(1, OWNER);
+
+    expect(result.outcome).toBe('no-op');
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('pending');
+    const rows = h.d.select().from(schema.appliedEdits).all();
+    expect(rows.every((r) => r.status === 'awaiting_approval')).toBe(true);
+  });
+
+  it('retires the card saying the label was removed', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
+
+    await h.approvals.strip(1, OWNER);
+
+    expect(h.edits.at(-1)?.embed.title).toBe('Applied — label removed');
+  });
+
+  /** retiredEmbed renders the subject from the approval row, so it has to move with the wording. */
+  it('updates the card subject to the removed form', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
+
+    await h.approvals.strip(1, OWNER);
+
+    const description = JSON.stringify(h.edits.at(-1)?.embed);
+    expect(description).toContain('All Apologies');
+    expect(description).not.toContain('All Apologies - Live');
+  });
+});
+
+describe('buttonsFor', () => {
+  it('offers Strip only for a rule that rewrites', () => {
+    expect(buttonsFor(1, ['live-track']).map((b) => b.label)).toEqual(['Apply', 'Strip', 'Never']);
+    expect(buttonsFor(1, ['edition']).map((b) => b.label)).toEqual(['Apply', 'Never']);
+    expect(buttonsFor(1, []).map((b) => b.label)).toEqual(['Apply', 'Never']);
+  });
+
+  it('offers Strip when a mixed group contains one', () => {
+    expect(buttonsFor(1, ['edition', 'live-track']).map((b) => b.label)).toContain('Strip');
+  });
+
+  it('ignores a tag that is not a group at all', () => {
+    expect(buttonsFor(1, ['custom']).map((b) => b.label)).toEqual(['Apply', 'Never']);
   });
 });

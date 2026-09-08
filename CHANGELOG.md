@@ -7,6 +7,19 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.3.0] - 2026-09-08
+
+- A gated card for a rule that *rewrites* a label now carries a third button, **Strip**, which
+  applies the same edit with the label removed instead of standardised. Today that is `live-track`
+  alone: where a rule's proposal is already a removal, **Apply** is that outcome and a third button
+  would duplicate it.
+- The decision is per card and remembers nothing — the next live title still proposes the rewrite and
+  asks again.
+- If there is nothing to remove (a title whose remainder would be too short, say) the card stays live
+  and says so, rather than silently doing nothing.
+- A stripped card retires as `Applied — label removed`, with its subject updated to the removed form
+  so the wording and the change agree.
+
 ## [1.2.0] - 2026-09-08
 
 - `live-track` now **standardises** a live label instead of removing it: `Song (Live)` becomes

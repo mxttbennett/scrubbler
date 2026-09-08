@@ -6,6 +6,7 @@ import { parseCustomId } from './proposals.js';
 export interface DecisionHandler {
   approve(approvalId: number, userId: string): Promise<{ outcome: string; detail: string }>;
   ignore(approvalId: number, userId: string): Promise<{ outcome: string; detail: string }>;
+  strip(approvalId: number, userId: string): Promise<{ outcome: string; detail: string }>;
   approveAll(userId: string): Promise<{ approved: number; failed: number }>;
 }
 
@@ -152,9 +153,16 @@ export class Gateway {
       const result =
         parsed.action === 'approve'
           ? await decisions.approve(parsed.id, interaction.user.id)
-          : await decisions.ignore(parsed.id, interaction.user.id);
+          : parsed.action === 'strip'
+            ? await decisions.strip(parsed.id, interaction.user.id)
+            : await decisions.ignore(parsed.id, interaction.user.id);
       if (result.outcome === 'gone') {
         await interaction.followUp({ content: UNKNOWN_ID, flags: MessageFlags.Ephemeral });
+        return;
+      }
+      // The card stays live: nothing was removed, so the decision is still open.
+      if (result.outcome === 'no-op') {
+        await interaction.followUp({ content: result.detail, flags: MessageFlags.Ephemeral });
         return;
       }
       this.log(`approval ${parsed.id}: ${result.outcome} — ${result.detail}`);
