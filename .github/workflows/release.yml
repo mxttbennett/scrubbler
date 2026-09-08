@@ -43,7 +43,15 @@ jobs:
 
           git fetch --tags --force
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "::error::$tag already exists — the merge did not bump the version. See VERSIONING.md"
+            tagged=$(git rev-parse "refs/tags/$tag^{commit}")
+            # Already pointing here means this commit is released and the run is a repeat — a
+            # re-run, or a force-push after a history rewrite. Only a tag on a *different* commit
+            # is the forgotten bump this guard exists for.
+            if [ "$tagged" = "${{ github.sha }}" ]; then
+              echo "::notice::$tag already points at this commit; nothing to release."
+              exit 0
+            fi
+            echo "::error::$tag already exists on $tagged — the merge did not bump the version. See VERSIONING.md"
             exit 1
           fi
 
