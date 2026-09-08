@@ -1,0 +1,19 @@
+[Unit]
+Description=scrobble-scrubber — Last.fm metadata cleaner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/scrobble-scrubber
+EnvironmentFile=/opt/scrobble-scrubber/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=15
+# migrations run at app startup, so a plain restart is a full deploy step
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
