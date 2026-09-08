@@ -80,6 +80,24 @@ names, is in `src/lastfm/editor.ts`.
 Automatic-edit rules live at two separate URLs:
 `/settings/subscription/automatic-edits/albums` (unpaginated) and `.../tracks` (paginated).
 
+## Approvals
+
+An approval is a **resume**, not a second persistence path. A proposal marks existing
+`applied_edits` rows `awaiting_approval`; approving flips them back to `planned` and runs them
+through the ordinary executor. Never add a table that stores a pending edit's fields — the ledger
+already has them.
+
+- `awaiting_approval` is **never** auto-applied. `Executor.run` skips only `verified`/`applied`, so
+  anything that widens the resume filter must exclude it explicitly. `Approvals.carryOver` exists
+  because the resume path used to run before any mode branch.
+- Grouping happens at the **candidate boundary**, which is the only place a candidate's tuples are
+  produced together. `Resolver.onGroup` therefore suppresses `onEdit`/`onAlbumEdit`; registering
+  both would write before proposing.
+- Album edits go through the ledger like track edits — `kind='album'` with `''` in every track
+  field, which is also why `resumable` must stay kind-aware.
+- `APPROVAL_MODE` is read once at startup. `sweep_state.paused` is the live flag; do not add a
+  second live mode switch.
+
 ## Testing
 
 Seams are constructor-injected (`sleep`, `fetchImpl`, `log`, `statePath`) rather than module-mocked.

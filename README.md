@@ -169,9 +169,53 @@ journald log and in batched digests the same outcomes are marked `+`, `?`, `!` a
 Posting is rate limited to one message per 1.2s, under Discord's ~5-per-5s channel limit, so
 one-per-correction is safe even in a dry run where nothing pauses between edits.
 
-It posts over the REST API with no gateway connection, so **the bot shows as offline** in Discord's
-member list. That is deliberate: this service only ever posts, so a websocket would be a process to
-supervise for no benefit. Reporting is best-effort throughout and never fails a sweep.
+Reports go over the REST API, which is best-effort throughout and never fails a sweep. In the
+default unattended mode there is no websocket at all, so **the bot shows as offline** in Discord's
+member list — a service that only posts gains nothing from a connection to supervise.
+
+Approval mode does hold a gateway connection, because it has to receive button clicks, so there the
+bot shows **online**. Proposals use a separate transport that throws on failure rather than
+swallowing it: a report that vanishes costs a line of history, while a proposal that vanishes would
+leave an approval nobody can ever act on.
+
+## Approval mode
+
+By default the service corrects unattended and tells you what it did. Set `APPROVAL_MODE=true` and
+it instead asks first: every candidate becomes one Discord card with **Apply** and **Never**
+buttons, and nothing is written until you click.
+
+One card per *candidate*, not per scrobble — if eleven tracks on an album share the same removable
+suffix, that is one decision, not eleven. The card shows the artist, the change, the track list and
+the rule that matched, with the cover art of the album as it *will* be.
+
+- **Apply** writes the edits and creates the automatic-edit rule, then stamps the card `Applied`.
+- **Never** records the entity on the ignore list, so it is not proposed again. Only
+  `/scrub unignore` lifts that.
+- Untouched for `APPROVAL_TTL_HOURS` (a week by default), a card becomes `Expired` and its edits go
+  back to the pending pool — an unread week is re-proposed, never discarded.
+
+Only `DISCORD_OWNER_ID` can click; anyone else gets an ephemeral refusal. Startup refuses outright
+if the mode is on without a bot token, channel, owner and guild.
+
+The mode is read once at startup, so changing it needs a restart. Switching it **off** drains the
+outstanding queue through the ordinary path on the next cycle and retires the cards — it does not
+leave proposals stranded. For a live stop, use `/scrub pause`.
+
+### Commands
+
+Guild-scoped, owner-only, replies are ephemeral.
+
+| Command | Does |
+|---|---|
+| `/scrub status` | mode, phase, candidate progress, verified/failed, pending count, cursor |
+| `/scrub stats` | all-time corrections, albums and tracks counted separately |
+| `/scrub pending` | the proposals awaiting a decision, with jump links |
+| `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
+| `/scrub ignored [page]` | the ignore list |
+| `/scrub unignore <artist> <title>` | remove an entry so it can be proposed again |
+| `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |
+| `/scrub resweep` | clear the scrobble cursor so the next sweep walks the whole library |
+| `/scrub retry-dead` | forget the learned-empty candidates |
 
 ## Seeing what it would change
 
