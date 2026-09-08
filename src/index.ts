@@ -38,7 +38,7 @@ async function main() {
     minIntervalMs: config.pageDelayMs,
     jitterMs: config.pageDelayJitterMs,
   });
-  const api = new LastfmApi(config.apiKey);
+  const api = new LastfmApi(config.apiKey, { username: config.username });
   const customRules = new CustomRules(db);
   const planner = new Planner(
     api,
@@ -62,6 +62,7 @@ async function main() {
   });
 
   const albumArt = (artist: string, album: string) => api.albumArt(artist, album);
+  const albumDetails = (artist: string, album: string) => api.albumDetails(artist, album);
 
   // One per process, shared by every executor: the worker, an approval click and a slash command
   // are otherwise three unordered writers against the same account.
@@ -82,6 +83,7 @@ async function main() {
       writeDelayMs: config.writeDelayMs,
       digestEvery: config.digestEvery,
       albumArt,
+      albumDetails,
       writeLock,
     }),
     proposals,
@@ -104,6 +106,7 @@ async function main() {
     albumEditor,
     reporter,
     albumArt,
+    albumDetails,
     approvals,
     writeLock,
   });
@@ -152,6 +155,7 @@ async function main() {
       writeDelayMs: config.writeDelayMs,
       digestEvery: config.digestEvery,
       albumArt,
+      albumDetails,
       writeLock,
       onApplied: (tags, entity) => {
         if (tags.includes('custom')) customRules.recordApplied(entity.kind, entity.artist, entity.title);

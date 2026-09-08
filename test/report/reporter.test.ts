@@ -273,13 +273,15 @@ describe('album cards name the tracks a single request covered', () => {
           groups: ['edition'],
           outcome: 'verified',
           trackNames: ['Serve the Servants', 'Heart-Shaped Box', 'Rape Me', 'Dumb'],
+          scrobbles: 37,
         },
       ],
       { planned: 1, applied: 1, verified: 1, unverified: 0, failed: 0 },
     );
 
     expect(sent[0]!.title).toBe('Corrected album (4 tracks)');
-    const list = sent[0]!.fields?.find((f) => f.name === 'tracks (4)');
+    expect(sent[0]!.fields?.find((f) => f.name === 'scrobbles affected')?.value).toBe('37');
+    const list = sent[0]!.fields?.find((f) => f.name === 'tracks on this album (4)');
     expect(list?.value).toContain('Serve the Servants');
     expect(list?.value.split('\n')).toHaveLength(4);
   });
