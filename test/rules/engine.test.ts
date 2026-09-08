@@ -323,3 +323,58 @@ describe('live is track-only, and off by default', () => {
     }
   });
 });
+
+describe('a dash inside brackets is not a tail', () => {
+  it('reaches the real title through a nested marker', () => {
+    // Splitting at the dash would leave "Remaster]", which matches nothing and stalls the pass.
+    expect(
+      cleanTitle('The Wall [2011 - Remaster] (2011 Remastered Version)', 'album', DEFAULT_ON)
+        ?.clean,
+    ).toBe('The Wall');
+    expect(cleanTitle('The Wall [2011 - Remaster]', 'album', DEFAULT_ON)?.clean).toBe('The Wall');
+  });
+
+  it('still refuses a dash tail that is genuinely part of the title', () => {
+    expect(cleanTitle('The Beatles 1967 - 1970', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('The Bootleg Series Vol.1 - The Quine Tapes', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Shine On You Crazy Diamond - Pt. II', 'track', DEFAULT_ON)).toBeNull();
+  });
+});
+
+describe('remaster word orders', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['Pink Flag (2006 Remastered Version)', 'album'],
+    ['The Name of This Band Is Talking Heads (Expanded 2004 Remaster)', 'album'],
+    ['Ride the Lightning (Deluxe Remaster)', 'album'],
+    ['Mother Juno (Deluxe Remastered 2023)', 'album'],
+    ['The Game (Deluxe Remastered Version)', 'album'],
+    ['Suicide (2019 - Remaster)', 'album'],
+    ['Rids the World (Hd Remaster)', 'album'],
+    ['Album (2019 Digital Remaster)', 'album'],
+    ['Album (Super Deluxe 1999 Remastered Version)', 'album'],
+    ['Brazil - 2006 Remastered Version', 'track'],
+    // "Digital Master" has no "re" and was covered by the old hand-written list.
+    ['Disorder - 2019 Digital Master', 'track'],
+    ['Colony - 2020 Digital Master', 'track'],
+    ['Album (Digital Master)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  const KEPT: [string, 'album' | 'track'][] = [
+    // A bare "Master" is a real title word, so it is only ever matched behind a qualifier.
+    ['Master of Puppets', 'album'],
+    ['Album (Master)', 'album'],
+    ['Album - Master', 'album'],
+    ['Remaster', 'album'],
+    ['Remastered Hits', 'album'],
+    ['Album (Expanded Reissue Sampler)', 'album'],
+    ['Song (Remastered at Abbey Road)', 'track'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+});

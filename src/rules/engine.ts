@@ -27,6 +27,20 @@ interface Tail {
   segment: string;
 }
 
+/** A dash inside brackets is not a tail: "[2011 - Remaster]" would otherwise split at the dash. */
+function balanced(segment: string): boolean {
+  let round = 0;
+  let square = 0;
+  for (const ch of segment) {
+    if (ch === '(') round++;
+    else if (ch === ')') round--;
+    else if (ch === '[') square++;
+    else if (ch === ']') square--;
+    if (round < 0 || square < 0) return false;
+  }
+  return round === 0 && square === 0;
+}
+
 function splitTail(title: string): Tail | null {
   let best: Tail | null = null;
   let bestIndex = -1;
@@ -40,6 +54,8 @@ function splitTail(title: string): Tail | null {
       if (!segment.endsWith(close)) continue;
       segment = segment.slice(0, -close.length);
     }
+    // Reject a split that lands inside a bracket group, so the bracket delimiter can win instead.
+    if (!balanced(segment)) continue;
 
     bestIndex = index;
     best = { head: title.slice(0, index), segment };
