@@ -8,8 +8,8 @@ const DEFAULT_ON = new Set<GroupName>(['remaster', 'edition', 'bonus']);
 const EVERYTHING = new Set<GroupName>(ALL_GROUPS);
 
 interface Corpus {
-  albums: { name: string; artist: string; playcount: number }[];
-  tracks: { name: string; artist: string; playcount: number }[];
+  albums: { name: string; artist: string }[];
+  tracks: { name: string; artist: string }[];
 }
 
 function corpus(): Corpus {

@@ -2,6836 +2,5467 @@
  "_meta": {
   "source": "last.fm user.getTopAlbums (all 45 pages) + user.getTopTracks (pages 1-40 of 202)",
   "captured": "2026-09-07",
-  "user_totals": {
-   "scrobbles": 164253,
-   "distinct_albums": 8831,
-   "distinct_tracks": 40257
-  },
-  "note": "Only entities whose title has a trailing delimiter segment are kept. Real library data; the golden corpus for rule-engine precision tests.",
+  "note": "Only entities whose title has a trailing delimiter segment are kept. Real library data; the golden corpus for rule-engine precision tests. Play counts are deliberately absent — only the title is ever read.",
   "credit": "Last.fm Data, powered by AudioScrobbler (https://www.last.fm). Property of Last.fm, retained non-commercially under the API Terms of Service and well inside the 100 MB Reasonable Usage Cap."
  },
  "albums": [
   {
    "name": "Minecraft - Volume Alpha",
-   "artist": "C418",
-   "playcount": 435
+   "artist": "C418"
   },
   {
    "name": "2012 - 2017",
-   "artist": "Against All Logic",
-   "playcount": 334
+   "artist": "Against All Logic"
   },
   {
    "name": "Live At The Liquid Room - Tokyo",
-   "artist": "Jeff Mills",
-   "playcount": 240
+   "artist": "Jeff Mills"
   },
   {
    "name": "Refried Ectoplasm [Switched On Volume 2]",
-   "artist": "Stereolab",
-   "playcount": 205
+   "artist": "Stereolab"
   },
   {
    "name": "One Day You'll See Me Again (1997-2009)",
-   "artist": "Viper",
-   "playcount": 181
+   "artist": "Viper"
   },
   {
    "name": "Enter the Wu-Tang (36 Chambers)",
-   "artist": "Wu-Tang Clan",
-   "playcount": 133
+   "artist": "Wu-Tang Clan"
   },
   {
    "name": "Grotesque (After The Gramme)",
-   "artist": "The Fall",
-   "playcount": 125
+   "artist": "The Fall"
   },
   {
    "name": "Scribbled (Lowtec Extendend Mixes)",
-   "artist": "Seidensticker",
-   "playcount": 106
+   "artist": "Seidensticker"
   },
   {
    "name": "Leak 04-13 (Bait Ones)",
-   "artist": "Jai Paul",
-   "playcount": 95
+   "artist": "Jai Paul"
   },
   {
    "name": "The Beatles (White Album)",
-   "artist": "The Beatles",
-   "playcount": 81
+   "artist": "The Beatles"
   },
   {
    "name": "Boiler Room: Frankie Knuckles in London, Sep 18, 2013 (DJ Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 78
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Reachin' (A New Refutation Of Time And Space)",
-   "artist": "Digable Planets",
-   "playcount": 74
+   "artist": "Digable Planets"
   },
   {
    "name": "Spyro Reignited Trilogy (Official Game Soundtrack)",
-   "artist": "Toys For Bob Audio",
-   "playcount": 70
+   "artist": "Toys For Bob Audio"
   },
   {
    "name": "Balance 005 (Mixed by James Holden) [Mixed Version]",
-   "artist": "James Holden",
-   "playcount": 69
+   "artist": "James Holden"
   },
   {
    "name": "Delusive Tongue Shifts - Situation Based Compositions",
-   "artist": "TIBSLC",
-   "playcount": 60
+   "artist": "TIBSLC"
   },
   {
    "name": "Sonhos E Memórias - 1941 / 1972",
-   "artist": "Erasmo Carlos",
-   "playcount": 54
+   "artist": "Erasmo Carlos"
   },
   {
    "name": "Cartola (1976)",
-   "artist": "Cartola",
-   "playcount": 52
+   "artist": "Cartola"
   },
   {
    "name": "Minimum - Maximum",
-   "artist": "Kraftwerk",
-   "playcount": 51
+   "artist": "Kraftwerk"
   },
   {
    "name": "Stop Making Sense (Live)",
-   "artist": "Talking Heads",
-   "playcount": 51
+   "artist": "Talking Heads"
   },
   {
    "name": "Rojus (Designed To Dance)",
-   "artist": "Leon Vynehall",
-   "playcount": 47
+   "artist": "Leon Vynehall"
   },
   {
    "name": "A・I・R (Air In Resort)",
-   "artist": "Hiroshi Yoshimura",
-   "playcount": 45
+   "artist": "Hiroshi Yoshimura"
   },
   {
    "name": "For Those Of You Who Have Never (And Also Those Who Have)",
-   "artist": "Huerco S.",
-   "playcount": 41
+   "artist": "Huerco S."
   },
   {
    "name": "The Great Santa Barbara Oil Slick (Live)",
-   "artist": "John Fahey",
-   "playcount": 41
+   "artist": "John Fahey"
   },
   {
    "name": "Untitled [Gray]",
-   "artist": "Josh Burke",
-   "playcount": 40
+   "artist": "Josh Burke"
   },
   {
    "name": "Gladness (2001-2006)",
-   "artist": "Helvetia",
-   "playcount": 38
+   "artist": "Helvetia"
   },
   {
    "name": "Zenyatta Mondatta (Remastered 2003)",
-   "artist": "The Police",
-   "playcount": 38
+   "artist": "The Police"
   },
   {
    "name": "UPLINK - CROSSNIQ+ Original Sound",
-   "artist": "ViRiX Dreamcore / DV-i",
-   "playcount": 38
+   "artist": "ViRiX Dreamcore / DV-i"
   },
   {
    "name": "Voices from the Lake (2023 Edition)",
-   "artist": "Voices from the Lake",
-   "playcount": 35
+   "artist": "Voices from the Lake"
   },
   {
    "name": "2017 - 2019",
-   "artist": "Against All Logic",
-   "playcount": 33
+   "artist": "Against All Logic"
   },
   {
    "name": "Skylax House Explosion (DJ Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 33
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Black British Music (2025)",
-   "artist": "Jim Legxacy",
-   "playcount": 33
+   "artist": "Jim Legxacy"
   },
   {
    "name": "XXX (Deluxe Version)",
-   "artist": "Danny Brown",
-   "playcount": 32
+   "artist": "Danny Brown"
   },
   {
    "name": "Works 2005 - 2009: Selected Tracks & Edits",
-   "artist": "Mark E",
-   "playcount": 31
+   "artist": "Mark E"
   },
   {
    "name": "Santana (III)",
-   "artist": "Santana",
-   "playcount": 31
+   "artist": "Santana"
   },
   {
    "name": "Bee Thousand: The Director's Cut (Abridged)",
-   "artist": "Guided by Voices",
-   "playcount": 30
+   "artist": "Guided by Voices"
   },
   {
    "name": "ASC - EP1",
-   "artist": "Konrad Wehrmeister",
-   "playcount": 30
+   "artist": "Konrad Wehrmeister"
   },
   {
    "name": "One Night Stand - Sam Cooke Live At The Harlem Square Club, 1963",
-   "artist": "Sam Cooke",
-   "playcount": 30
+   "artist": "Sam Cooke"
   },
   {
    "name": "Let It Be (Expanded)",
-   "artist": "The Replacements",
-   "playcount": 30
+   "artist": "The Replacements"
   },
   {
    "name": "Challengers (Original Score)",
-   "artist": "Trent Reznor and Atticus Ross",
-   "playcount": 29
+   "artist": "Trent Reznor and Atticus Ross"
   },
   {
    "name": "Carlos, Erasmo [Versão Com Bônus (1971)]",
-   "artist": "Erasmo Carlos",
-   "playcount": 29
+   "artist": "Erasmo Carlos"
   },
   {
    "name": "Unreleased (Die Lit Era)",
-   "artist": "Playboi Carti",
-   "playcount": 29
+   "artist": "Playboi Carti"
   },
   {
    "name": "Bugsnax (Original Soundtrack)",
-   "artist": "Seth Parker",
-   "playcount": 29
+   "artist": "Seth Parker"
   },
   {
    "name": "Speaking In Tongues (Deluxe Version)",
-   "artist": "Talking Heads",
-   "playcount": 28
+   "artist": "Talking Heads"
   },
   {
    "name": "Double Heads: Legendary Live - Yaneura Shibuya, Tokyo 1980–1981",
-   "artist": "Les Rallizes Dénudés",
-   "playcount": 27
+   "artist": "Les Rallizes Dénudés"
   },
   {
    "name": "Sabbath Bloody Sabbath (2014 Remaster)",
-   "artist": "Black Sabbath",
-   "playcount": 26
+   "artist": "Black Sabbath"
   },
   {
    "name": "Rids the World of the Evil Curse of the Vampires (Hd Remastered)",
-   "artist": "Scientist",
-   "playcount": 26
+   "artist": "Scientist"
   },
   {
    "name": "Everything, Everything (Live)",
-   "artist": "Underworld",
-   "playcount": 26
+   "artist": "Underworld"
   },
   {
    "name": "New Trend Sounds (Classics, Remixes & Beyond)",
-   "artist": "Todd Edwards",
-   "playcount": 24
+   "artist": "Todd Edwards"
   },
   {
    "name": "L.A.M.F. (The Lost '77 Mixes) [40th anniversary: remaster]",
-   "artist": "Johnny Thunders & The Heartbreakers",
-   "playcount": 23
+   "artist": "Johnny Thunders & The Heartbreakers"
   },
   {
    "name": "The Velvet Underground (45th Anniversary / Super Deluxe)",
-   "artist": "The Velvet Underground",
-   "playcount": 23
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Weezer (Red Album)",
-   "artist": "Weezer",
-   "playcount": 22
+   "artist": "Weezer"
   },
   {
    "name": "Sheep (Hood By Air FW15)",
-   "artist": "Arca",
-   "playcount": 21
+   "artist": "Arca"
   },
   {
    "name": "Royalty (Two Faced)",
-   "artist": "Hyphyskazerbox",
-   "playcount": 21
+   "artist": "Hyphyskazerbox"
   },
   {
    "name": "Our Music Is Red - With Purple Flashes (Deluxe)",
-   "artist": "The Creation",
-   "playcount": 21
+   "artist": "The Creation"
   },
   {
    "name": "The Specials (Deluxe Version)",
-   "artist": "The Specials",
-   "playcount": 21
+   "artist": "The Specials"
   },
   {
    "name": "New York - Addis - London: The Story Of Ethio Jazz 1965-1975",
-   "artist": "Mulatu Astatke",
-   "playcount": 19
+   "artist": "Mulatu Astatke"
   },
   {
    "name": "The Bootleg Series Vol.1 - The Quine Tapes (Live)",
-   "artist": "The Velvet Underground",
-   "playcount": 19
+   "artist": "The Velvet Underground"
   },
   {
    "name": "SILENT HILL2 (Original Soundtrack)",
-   "artist": "Akira Yamaoka",
-   "playcount": 18
+   "artist": "Akira Yamaoka"
   },
   {
    "name": "Morning Shore (Eon Isle)",
-   "artist": "Geotic",
-   "playcount": 18
+   "artist": "Geotic"
   },
   {
    "name": "Seen/Unseen [Bootleg]",
-   "artist": "Sweet Trip",
-   "playcount": 18
+   "artist": "Sweet Trip"
   },
   {
    "name": "Outlandos D'Amour (Remastered 2003)",
-   "artist": "The Police",
-   "playcount": 18
+   "artist": "The Police"
   },
   {
    "name": "untitled - circa 2014",
-   "artist": "Vladislav Delay",
-   "playcount": 18
+   "artist": "Vladislav Delay"
   },
   {
    "name": "Reggatta de Blanc (Remastered 2003)",
-   "artist": "The Police",
-   "playcount": 17
+   "artist": "The Police"
   },
   {
    "name": "SEASCAPE - polyptych",
-   "artist": "Jan Jelinek",
-   "playcount": 17
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Kick Out The Jams (live)",
-   "artist": "MC5",
-   "playcount": 17
+   "artist": "MC5"
   },
   {
    "name": "Magnolia Electric Co. (Deluxe Edition)",
-   "artist": "Songs: Ohia",
-   "playcount": 17
+   "artist": "Songs: Ohia"
   },
   {
    "name": "Reckoning - Deluxe Edition",
-   "artist": "R.E.M.",
-   "playcount": 16
+   "artist": "R.E.M."
   },
   {
    "name": "Forged Prescriptions (Original)",
-   "artist": "Spacemen 3",
-   "playcount": 16
+   "artist": "Spacemen 3"
   },
   {
    "name": "Europe '72 (Live; 2001 Remaster)",
-   "artist": "Grateful Dead",
-   "playcount": 15
+   "artist": "Grateful Dead"
   },
   {
    "name": "Revolver (Super Deluxe)",
-   "artist": "The Beatles",
-   "playcount": 15
+   "artist": "The Beatles"
   },
   {
    "name": "Special Beat Service (Remastered)",
-   "artist": "The English Beat",
-   "playcount": 15
+   "artist": "The English Beat"
   },
   {
    "name": "Weezer (Blue Album)",
-   "artist": "Weezer",
-   "playcount": 15
+   "artist": "Weezer"
   },
   {
    "name": "Foreign Affairs - Single",
-   "artist": "Alexis Georgopoulos & Jefre Cantu-Ledesma",
-   "playcount": 14
+   "artist": "Alexis Georgopoulos & Jefre Cantu-Ledesma"
   },
   {
    "name": "Incomplete Insight (2012-2015)",
-   "artist": "DJ Sprinkles & Mark Fell",
-   "playcount": 14
+   "artist": "DJ Sprinkles & Mark Fell"
   },
   {
    "name": "All Things Must Pass (2014 Remaster)",
-   "artist": "George Harrison",
-   "playcount": 14
+   "artist": "George Harrison"
   },
   {
    "name": "Halica: Bliss Out, Vol. 11 (Expanded Edition)",
-   "artist": "Sweet Trip",
-   "playcount": 14
+   "artist": "Sweet Trip"
   },
   {
    "name": "The Name of This Band Is Talking Heads (Expanded 2004 Remaster)",
-   "artist": "Talking Heads",
-   "playcount": 14
+   "artist": "Talking Heads"
   },
   {
    "name": "Arthur or the Decline and Fall of the British Empire (2019 Remaster)",
-   "artist": "The Kinks",
-   "playcount": 14
+   "artist": "The Kinks"
   },
   {
    "name": "Bangs & Works, Vol. 1 (A Chicago Footwork Compilation)",
-   "artist": "Various Artists",
-   "playcount": 14
+   "artist": "Various Artists"
   },
   {
    "name": "Shiny Beast (Bat Chain Puller)",
-   "artist": "Captain Beefheart & His Magic Band",
-   "playcount": 13
+   "artist": "Captain Beefheart & His Magic Band"
   },
   {
    "name": "Flowerss - EP",
-   "artist": "HalfNoise",
-   "playcount": 13
+   "artist": "HalfNoise"
   },
   {
    "name": "Emergency Third Rail Power Trip (2023 Remaster)",
-   "artist": "Rain Parade",
-   "playcount": 13
+   "artist": "Rain Parade"
   },
   {
    "name": "Sinatra's Swingin' Session!!! And More (Remastered / Expanded Edition)",
-   "artist": "Frank Sinatra",
-   "playcount": 12
+   "artist": "Frank Sinatra"
   },
   {
    "name": "re: phgrp (reworking »Consequences« by Philipp Gropper's PHILM)",
-   "artist": "Grischa Lichtenberger",
-   "playcount": 12
+   "artist": "Grischa Lichtenberger"
   },
   {
    "name": "Paris 1919 (Deluxe Edition)",
-   "artist": "John Cale",
-   "playcount": 12
+   "artist": "John Cale"
   },
   {
    "name": "Computer World (2009 Remaster)",
-   "artist": "Kraftwerk",
-   "playcount": 12
+   "artist": "Kraftwerk"
   },
   {
    "name": "Led Zeppelin IV (Remaster)",
-   "artist": "Led Zeppelin",
-   "playcount": 12
+   "artist": "Led Zeppelin"
   },
   {
    "name": "In Utero (30th Anniversary Super Deluxe)",
-   "artist": "Nirvana",
-   "playcount": 12
+   "artist": "Nirvana"
   },
   {
    "name": "Goodbye Horses - Single",
-   "artist": "Q Lazzarus",
-   "playcount": 12
+   "artist": "Q Lazzarus"
   },
   {
    "name": "rEAGENZ (2021 Remaster)",
-   "artist": "Reagenz",
-   "playcount": 12
+   "artist": "Reagenz"
   },
   {
    "name": "Alura (Expanded Edition)",
-   "artist": "Sweet Trip",
-   "playcount": 12
+   "artist": "Sweet Trip"
   },
   {
    "name": "Webern: Complete Works, Op. 1 - Op. 31",
-   "artist": "Anton Webern",
-   "playcount": 11
+   "artist": "Anton Webern"
   },
   {
    "name": "Seeing Through Sound (Pentimento Volume Two)",
-   "artist": "Jon Hassell",
-   "playcount": 11
+   "artist": "Jon Hassell"
   },
   {
    "name": "Tour De France (2009 Remaster)",
-   "artist": "Kraftwerk",
-   "playcount": 11
+   "artist": "Kraftwerk"
   },
   {
    "name": "Road To Ruin (40th Anniversary Deluxe Edition)",
-   "artist": "Ramones",
-   "playcount": 11
+   "artist": "Ramones"
   },
   {
    "name": "Emotional Healing (639 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 10
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "Felder (Fiepblatter Catalogue #4)",
-   "artist": "Jan St. Werner",
-   "playcount": 10
+   "artist": "Jan St. Werner"
   },
   {
    "name": "A Parade, In The Place I Sit, The Floating World (& All Its Pleasures)",
-   "artist": "Loidis",
-   "playcount": 10
+   "artist": "Loidis"
   },
   {
    "name": "Gradual Small Fires (And A Bowl Of Resonant Milk)",
-   "artist": "Steve Roden",
-   "playcount": 10
+   "artist": "Steve Roden"
   },
   {
    "name": "Sgt. Pepper's Lonely Hearts Club Band (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 10
+   "artist": "The Beatles"
   },
   {
    "name": "The Rise and Fall of Ziggy Stardust and the Spiders from Mars (2012 Remaster)",
-   "artist": "David Bowie",
-   "playcount": 9
+   "artist": "David Bowie"
   },
   {
    "name": "Cornell 5/8/77 (Live)",
-   "artist": "Grateful Dead",
-   "playcount": 9
+   "artist": "Grateful Dead"
   },
   {
    "name": "Little River Band (Remastered 2022)",
-   "artist": "Little River Band",
-   "playcount": 9
+   "artist": "Little River Band"
   },
   {
    "name": "Snow (Dusk, Dawn)",
-   "artist": "Taylor Deupree",
-   "playcount": 9
+   "artist": "Taylor Deupree"
   },
   {
    "name": "Help! (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 9
+   "artist": "The Beatles"
   },
   {
    "name": "Miami (Remastered 2020)",
-   "artist": "The Gun Club",
-   "playcount": 9
+   "artist": "The Gun Club"
   },
   {
    "name": "Tim (Expanded)",
-   "artist": "The Replacements",
-   "playcount": 9
+   "artist": "The Replacements"
   },
   {
    "name": "UGK (Underground Kingz)",
-   "artist": "UGK",
-   "playcount": 9
+   "artist": "UGK"
   },
   {
    "name": "Necroticism - Descanting the Insalubrious",
-   "artist": "Carcass",
-   "playcount": 8
+   "artist": "Carcass"
   },
   {
    "name": "Fantasma (Remastered)",
-   "artist": "Cornelius",
-   "playcount": 8
+   "artist": "Cornelius"
   },
   {
    "name": "Somehow, Somewhere (There's A Soul Heaven)",
-   "artist": "Deep Sensation",
-   "playcount": 8
+   "artist": "Deep Sensation"
   },
   {
    "name": "Faust IV (Deluxe Edition)",
-   "artist": "Faust",
-   "playcount": 8
+   "artist": "Faust"
   },
   {
    "name": "Rumours (Super Deluxe)",
-   "artist": "Fleetwood Mac",
-   "playcount": 8
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "Techno Pop (2009 remaster)",
-   "artist": "Kraftwerk",
-   "playcount": 8
+   "artist": "Kraftwerk"
   },
   {
    "name": "Operation: Doomsday (Complete)",
-   "artist": "MF DOOM",
-   "playcount": 8
+   "artist": "MF DOOM"
   },
   {
    "name": "Letzte Tage - Letzte Nachte",
-   "artist": "Popol Vuh",
-   "playcount": 8
+   "artist": "Popol Vuh"
   },
   {
    "name": "Friends (Remastered)",
-   "artist": "The Beach Boys",
-   "playcount": 8
+   "artist": "The Beach Boys"
   },
   {
    "name": "Please Please Me (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 8
+   "artist": "The Beatles"
   },
   {
    "name": "Rubber Soul (Remastered 2009)",
-   "artist": "The Beatles",
-   "playcount": 8
+   "artist": "The Beatles"
   },
   {
    "name": "Damned Damned Damned (Bonus Tracks Version)",
-   "artist": "The Damned",
-   "playcount": 8
+   "artist": "The Damned"
   },
   {
    "name": "Paranoid (Remaster)",
-   "artist": "Black Sabbath",
-   "playcount": 7
+   "artist": "Black Sabbath"
   },
   {
    "name": "Hereditary (Original Soundtrack Album)",
-   "artist": "Colin Stetson",
-   "playcount": 7
+   "artist": "Colin Stetson"
   },
   {
    "name": "Private Eyes (Expanded Edition)",
-   "artist": "Daryl Hall & John Oates",
-   "playcount": 7
+   "artist": "Daryl Hall & John Oates"
   },
   {
    "name": "Better Call Saul, Vol. 3 (Original Score from the TV Series)",
-   "artist": "Dave Porter",
-   "playcount": 7
+   "artist": "Dave Porter"
   },
   {
    "name": "Rio (Collector's Edition)",
-   "artist": "Duran Duran",
-   "playcount": 7
+   "artist": "Duran Duran"
   },
   {
    "name": "State Effect (Accel)",
-   "artist": "Georgia",
-   "playcount": 7
+   "artist": "Georgia"
   },
   {
    "name": "Dick's Picks Vol. 3: Hollywood Sportatorium, Pembroke Pines, FL 5/22/77 (Live)",
-   "artist": "Grateful Dead",
-   "playcount": 7
+   "artist": "Grateful Dead"
   },
   {
    "name": "Fare Forward Voyagers (Soldier's Choice)",
-   "artist": "John Fahey",
-   "playcount": 7
+   "artist": "John Fahey"
   },
   {
    "name": "In The Court Of The Crimson King (Expanded & Remastered Original Album Mix)",
-   "artist": "King Crimson",
-   "playcount": 7
+   "artist": "King Crimson"
   },
   {
    "name": "Grippin' Woodgrain (feat. ASAP Rocky)",
-   "artist": "Seth Narley feat. ASAP Rocky",
-   "playcount": 7
+   "artist": "Seth Narley feat. ASAP Rocky"
   },
   {
    "name": "Daydream Nation (Remastered Original Album)",
-   "artist": "Sonic Youth",
-   "playcount": 7
+   "artist": "Sonic Youth"
   },
   {
    "name": "FRKWYS Vol. 13 - Sunergy (Expanded)",
-   "artist": "Suzanne Ciani",
-   "playcount": 7
+   "artist": "Suzanne Ciani"
   },
   {
    "name": "You Will Never Know Why (2021 Remaster)",
-   "artist": "Sweet Trip",
-   "playcount": 7
+   "artist": "Sweet Trip"
   },
   {
    "name": "Three Imaginary Boys (Deluxe Edition)",
-   "artist": "The Cure",
-   "playcount": 7
+   "artist": "The Cure"
   },
   {
    "name": "Hex Enduction Hour (Expanded Deluxe Edition)",
-   "artist": "The Fall",
-   "playcount": 7
+   "artist": "The Fall"
   },
   {
    "name": "Mellon Collie and the Infinite Sadness (Deluxe Edition)",
-   "artist": "The Smashing Pumpkins",
-   "playcount": 7
+   "artist": "The Smashing Pumpkins"
   },
   {
    "name": "The Velvet Underground (45th Anniversary)",
-   "artist": "The Velvet Underground",
-   "playcount": 7
+   "artist": "The Velvet Underground"
   },
   {
    "name": "My Generation (50th Anniversary / Super Deluxe)",
-   "artist": "The Who",
-   "playcount": 7
+   "artist": "The Who"
   },
   {
    "name": "Insect Wings, Leaf Matter & Broken Twigs: Early Ambient Recordings (1991-1994)",
-   "artist": "Tor Lundvall",
-   "playcount": 7
+   "artist": "Tor Lundvall"
   },
   {
    "name": "Breaking Bad (Music from the Original TV Series)",
-   "artist": "Various Artists",
-   "playcount": 7
+   "artist": "Various Artists"
   },
   {
    "name": "Warp20 (Unheard)",
-   "artist": "Various Artists",
-   "playcount": 7
+   "artist": "Various Artists"
   },
   {
    "name": "LONG.LIVE.A$AP (Deluxe Version)",
-   "artist": "A$AP Rocky",
-   "playcount": 6
+   "artist": "A$AP Rocky"
   },
   {
    "name": "The E.N.D. (The Energy Never Dies)",
-   "artist": "Black Eyed Peas",
-   "playcount": 6
+   "artist": "Black Eyed Peas"
   },
   {
    "name": "Eagles (2013 Remaster)",
-   "artist": "Eagles",
-   "playcount": 6
+   "artist": "Eagles"
   },
   {
    "name": "Goodbye Yellow Brick Road (Remastered)",
-   "artist": "Elton John",
-   "playcount": 6
+   "artist": "Elton John"
   },
   {
    "name": "Fetty Wap (Deluxe)",
-   "artist": "Fetty Wap",
-   "playcount": 6
+   "artist": "Fetty Wap"
   },
   {
    "name": "In Utero (Deluxe Edition)",
-   "artist": "Nirvana",
-   "playcount": 6
+   "artist": "Nirvana"
   },
   {
    "name": "Palm - Audiotree Live",
-   "artist": "Palm",
-   "playcount": 6
+   "artist": "Palm"
   },
   {
    "name": "Different Light (Expanded Edition)",
-   "artist": "The Bangles",
-   "playcount": 6
+   "artist": "The Bangles"
   },
   {
    "name": "A Hard Day's Night (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 6
+   "artist": "The Beatles"
   },
   {
    "name": "London Calling (Remastered)",
-   "artist": "The Clash",
-   "playcount": 6
+   "artist": "The Clash"
   },
   {
    "name": "Loaded (2015 Remaster)",
-   "artist": "The Velvet Underground",
-   "playcount": 6
+   "artist": "The Velvet Underground"
   },
   {
    "name": "La Ola Interior (Spanish Ambient & Acid Exotism : 1983-1990)",
-   "artist": "Various Artists",
-   "playcount": 6
+   "artist": "Various Artists"
   },
   {
    "name": "Inside Out (Mixed Tracks)",
-   "artist": "Will Saul",
-   "playcount": 6
+   "artist": "Will Saul"
   },
   {
    "name": "Tago Mago (40th Anniversary Edition)",
-   "artist": "Can",
-   "playcount": 5
+   "artist": "Can"
   },
   {
    "name": "392 - 2509:Walk This Way",
-   "artist": "Club Casualties",
-   "playcount": 5
+   "artist": "Club Casualties"
   },
   {
    "name": "Low (2017 remaster)",
-   "artist": "David Bowie",
-   "playcount": 5
+   "artist": "David Bowie"
   },
   {
    "name": "DJ-Kicks (DJ Tennis) [DJ Mix]",
-   "artist": "DJ Tennis",
-   "playcount": 5
+   "artist": "DJ Tennis"
   },
   {
    "name": "Tango in the Night (Deluxe Edition)",
-   "artist": "Fleetwood Mac",
-   "playcount": 5
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "Hozier (Expanded Edition)",
-   "artist": "Hozier",
-   "playcount": 5
+   "artist": "Hozier"
   },
   {
    "name": "ICE Compositions - EP",
-   "artist": "Jan Jelinek",
-   "playcount": 5
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Bleach (Deluxe Edition)",
-   "artist": "Nirvana",
-   "playcount": 5
+   "artist": "Nirvana"
   },
   {
    "name": "Still Groovin (2014 Remaster)",
-   "artist": "Paul Carrack",
-   "playcount": 5
+   "artist": "Paul Carrack"
   },
   {
    "name": "Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)",
-   "artist": "Ramones",
-   "playcount": 5
+   "artist": "Ramones"
   },
   {
    "name": "The Royal Scam (2025 Remaster)",
-   "artist": "Steely Dan",
-   "playcount": 5
+   "artist": "Steely Dan"
   },
   {
    "name": "Octet - Music for a Large Ensemble - Violin Phase",
-   "artist": "Steve Reich",
-   "playcount": 5
+   "artist": "Steve Reich"
   },
   {
    "name": "Electric Warrior [Expanded & Remastered]",
-   "artist": "T. Rex",
-   "playcount": 5
+   "artist": "T. Rex"
   },
   {
    "name": "Kinks (Deluxe Edition)",
-   "artist": "The Kinks",
-   "playcount": 5
+   "artist": "The Kinks"
   },
   {
    "name": "Pink Flag (2006 Remastered Version)",
-   "artist": "Wire",
-   "playcount": 5
+   "artist": "Wire"
   },
   {
    "name": "Physical Graffiti (Deluxe Edition)",
-   "artist": "Led Zeppelin",
-   "playcount": 4
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Alright, Still (Bonus Track Version)",
-   "artist": "Lily Allen",
-   "playcount": 4
+   "artist": "Lily Allen"
   },
   {
    "name": "Singles (2016 Remaster)",
-   "artist": "New Order",
-   "playcount": 4
+   "artist": "New Order"
   },
   {
    "name": "Operation Ivy (2007 Remaster)",
-   "artist": "Operation Ivy",
-   "playcount": 4
+   "artist": "Operation Ivy"
   },
   {
    "name": "Leave Home (40th Anniversary Deluxe Edition)",
-   "artist": "Ramones",
-   "playcount": 4
+   "artist": "Ramones"
   },
   {
    "name": "Californication (Deluxe Edition)",
-   "artist": "Red Hot Chili Peppers",
-   "playcount": 4
+   "artist": "Red Hot Chili Peppers"
   },
   {
    "name": "The Shape Of Punk To Come (Deluxe Edition)",
-   "artist": "Refused",
-   "playcount": 4
+   "artist": "Refused"
   },
   {
    "name": "Short n' Sweet (Deluxe)",
-   "artist": "Sabrina Carpenter",
-   "playcount": 4
+   "artist": "Sabrina Carpenter"
   },
   {
    "name": "The Body Is A Message Of The Universe - からだは宇宙のメッセージ",
-   "artist": "Shiho Yabuki",
-   "playcount": 4
+   "artist": "Shiho Yabuki"
   },
   {
    "name": "Superunknown (20th Anniversary)",
-   "artist": "Soundgarden",
-   "playcount": 4
+   "artist": "Soundgarden"
   },
   {
    "name": "More Songs About Buildings And Food (Deluxe Version)",
-   "artist": "Talking Heads",
-   "playcount": 4
+   "artist": "Talking Heads"
   },
   {
    "name": "Just The Right Sound: The Association Anthology [Digital Version]",
-   "artist": "The Association",
-   "playcount": 4
+   "artist": "The Association"
   },
   {
    "name": "The Beach Boys Today! (Remastered)",
-   "artist": "The Beach Boys",
-   "playcount": 4
+   "artist": "The Beach Boys"
   },
   {
    "name": "Abbey Road (Super Deluxe Edition)",
-   "artist": "The Beatles",
-   "playcount": 4
+   "artist": "The Beatles"
   },
   {
    "name": "Shake It Up (Expanded Edition)",
-   "artist": "The Cars",
-   "playcount": 4
+   "artist": "The Cars"
   },
   {
    "name": "Synchronicity (Remastered 2003)",
-   "artist": "The Police",
-   "playcount": 4
+   "artist": "The Police"
   },
   {
    "name": "Cut (Deluxe Edition)",
-   "artist": "The Slits",
-   "playcount": 4
+   "artist": "The Slits"
   },
   {
    "name": "Quadrophenia (Super Deluxe Edition)",
-   "artist": "The Who",
-   "playcount": 4
+   "artist": "The Who"
   },
   {
    "name": "Astral Weeks (Expanded Edition)",
-   "artist": "Van Morrison",
-   "playcount": 4
+   "artist": "Van Morrison"
   },
   {
    "name": "Chairs Missing (2006 Remastered Version)",
-   "artist": "Wire",
-   "playcount": 4
+   "artist": "Wire"
   },
   {
    "name": "Glandular Formations (1988-1990)",
-   "artist": "Bestattungsinstitut",
-   "playcount": 4
+   "artist": "Bestattungsinstitut"
   },
   {
    "name": "Piano Man (Legacy Edition)",
-   "artist": "Billy Joel",
-   "playcount": 4
+   "artist": "Billy Joel"
   },
   {
    "name": "Twin Fantasy (Mirror to Mirror)",
-   "artist": "Car Seat Headrest",
-   "playcount": 4
+   "artist": "Car Seat Headrest"
   },
   {
    "name": "Money (feat. Fly Ty)",
-   "artist": "D/R Period",
-   "playcount": 4
+   "artist": "D/R Period"
   },
   {
    "name": "Restful Recovery (Delta Waves) (1 Hz)",
-   "artist": "Dream Wave",
-   "playcount": 4
+   "artist": "Dream Wave"
   },
   {
    "name": "Sings For Only The Lonely (2018 Stereo Mix)",
-   "artist": "Frank Sinatra",
-   "playcount": 4
+   "artist": "Frank Sinatra"
   },
   {
    "name": "The Long Versions - Part One",
-   "artist": "Golden Earring",
-   "playcount": 4
+   "artist": "Golden Earring"
   },
   {
    "name": "Pillars of Eternity (Official Soundtrack)",
-   "artist": "Justin Bell",
-   "playcount": 4
+   "artist": "Justin Bell"
   },
   {
    "name": "Out of the Blue (40th Anniversary Remaster)",
-   "artist": "\"Blue\" Gene Tyranny",
-   "playcount": 3
+   "artist": "\"Blue\" Gene Tyranny"
   },
   {
    "name": "Off White Rozay (feat. Voice of Harlem)",
-   "artist": "A$AP Ferg",
-   "playcount": 3
+   "artist": "A$AP Ferg"
   },
   {
    "name": "Farewell to Faraway Friends (Wurlitzer Improvisations 2021-23)",
-   "artist": "Anja Lauvdal",
-   "playcount": 3
+   "artist": "Anja Lauvdal"
   },
   {
    "name": "Portal 2: Songs to Test By (Collectors Edition)",
-   "artist": "Aperture Science Psychoacoustics Laboratory",
-   "playcount": 3
+   "artist": "Aperture Science Psychoacoustics Laboratory"
   },
   {
    "name": "E.T.I. Espace, Transit Et Individu (Reshape & Restoration)",
-   "artist": "Automatisme",
-   "playcount": 3
+   "artist": "Automatisme"
   },
   {
    "name": "Azymuth (Deluxe Edition)",
-   "artist": "Azymuth",
-   "playcount": 3
+   "artist": "Azymuth"
   },
   {
    "name": "The Stranger (Legacy Edition)",
-   "artist": "Billy Joel",
-   "playcount": 3
+   "artist": "Billy Joel"
   },
   {
    "name": "Bing Crosby - Christmas Classics",
-   "artist": "Bing Crosby",
-   "playcount": 3
+   "artist": "Bing Crosby"
   },
   {
    "name": "The Witmark Demos: 1962-1964 (The Bootleg Series Vol. 9)",
-   "artist": "Bob Dylan",
-   "playcount": 3
+   "artist": "Bob Dylan"
   },
   {
    "name": "Dr. Seuss' How the Grinch Stole Christmas! (Original TV Soundtrack)",
-   "artist": "Boris Karloff",
-   "playcount": 3
+   "artist": "Boris Karloff"
   },
   {
    "name": "Silk Degrees (2023 Remaster)",
-   "artist": "Boz Scaggs",
-   "playcount": 3
+   "artist": "Boz Scaggs"
   },
   {
    "name": "F.A.M.E. (Expanded Edition)",
-   "artist": "Chris Brown",
-   "playcount": 3
+   "artist": "Chris Brown"
   },
   {
    "name": "Cosmo's Factory (Expanded Edition)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 3
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Green River (Expanded Edition)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 3
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Pendulum (Expanded Edition)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 3
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Crystal Castles (II)",
-   "artist": "Crystal Castles",
-   "playcount": 3
+   "artist": "Crystal Castles"
   },
   {
    "name": "Hunky Dory (2015 Remaster)",
-   "artist": "David Bowie",
-   "playcount": 3
+   "artist": "David Bowie"
   },
   {
    "name": "Dance the Night (From Barbie the Album)",
-   "artist": "Dua Lipa",
-   "playcount": 3
+   "artist": "Dua Lipa"
   },
   {
    "name": "Rumours (Deluxe Edition)",
-   "artist": "Fleetwood Mac",
-   "playcount": 3
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "Album - Generic Flipper",
-   "artist": "Flipper",
-   "playcount": 3
+   "artist": "Flipper"
   },
   {
    "name": "Looping I-VI (And Other Assorted Love Songs)",
-   "artist": "Frank Bretschneider",
-   "playcount": 3
+   "artist": "Frank Bretschneider"
   },
   {
    "name": "Garbage (20th Anniversary Deluxe Edition/Remastered)",
-   "artist": "Garbage",
-   "playcount": 3
+   "artist": "Garbage"
   },
   {
    "name": "Generation X (2002 Remaster)",
-   "artist": "Generation X",
-   "playcount": 3
+   "artist": "Generation X"
   },
   {
    "name": "Preparati la bara ! (Original Motion Picture Soundtrack) [Remastered]",
-   "artist": "Gianfranco & Gianpiero Reverberi",
-   "playcount": 3
+   "artist": "Gianfranco & Gianpiero Reverberi"
   },
   {
    "name": "Organ Health (174 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 3
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "Rock 'n' Roll With the Modern Lovers (Bonus Track Edition)",
-   "artist": "Jonathan Richman",
-   "playcount": 3
+   "artist": "Jonathan Richman"
   },
   {
    "name": "Blue Cube [ ]",
-   "artist": "Kim Cascone",
-   "playcount": 3
+   "artist": "Kim Cascone"
   },
   {
    "name": "Sten - Earthshine",
-   "artist": "Lawrence",
-   "playcount": 3
+   "artist": "Lawrence"
   },
   {
    "name": "HBO (Haitian Body Odor)",
-   "artist": "Mach-Hommy",
-   "playcount": 3
+   "artist": "Mach-Hommy"
   },
   {
    "name": "Celebration (Double Disc Version)",
-   "artist": "Madonna",
-   "playcount": 3
+   "artist": "Madonna"
   },
   {
    "name": "Jackie (Original Soundtrack Album)",
-   "artist": "Mica Levi",
-   "playcount": 3
+   "artist": "Mica Levi"
   },
   {
    "name": "The Downward Spiral (Deluxe Edition)",
-   "artist": "Nine Inch Nails",
-   "playcount": 3
+   "artist": "Nine Inch Nails"
   },
   {
    "name": "Spirit In The Sky (Deluxe Edition)",
-   "artist": "Norman Greenbaum",
-   "playcount": 3
+   "artist": "Norman Greenbaum"
   },
   {
    "name": "The Wicker Man (Original Motion Picture Soundtrack)",
-   "artist": "Paul Giovanni",
-   "playcount": 3
+   "artist": "Paul Giovanni"
   },
   {
    "name": "Baikal Ice (Spring 2003)",
-   "artist": "Peter Cusack",
-   "playcount": 3
+   "artist": "Peter Cusack"
   },
   {
    "name": "His Past of Heaven-Floor Permanents - Her Lufa",
-   "artist": "PRADA & OREGON",
-   "playcount": 3
+   "artist": "PRADA & OREGON"
   },
   {
    "name": "The Game (Deluxe Remastered Version)",
-   "artist": "Queen",
-   "playcount": 3
+   "artist": "Queen"
   },
   {
    "name": "FRKWYS Vol. 12 - We Know Each Other Somehow",
-   "artist": "Robert Aiki Aubrey Lowe",
-   "playcount": 3
+   "artist": "Robert Aiki Aubrey Lowe"
   },
   {
    "name": "Everybody Loves The Sunshine (Reissue)",
-   "artist": "Roy Ayers Ubiquity",
-   "playcount": 3
+   "artist": "Roy Ayers Ubiquity"
   },
   {
    "name": "Señorita - Single",
-   "artist": "Shawn Mendes & Camila Cabello",
-   "playcount": 3
+   "artist": "Shawn Mendes & Camila Cabello"
   },
   {
    "name": "Magic In The Hamptons (feat. Lil Yachty)",
-   "artist": "Social House",
-   "playcount": 3
+   "artist": "Social House"
   },
   {
    "name": "Suicide (2019 - Remaster)",
-   "artist": "Suicide",
-   "playcount": 3
+   "artist": "Suicide"
   },
   {
    "name": "Fear Of Music (Deluxe Version)",
-   "artist": "Talking Heads",
-   "playcount": 3
+   "artist": "Talking Heads"
   },
   {
    "name": "Remain In Light (Deluxe Version)",
-   "artist": "Talking Heads",
-   "playcount": 3
+   "artist": "Talking Heads"
   },
   {
    "name": "Since I Left You (20th Anniversary Deluxe Edition)",
-   "artist": "The Avalanches",
-   "playcount": 3
+   "artist": "The Avalanches"
   },
   {
    "name": "M.I.U. Album (Remastered)",
-   "artist": "The Beach Boys",
-   "playcount": 3
+   "artist": "The Beach Boys"
   },
   {
    "name": "Pet Sounds (Original Mono & Stereo Mix)",
-   "artist": "The Beach Boys",
-   "playcount": 3
+   "artist": "The Beach Boys"
   },
   {
    "name": "The Incredible Shrinking Dickies (Expanded Version)",
-   "artist": "The Dickies",
-   "playcount": 3
+   "artist": "The Dickies"
   },
   {
    "name": "Grotesque (After The Gramme) [Expanded Edition]",
-   "artist": "The Fall",
-   "playcount": 3
+   "artist": "The Fall"
   },
   {
    "name": "Ghost In The Machine (Remastered 2003)",
-   "artist": "The Police",
-   "playcount": 3
+   "artist": "The Police"
   },
   {
    "name": "Sorry Ma, Forgot to Take Out the Trash (Expanded)",
-   "artist": "The Replacements",
-   "playcount": 3
+   "artist": "The Replacements"
   },
   {
    "name": "Oh, Inverted World (20th Anniversary Remaster)",
-   "artist": "The Shins",
-   "playcount": 3
+   "artist": "The Shins"
   },
   {
    "name": "Who Will Cut Our Hair When We're Gone? (Remastered)",
-   "artist": "The Unicorns",
-   "playcount": 3
+   "artist": "The Unicorns"
   },
   {
    "name": "White Light / White Heat (Super Deluxe)",
-   "artist": "The Velvet Underground",
-   "playcount": 3
+   "artist": "The Velvet Underground"
   },
   {
    "name": "1992 - 2012",
-   "artist": "Underworld",
-   "playcount": 3
+   "artist": "Underworld"
   },
   {
    "name": "Saturday Night Fever (The Original Movie Soundtrack Deluxe Edition)",
-   "artist": "Various Artists",
-   "playcount": 3
+   "artist": "Various Artists"
   },
   {
    "name": "The Rocky Horror Picture Show - Original Soundtrack",
-   "artist": "Various Artists",
-   "playcount": 3
+   "artist": "Various Artists"
   },
   {
    "name": "Wings At The Speed Of Sound (Archive Collection)",
-   "artist": "Wings",
-   "playcount": 3
+   "artist": "Wings"
   },
   {
    "name": "Enter The Wu-Tang (36 Chambers) [Expanded Edition]",
-   "artist": "Wu-Tang Clan",
-   "playcount": 3
+   "artist": "Wu-Tang Clan"
   },
   {
    "name": "Gorilla (2019 Remaster)",
-   "artist": "James Taylor",
-   "playcount": 2
+   "artist": "James Taylor"
   },
   {
    "name": "The Forever Story (Extended Version)",
-   "artist": "JID",
-   "playcount": 2
+   "artist": "JID"
   },
   {
    "name": "John Fahey Sessions (Live at the BBC October, 1987)",
-   "artist": "John Fahey",
-   "playcount": 2
+   "artist": "John Fahey"
   },
   {
    "name": "A Period of Review (Original Recordings: 1975 - 1983)",
-   "artist": "K. Leimer",
-   "playcount": 2
+   "artist": "K. Leimer"
   },
   {
    "name": "Atmosphere - The Lost Dubs",
-   "artist": "Kerri Chandler",
-   "playcount": 2
+   "artist": "Kerri Chandler"
   },
   {
    "name": "In the Court of the Crimson King (Expanded Edition)",
-   "artist": "King Crimson",
-   "playcount": 2
+   "artist": "King Crimson"
   },
   {
    "name": "Sauce Boss (feat. Epic Meal Time)",
-   "artist": "Klaypex",
-   "playcount": 2
+   "artist": "Klaypex"
   },
   {
    "name": "The Man-Machine (2009 Remaster)",
-   "artist": "Kraftwerk",
-   "playcount": 2
+   "artist": "Kraftwerk"
   },
   {
    "name": "The Fame Monster (Deluxe Edition)",
-   "artist": "Lady Gaga",
-   "playcount": 2
+   "artist": "Lady Gaga"
   },
   {
    "name": "Off to Another Planet (EP)",
-   "artist": "Lamar Greene",
-   "playcount": 2
+   "artist": "Lamar Greene"
   },
   {
    "name": "Orpokotijuhlat Saarella (Maagillinen Teatteri live 9.9.2016)",
-   "artist": "Lauri Ainala & Olli Aarni",
-   "playcount": 2
+   "artist": "Lauri Ainala & Olli Aarni"
   },
   {
    "name": "Houses of the Holy (Deluxe Edition)",
-   "artist": "Led Zeppelin",
-   "playcount": 2
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Led Zeppelin (Remaster)",
-   "artist": "Led Zeppelin",
-   "playcount": 2
+   "artist": "Led Zeppelin"
   },
   {
    "name": "How Much Longer Must I Wait? (Singles & Rarities 1965-1972)",
-   "artist": "Lee Moses",
-   "playcount": 2
+   "artist": "Lee Moses"
   },
   {
    "name": "K.I.D.S. (Deluxe)",
-   "artist": "Mac Miller",
-   "playcount": 2
+   "artist": "Mac Miller"
   },
   {
    "name": "The Inner Mounting Flame (With John McLaughlin)",
-   "artist": "Mahavishnu Orchestra",
-   "playcount": 2
+   "artist": "Mahavishnu Orchestra"
   },
   {
    "name": "A Triumph for Man (Extended Version)",
-   "artist": "Mew",
-   "playcount": 2
+   "artist": "Mew"
   },
   {
    "name": "Negative Space (1981–2014)",
-   "artist": "Meyers",
-   "playcount": 2
+   "artist": "Meyers"
   },
   {
    "name": "Victim Of Romance (Expanded Edition)",
-   "artist": "Michelle Phillips",
-   "playcount": 2
+   "artist": "Michelle Phillips"
   },
   {
    "name": "Brotherhood (Collector's Edition)",
-   "artist": "New Order",
-   "playcount": 2
+   "artist": "New Order"
   },
   {
    "name": "Emergency Ward (Expanded Edition)",
-   "artist": "Nina Simone",
-   "playcount": 2
+   "artist": "Nina Simone"
   },
   {
    "name": "Nina Simone Sings The Blues (Expanded Edition)",
-   "artist": "Nina Simone",
-   "playcount": 2
+   "artist": "Nina Simone"
   },
   {
    "name": "Stick Season (We'll All Be Here Forever)",
-   "artist": "Noah Kahan",
-   "playcount": 2
+   "artist": "Noah Kahan"
   },
   {
    "name": "Cachaito (with Angá Díaz, Amadito Valdés, Carlos González, Manuel Galbán & Bigga Morrison)",
-   "artist": "Orlando \"Cachaíto\" López",
-   "playcount": 2
+   "artist": "Orlando \"Cachaíto\" López"
   },
   {
    "name": "The Dock Of The Bay (Mono)",
-   "artist": "Otis Redding",
-   "playcount": 2
+   "artist": "Otis Redding"
   },
   {
    "name": "Preludes, Airs And Yodels (A Penguin Cafe Primer)",
-   "artist": "Penguin Cafe Orchestra",
-   "playcount": 2
+   "artist": "Penguin Cafe Orchestra"
   },
   {
    "name": "L'imprevisto (Colonna Sonora Originale)",
-   "artist": "Piero Piccioni",
-   "playcount": 2
+   "artist": "Piero Piccioni"
   },
   {
    "name": "Frizzle Fry (Remastered)",
-   "artist": "Primus",
-   "playcount": 2
+   "artist": "Primus"
   },
   {
    "name": "Purple Rain (Deluxe Expanded Edition)",
-   "artist": "Prince",
-   "playcount": 2
+   "artist": "Prince"
   },
   {
    "name": "SremmLife 2 (Deluxe)",
-   "artist": "Rae Sremmurd",
-   "playcount": 2
+   "artist": "Rae Sremmurd"
   },
   {
    "name": "Sound Mind Sound Body (30th Anniversary Edition)",
-   "artist": "Rafael Toral",
-   "playcount": 2
+   "artist": "Rafael Toral"
   },
   {
    "name": "Blood Sugar Sex Magik (Deluxe Edition)",
-   "artist": "Red Hot Chili Peppers",
-   "playcount": 2
+   "artist": "Red Hot Chili Peppers"
   },
   {
    "name": "By the Way (Deluxe Edition)",
-   "artist": "Red Hot Chili Peppers",
-   "playcount": 2
+   "artist": "Red Hot Chili Peppers"
   },
   {
    "name": "Juno (Deluxe)",
-   "artist": "Remi Wolf",
-   "playcount": 2
+   "artist": "Remi Wolf"
   },
   {
    "name": "She Wolf (Expanded Edition)",
-   "artist": "Shakira",
-   "playcount": 2
+   "artist": "Shakira"
   },
   {
    "name": "Once Upon a Time (Super Deluxe)",
-   "artist": "Simple Minds",
-   "playcount": 2
+   "artist": "Simple Minds"
   },
   {
    "name": "Is It Gonna Get Any Weirder (Reddit Recap)",
-   "artist": "sngl",
-   "playcount": 2
+   "artist": "sngl"
   },
   {
    "name": "Dots and Loops (Expanded Edition)",
-   "artist": "Stereolab",
-   "playcount": 2
+   "artist": "Stereolab"
   },
   {
    "name": "Bella Donna (2016 Remastered)",
-   "artist": "Stevie Nicks",
-   "playcount": 2
+   "artist": "Stevie Nicks"
   },
   {
    "name": "UkabazUmorezU (不浮不埋)",
-   "artist": "Sugai Ken",
-   "playcount": 2
+   "artist": "Sugai Ken"
   },
   {
    "name": "LP2 (2009 Edition)",
-   "artist": "Sunny Day Real Estate",
-   "playcount": 2
+   "artist": "Sunny Day Real Estate"
   },
   {
    "name": "1989 (Taylor's Version)",
-   "artist": "Taylor Swift",
-   "playcount": 2
+   "artist": "Taylor Swift"
   },
   {
    "name": "Fearless (Taylor's Version)",
-   "artist": "Taylor Swift",
-   "playcount": 2
+   "artist": "Taylor Swift"
   },
   {
    "name": "Songs From The Big Chair (Super Deluxe Edition)",
-   "artist": "Tears for Fears",
-   "playcount": 2
+   "artist": "Tears for Fears"
   },
   {
    "name": "Eat A Peach (Deluxe Edition)",
-   "artist": "The Allman Brothers Band",
-   "playcount": 2
+   "artist": "The Allman Brothers Band"
   },
   {
    "name": "L.A. (Light Album) [Remastered]",
-   "artist": "The Beach Boys",
-   "playcount": 2
+   "artist": "The Beach Boys"
   },
   {
    "name": "Revolver (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 2
+   "artist": "The Beatles"
   },
   {
    "name": "The Clash (Remastered)",
-   "artist": "The Clash",
-   "playcount": 2
+   "artist": "The Clash"
   },
   {
    "name": "I Just Can’t Stop It (2012 Remaster)",
-   "artist": "The English Beat",
-   "playcount": 2
+   "artist": "The English Beat"
   },
   {
    "name": "Psychocandy - Expanded Version",
-   "artist": "The Jesus and Mary Chain",
-   "playcount": 2
+   "artist": "The Jesus and Mary Chain"
   },
   {
    "name": "More of the Monkees (Deluxe Edition)",
-   "artist": "The Monkees",
-   "playcount": 2
+   "artist": "The Monkees"
   },
   {
    "name": "Hot Rocks (1964-1971)",
-   "artist": "The Rolling Stones",
-   "playcount": 2
+   "artist": "The Rolling Stones"
   },
   {
    "name": "Cowboy Bebop (Original Motion Picture Soundtrack)",
-   "artist": "The Seatbelts",
-   "playcount": 2
+   "artist": "The Seatbelts"
   },
   {
    "name": "Raw Power (50th Anniversary Legacy Edition)",
-   "artist": "The Stooges",
-   "playcount": 2
+   "artist": "The Stooges"
   },
   {
    "name": "Live At Leeds (2010 Super Deluxe Edition)",
-   "artist": "The Who",
-   "playcount": 2
+   "artist": "The Who"
   },
   {
    "name": "Odessey and Oracle (Mono Remastered)",
-   "artist": "The Zombies",
-   "playcount": 2
+   "artist": "The Zombies"
   },
   {
    "name": "The Taste of TG (A beginner's guide to the music of Throbbing Gristle)",
-   "artist": "Throbbing Gristle",
-   "playcount": 2
+   "artist": "Throbbing Gristle"
   },
   {
    "name": "A-Punk - Single of the Week",
-   "artist": "Vampire Weekend",
-   "playcount": 2
+   "artist": "Vampire Weekend"
   },
   {
    "name": "Moondance (Deluxe Edition)",
-   "artist": "Van Morrison",
-   "playcount": 2
+   "artist": "Van Morrison"
   },
   {
    "name": "Defected Presents House Masters - Heller & Farley",
-   "artist": "Various Artists",
-   "playcount": 2
+   "artist": "Various Artists"
   },
   {
    "name": "Pop à Paris - La joue Barclay",
-   "artist": "Various Artists",
-   "playcount": 2
+   "artist": "Various Artists"
   },
   {
    "name": "The Farmer's Daughter (Assumption Song)",
-   "artist": "Vito Petroccitto Jr",
-   "playcount": 2
+   "artist": "Vito Petroccitto Jr"
   },
   {
    "name": "Yankee Hotel Foxtrot (Expanded Edition)",
-   "artist": "Wilco",
-   "playcount": 2
+   "artist": "Wilco"
   },
   {
    "name": "Moanin' (Expanded Edition)",
-   "artist": "Art Blakey & The Jazz Messengers",
-   "playcount": 2
+   "artist": "Art Blakey & The Jazz Messengers"
   },
   {
    "name": "A Certain Smile, A Certain Sadness (Expanded Edition)",
-   "artist": "Astrud Gilberto",
-   "playcount": 2
+   "artist": "Astrud Gilberto"
   },
   {
    "name": "Baile la Guerra [7\"]",
-   "artist": "Aviador Dro",
-   "playcount": 2
+   "artist": "Aviador Dro"
   },
   {
    "name": "Vete - Single",
-   "artist": "Bad Bunny",
-   "playcount": 2
+   "artist": "Bad Bunny"
   },
   {
    "name": "Stunt (20th Anniversary Edition)",
-   "artist": "Barenaked Ladies",
-   "playcount": 2
+   "artist": "Barenaked Ladies"
   },
   {
    "name": "From Left To Right (Expanded Edition)",
-   "artist": "Bill Evans",
-   "playcount": 2
+   "artist": "Bill Evans"
   },
   {
    "name": "Holiday Inn (Original Motion Picture Soundtrack)",
-   "artist": "Bing Crosby",
-   "playcount": 2
+   "artist": "Bing Crosby"
   },
   {
    "name": "Hooked On A Feeling - 40th Anniversary Collection",
-   "artist": "Blue Swede",
-   "playcount": 2
+   "artist": "Blue Swede"
   },
   {
    "name": "Blur (Special Edition)",
-   "artist": "Blur",
-   "playcount": 2
+   "artist": "Blur"
   },
   {
    "name": "Jingle Bell Rock/Captain Santa Claus (And His Reindeer Space Patrol)",
-   "artist": "Bobby Helms",
-   "playcount": 2
+   "artist": "Bobby Helms"
   },
   {
    "name": "Peach Fuzz (demos and home recordings 2012-2013)",
-   "artist": "Bobby T. and the Slackers",
-   "playcount": 2
+   "artist": "Bobby T. and the Slackers"
   },
   {
    "name": "000000000 (开系先知印记)",
-   "artist": "bod [包家巷]",
-   "playcount": 2
+   "artist": "bod [包家巷]"
   },
   {
    "name": "Taking Tiger Mountain (By Strategy) [2004 Remaster]",
-   "artist": "Brian Eno",
-   "playcount": 2
+   "artist": "Brian Eno"
   },
   {
    "name": "Freakin' Out On The Interstate (Acoustic Version [Live])",
-   "artist": "Briston Maroney",
-   "playcount": 2
+   "artist": "Briston Maroney"
   },
   {
    "name": "Flow Motion (Remastered)",
-   "artist": "Can",
-   "playcount": 2
+   "artist": "Can"
   },
   {
    "name": "WAP (feat. Megan Thee Stallion)",
-   "artist": "Cardi B",
-   "playcount": 2
+   "artist": "Cardi B"
   },
   {
    "name": "Mistérios da Amazônia (feat. Devas)",
-   "artist": "Carioca",
-   "playcount": 2
+   "artist": "Carioca"
   },
   {
    "name": "CRASH (Deluxe)",
-   "artist": "Charli xcx",
-   "playcount": 2
+   "artist": "Charli xcx"
   },
   {
    "name": "My Favourite Songs - The Last Great Concert",
-   "artist": "Chet Baker",
-   "playcount": 2
+   "artist": "Chet Baker"
   },
   {
    "name": "Guitar Graffiti (Expanded Edition)",
-   "artist": "Chris Spedding",
-   "playcount": 2
+   "artist": "Chris Spedding"
   },
   {
    "name": "Green River (Remastered 1985)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 2
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Willy And The Poor Boys (Expanded Edition)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 2
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Under the Table and Dreaming (Expanded Edition)",
-   "artist": "Dave Matthews Band",
-   "playcount": 2
+   "artist": "Dave Matthews Band"
   },
   {
    "name": "Dean Martin: The Capitol Recordings, Vol. 11 (1960-1961)",
-   "artist": "Dean Martin",
-   "playcount": 2
+   "artist": "Dean Martin"
   },
   {
    "name": "Music For The Masses (2006 Remaster)",
-   "artist": "Depeche Mode",
-   "playcount": 2
+   "artist": "Depeche Mode"
   },
   {
    "name": "Violator (2006 Remaster)",
-   "artist": "Depeche Mode",
-   "playcount": 2
+   "artist": "Depeche Mode"
   },
   {
    "name": "Innovator (Mayday)",
-   "artist": "Derrick May",
-   "playcount": 2
+   "artist": "Derrick May"
   },
   {
    "name": "What Will We Be (Standard)",
-   "artist": "Devendra Banhart",
-   "playcount": 2
+   "artist": "Devendra Banhart"
   },
   {
    "name": "Freedom of Choice (2009 Remaster; Deluxe Edition)",
-   "artist": "Devo",
-   "playcount": 2
+   "artist": "Devo"
   },
   {
    "name": "All Screwed Up, Vol. II (Screwed)",
-   "artist": "DJ Screw",
-   "playcount": 2
+   "artist": "DJ Screw"
   },
   {
    "name": "Ella Wishes You a Swinging Christmas (Expanded Edition)",
-   "artist": "Ella Fitzgerald",
-   "playcount": 2
+   "artist": "Ella Fitzgerald"
   },
   {
    "name": "Emilio Santiago (1975 Remastered Version)",
-   "artist": "Emílio Santiago",
-   "playcount": 2
+   "artist": "Emílio Santiago"
   },
   {
    "name": "Get to Heaven (Deluxe)",
-   "artist": "Everything Everything",
-   "playcount": 2
+   "artist": "Everything Everything"
   },
   {
    "name": "98.12.28 男達の別れ (Live)",
-   "artist": "Fishmans",
-   "playcount": 2
+   "artist": "Fishmans"
   },
   {
    "name": "Cherry (feat. Hayley Kiyoko)",
-   "artist": "Fletcher",
-   "playcount": 2
+   "artist": "Fletcher"
   },
   {
    "name": "Ravissante Baby (Negro Phasing)",
-   "artist": "Francis The Great",
-   "playcount": 2
+   "artist": "Francis The Great"
   },
   {
    "name": "Piñata (Deluxe Edition)",
-   "artist": "Freddie Gibbs",
-   "playcount": 2
+   "artist": "Freddie Gibbs"
   },
   {
    "name": "DS2 (Deluxe)",
-   "artist": "Future",
-   "playcount": 2
+   "artist": "Future"
   },
   {
    "name": "\"ხმის სიყვარული” (SOUND LOVE)",
-   "artist": "Georgia",
-   "playcount": 2
+   "artist": "Georgia"
   },
   {
    "name": "Imagination (Expanded Edition)",
-   "artist": "Gladys Knight & The Pips",
-   "playcount": 2
+   "artist": "Gladys Knight & The Pips"
   },
   {
    "name": "Impressões de Outra Ilha (Borneo)",
-   "artist": "gonçalo f. cardoso",
-   "playcount": 2
+   "artist": "gonçalo f. cardoso"
   },
   {
    "name": "Grateful Dead (Skull & Roses) [Live]",
-   "artist": "Grateful Dead",
-   "playcount": 2
+   "artist": "Grateful Dead"
   },
   {
    "name": "Summer Girl - Single",
-   "artist": "HAIM",
-   "playcount": 2
+   "artist": "HAIM"
   },
   {
    "name": "Hannah Montana 2 (Original Soundtrack)",
-   "artist": "Hannah Montana",
-   "playcount": 2
+   "artist": "Hannah Montana"
   },
   {
    "name": "Eliminate Negative Energy (417 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 2
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "House of Pain (Fine Malt Lyrics)",
-   "artist": "House of Pain",
-   "playcount": 2
+   "artist": "House of Pain"
   },
   {
    "name": "RuneScape: (Original Soundtrack Classics)",
-   "artist": "Jagex Audio Team",
-   "playcount": 2
+   "artist": "Jagex Audio Team"
   },
   {
    "name": "90125 (Deluxe Version)",
-   "artist": "Yes",
-   "playcount": 2
+   "artist": "Yes"
   },
   {
    "name": "Yes (Deluxe Edition)",
-   "artist": "Yes",
-   "playcount": 2
+   "artist": "Yes"
   },
   {
    "name": "No Exist (Feel Special)",
-   "artist": "YlangYlang",
-   "playcount": 2
+   "artist": "YlangYlang"
   },
   {
    "name": "Musique originale de films (Habibi Funk 003)",
-   "artist": "Ahmed Malek",
-   "playcount": 2
+   "artist": "Ahmed Malek"
   },
   {
    "name": "Project Wingman (Original Soundtrack)",
-   "artist": "Jose Pavli",
-   "playcount": 1
+   "artist": "Jose Pavli"
   },
   {
    "name": "Unknown Pleasures (Collector's Edition)",
-   "artist": "Joy Division",
-   "playcount": 1
+   "artist": "Joy Division"
   },
   {
    "name": "Fall Guys (Original Soundtrack)",
-   "artist": "Jukio Kallio",
-   "playcount": 1
+   "artist": "Jukio Kallio"
   },
   {
    "name": "Beat Down Babylon (Expanded Version)",
-   "artist": "Junior Byles",
-   "playcount": 1
+   "artist": "Junior Byles"
   },
   {
    "name": "Can't Help Falling in Love (From The Original Motion Picture Soundtrack ELVIS)",
-   "artist": "Kacey Musgraves",
-   "playcount": 1
+   "artist": "Kacey Musgraves"
   },
   {
    "name": "Vote Do (From \"Blue Mountains\")",
-   "artist": "Kailash Kher",
-   "playcount": 1
+   "artist": "Kailash Kher"
   },
   {
    "name": "Whistle Stop (Remastered 2014)",
-   "artist": "Kenny Dorham",
-   "playcount": 1
+   "artist": "Kenny Dorham"
   },
   {
    "name": "Man On The Moon: The End Of Day (Deluxe)",
-   "artist": "Kid Cudi",
-   "playcount": 1
+   "artist": "Kid Cudi"
   },
   {
    "name": "Man on the Moon: The End of Day (Int'l Version)",
-   "artist": "Kid Cudi",
-   "playcount": 1
+   "artist": "Kid Cudi"
   },
   {
    "name": "Mew (1996-2004)",
-   "artist": "Kitty Craft",
-   "playcount": 1
+   "artist": "Kitty Craft"
   },
   {
    "name": "The Very Best Of Kool & The Gang (Reissue)",
-   "artist": "Kool & the Gang",
-   "playcount": 1
+   "artist": "Kool & the Gang"
   },
   {
    "name": "iSpy (Feat. Lil Yachty)",
-   "artist": "KYLE",
-   "playcount": 1
+   "artist": "KYLE"
   },
   {
    "name": "Born This Way (Special Edition)",
-   "artist": "Lady Gaga",
-   "playcount": 1
+   "artist": "Lady Gaga"
   },
   {
    "name": "Born to Die - The Paradise Edition",
-   "artist": "Lana Del Rey",
-   "playcount": 1
+   "artist": "Lana Del Rey"
   },
   {
    "name": "Lottery (feat. LU KALA)",
-   "artist": "Latto",
-   "playcount": 1
+   "artist": "Latto"
   },
   {
    "name": "Houses Of The Holy (Remaster)",
-   "artist": "Led Zeppelin",
-   "playcount": 1
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Led Zeppelin III (Remaster)",
-   "artist": "Led Zeppelin",
-   "playcount": 1
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Physical Graffiti (Remaster)",
-   "artist": "Led Zeppelin",
-   "playcount": 1
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Coming Home (Deluxe)",
-   "artist": "Leon Bridges",
-   "playcount": 1
+   "artist": "Leon Bridges"
   },
   {
    "name": "The Scientist - Scientific Dub",
-   "artist": "Scientist",
-   "playcount": 1
+   "artist": "Scientist"
   },
   {
    "name": "Pipe (with Vashti Bunyan)",
-   "artist": "Sega Bodega",
-   "playcount": 1
+   "artist": "Sega Bodega"
   },
   {
    "name": "Sinners (Original Motion Picture Soundtrack)",
-   "artist": "Sinners Movie",
-   "playcount": 1
+   "artist": "Sinners Movie"
   },
   {
    "name": "Heyyeyaaeyaaaeyaeyaa (Fabulous Secret Powers)",
-   "artist": "SlackCircus",
-   "playcount": 1
+   "artist": "SlackCircus"
   },
   {
    "name": "A Quiet Farwell, 2016–2018 (Crater Speak)",
-   "artist": "SLAUSON MALONE 1",
-   "playcount": 1
+   "artist": "SLAUSON MALONE 1"
   },
   {
    "name": "Ogdens' Nut Gone Flake - 50th Anniversary Edition (2018 Remaster)",
-   "artist": "Small Faces",
-   "playcount": 1
+   "artist": "Small Faces"
   },
   {
    "name": "There Are But Four Small Faces (Expanded)",
-   "artist": "Small Faces",
-   "playcount": 1
+   "artist": "Small Faces"
   },
   {
    "name": "Fush Yu Mang (20th Anniversary Edition)",
-   "artist": "Smash Mouth",
-   "playcount": 1
+   "artist": "Smash Mouth"
   },
   {
    "name": "Alive and Well - Recorded in Paris",
-   "artist": "Soft Machine",
-   "playcount": 1
+   "artist": "Soft Machine"
   },
   {
    "name": "The Soft Machine (Remastered And Expanded)",
-   "artist": "Soft Machine",
-   "playcount": 1
+   "artist": "Soft Machine"
   },
   {
    "name": "Ape Escape 3 - Originape Soundtracks / サルゲッチュ3・オリジサル・サウンドトラック",
-   "artist": "Soichi Terada",
-   "playcount": 1
+   "artist": "Soichi Terada"
   },
   {
    "name": "Mirror's Edge (Original Videogame Score)",
-   "artist": "Solar Fields",
-   "playcount": 1
+   "artist": "Solar Fields"
   },
   {
    "name": "Amarrate! (feat. Mayito Rivera, Luis Frank Arias)",
-   "artist": "Soneros De Verdad",
-   "playcount": 1
+   "artist": "Soneros De Verdad"
   },
   {
    "name": "SONIC THE HEDGEHOG CD Original Soundtrack (20th Anniversary Edition)",
-   "artist": "Sonic the Hedgehog CD",
-   "playcount": 1
+   "artist": "Sonic the Hedgehog CD"
   },
   {
    "name": "Read My Lips (Deluxe Version)",
-   "artist": "Sophie Ellis-Bextor",
-   "playcount": 1
+   "artist": "Sophie Ellis-Bextor"
   },
   {
    "name": "Badmotorfinger (25th Anniversary Remaster)",
-   "artist": "Soundgarden",
-   "playcount": 1
+   "artist": "Soundgarden"
   },
   {
    "name": "Superunknown (Deluxe Edition)",
-   "artist": "Soundgarden",
-   "playcount": 1
+   "artist": "Soundgarden"
   },
   {
    "name": "Gold - The Best of Spandau Ballet",
-   "artist": "Spandau Ballet",
-   "playcount": 1
+   "artist": "Spandau Ballet"
   },
   {
    "name": "True (Special Edition)",
-   "artist": "Spandau Ballet",
-   "playcount": 1
+   "artist": "Spandau Ballet"
   },
   {
    "name": "Ginger (Remastered 2021)",
-   "artist": "Speedy J",
-   "playcount": 1
+   "artist": "Speedy J"
   },
   {
    "name": "Loudboxer (Remastered 2021)",
-   "artist": "Speedy J",
-   "playcount": 1
+   "artist": "Speedy J"
   },
   {
    "name": "Pocket Full Of Kryptonite (Anniversary Edition)",
-   "artist": "Spin Doctors",
-   "playcount": 1
+   "artist": "Spin Doctors"
   },
   {
    "name": "Feed Me Weird Things (Remastered)",
-   "artist": "Squarepusher",
-   "playcount": 1
+   "artist": "Squarepusher"
   },
   {
    "name": "Little Pieces Of Stereolab (A Switched On Sampler)",
-   "artist": "Stereolab",
-   "playcount": 1
+   "artist": "Stereolab"
   },
   {
    "name": "Sound-Dust (Expanded Edition)",
-   "artist": "Stereolab",
-   "playcount": 1
+   "artist": "Stereolab"
   },
   {
    "name": "Revolutions: The Very Best Of Steve Winwood (UK/ROW Version)",
-   "artist": "Steve Winwood",
-   "playcount": 1
+   "artist": "Steve Winwood"
   },
   {
    "name": "Core (Super Deluxe Edition)",
-   "artist": "Stone Temple Pilots",
-   "playcount": 1
+   "artist": "Stone Temple Pilots"
   },
   {
    "name": "Ma Meilleure Ennemie (from the series Arcane League of Legends)",
-   "artist": "Stromae",
-   "playcount": 1
+   "artist": "Stromae"
   },
   {
    "name": "It Takes A Nation Of Millions To Hold Us Back (Deluxe Edition)",
-   "artist": "Public Enemy",
-   "playcount": 1
+   "artist": "Public Enemy"
   },
   {
    "name": "Songs Before Bed (2022)",
-   "artist": "Pudding Club",
-   "playcount": 1
+   "artist": "Pudding Club"
   },
   {
    "name": "Black Mill Tapes (10th Anniversary Box)",
-   "artist": "Pye Corner Audio",
-   "playcount": 1
+   "artist": "Pye Corner Audio"
   },
   {
    "name": "Goodbye Horses: The Many Lives of Q Lazzarus (Music From The Motion Picture)",
-   "artist": "Q Lazzarus",
-   "playcount": 1
+   "artist": "Q Lazzarus"
   },
   {
    "name": "We Will Rock You (Megan Thee Stallion Version)",
-   "artist": "Queen",
-   "playcount": 1
+   "artist": "Queen"
   },
   {
    "name": "Game of Thrones: Season 3 (Music from the HBO Series)",
-   "artist": "Ramin Djawadi",
-   "playcount": 1
+   "artist": "Ramin Djawadi"
   },
   {
    "name": "End of the Century (Expanded 2005 Remaster)",
-   "artist": "Ramones",
-   "playcount": 1
+   "artist": "Ramones"
   },
   {
    "name": "Pleasant Dreams (Expanded 2005 Remaster)",
-   "artist": "Ramones",
-   "playcount": 1
+   "artist": "Ramones"
   },
   {
    "name": "Rocket To Russia (40th Anniversary Deluxe Edition)",
-   "artist": "Ramones",
-   "playcount": 1
+   "artist": "Ramones"
   },
   {
    "name": "Cars Original Soundtrack (English version)",
-   "artist": "Rascal Flatts",
-   "playcount": 1
+   "artist": "Rascal Flatts"
   },
   {
    "name": "Defected presents Frankie Knuckles In The House (DJ Mix)",
-   "artist": "Richard Earnshaw",
-   "playcount": 1
+   "artist": "Richard Earnshaw"
   },
   {
    "name": "Ricky Sings Again (Expanded Edition / Remastered)",
-   "artist": "Ricky Nelson",
-   "playcount": 1
+   "artist": "Ricky Nelson"
   },
   {
    "name": "ANTI (Deluxe)",
-   "artist": "Rihanna",
-   "playcount": 1
+   "artist": "Rihanna"
   },
   {
    "name": "Talk That Talk (Deluxe Explicit)",
-   "artist": "Rihanna",
-   "playcount": 1
+   "artist": "Rihanna"
   },
   {
    "name": "Candyman (Original Motion Picture Soundtrack)",
-   "artist": "Robert Aiki Aubrey Lowe",
-   "playcount": 1
+   "artist": "Robert Aiki Aubrey Lowe"
   },
   {
    "name": "Happy Prisoner: The Bluegrass Sessions (Deluxe Edition)",
-   "artist": "Robert Earl Keen",
-   "playcount": 1
+   "artist": "Robert Earl Keen"
   },
   {
    "name": "Stayin' Alive VS 50 C Tik Tok (Remix)",
-   "artist": "ROSE BEAT",
-   "playcount": 1
+   "artist": "ROSE BEAT"
   },
   {
    "name": "B-2 Unit (2019 Remastering)",
-   "artist": "Ryuichi Sakamoto",
-   "playcount": 1
+   "artist": "Ryuichi Sakamoto"
   },
   {
    "name": "Unholy (feat. Kim Petras)",
-   "artist": "Sam Smith",
-   "playcount": 1
+   "artist": "Sam Smith"
   },
   {
    "name": "I found a date for the holidays (maybe)",
-   "artist": "savings",
-   "playcount": 1
+   "artist": "savings"
   },
   {
    "name": "An Anthology of Noise and Electronic Music Vol. 5 - Fifth A-chronology 1920-2007",
-   "artist": "Li Chin Sung",
-   "playcount": 1
+   "artist": "Li Chin Sung"
   },
   {
    "name": "Penith (The DAVE Soundtrack)",
-   "artist": "Lil Dicky",
-   "playcount": 1
+   "artist": "Lil Dicky"
   },
   {
    "name": "Old Town Road (feat. Billy Ray Cyrus) [Remix] - Single",
-   "artist": "Lil Nas X",
-   "playcount": 1
+   "artist": "Lil Nas X"
   },
   {
    "name": "Eternal Atake (Deluxe) - LUV vs. The World 2",
-   "artist": "Lil Uzi Vert",
-   "playcount": 1
+   "artist": "Lil Uzi Vert"
   },
   {
    "name": "It's Not Me, It's You (Special Edition)",
-   "artist": "Lily Allen",
-   "playcount": 1
+   "artist": "Lily Allen"
   },
   {
    "name": "Stay (I Missed You)",
-   "artist": "Lisa Loeb",
-   "playcount": 1
+   "artist": "Lisa Loeb"
   },
   {
    "name": "Get Weird (Expanded Edition)",
-   "artist": "Little Mix",
-   "playcount": 1
+   "artist": "Little Mix"
   },
   {
    "name": "Cuz I Love You (Super Deluxe)",
-   "artist": "Lizzo",
-   "playcount": 1
+   "artist": "Lizzo"
   },
   {
    "name": "Forever Changes (2015 Remaster)",
-   "artist": "Love",
-   "playcount": 1
+   "artist": "Love"
   },
   {
    "name": "Fiesta de negritos (Remastered)",
-   "artist": "Lucho Bermúdez",
-   "playcount": 1
+   "artist": "Lucho Bermúdez"
   },
   {
    "name": "Das Capital - The Songwriting Genius Of Luke Haines And The Auteurs",
-   "artist": "Luke Haines",
-   "playcount": 1
+   "artist": "Luke Haines"
   },
   {
    "name": "Midnight City - EP",
-   "artist": "M83",
-   "playcount": 1
+   "artist": "M83"
   },
   {
    "name": "B Cool (feat. Melanie Faye)",
-   "artist": "Magroove",
-   "playcount": 1
+   "artist": "Magroove"
   },
   {
    "name": "Éthiopiques, Vol. 7: Mahmoud Ahmed (1975)",
-   "artist": "Mahmoud Ahmed",
-   "playcount": 1
+   "artist": "Mahmoud Ahmed"
   },
   {
    "name": "The Gold (Phoebe Bridgers Version)",
-   "artist": "Manchester Orchestra",
-   "playcount": 1
+   "artist": "Manchester Orchestra"
   },
   {
    "name": "Candy Cane Lane (Original Motion Picture Soundtrack)",
-   "artist": "Marcus Miller",
-   "playcount": 1
+   "artist": "Marcus Miller"
   },
   {
    "name": "The Bones (with Hozier)",
-   "artist": "Maren Morris",
-   "playcount": 1
+   "artist": "Maren Morris"
   },
   {
    "name": "Memoir #02 [06.12.09]",
-   "artist": "Maria Pseftoga",
-   "playcount": 1
+   "artist": "Maria Pseftoga"
   },
   {
    "name": "Electra Heart (Deluxe)",
-   "artist": "Marina",
-   "playcount": 1
+   "artist": "Marina"
   },
   {
    "name": "Red Pill Blues (Deluxe)",
-   "artist": "Maroon 5",
-   "playcount": 1
+   "artist": "Maroon 5"
   },
   {
    "name": "I Want You (Deluxe Edition)",
-   "artist": "Marvin Gaye",
-   "playcount": 1
+   "artist": "Marvin Gaye"
   },
   {
    "name": "Blue Lines (2012 Mix/Master)",
-   "artist": "Massive Attack",
-   "playcount": 1
+   "artist": "Massive Attack"
   },
   {
    "name": "Animal Crossing: New Leaf (Covers)",
-   "artist": "Masters Of Sound",
-   "playcount": 1
+   "artist": "Masters Of Sound"
   },
   {
    "name": "We Insist! Max Roach's Freedom Now Suite (Remastered)",
-   "artist": "Max Roach",
-   "playcount": 1
+   "artist": "Max Roach"
   },
   {
    "name": "Afrique Victime (Deluxe Edition)",
-   "artist": "Mdou Moctar",
-   "playcount": 1
+   "artist": "Mdou Moctar"
   },
   {
    "name": "Steven Spielberg Presents Animaniacs (Soundtrack from the Original Series)",
-   "artist": "Animaniacs",
-   "playcount": 1
+   "artist": "Animaniacs"
   },
   {
    "name": "Music From the Merch Desk (2016 - 2023)",
-   "artist": "Aphex Twin",
-   "playcount": 1
+   "artist": "Aphex Twin"
   },
   {
    "name": "DJ-Kicks (Apparat)",
-   "artist": "Apparat",
-   "playcount": 1
+   "artist": "Apparat"
   },
   {
    "name": "House Arrest (Original Release)",
-   "artist": "Ariel Pink",
-   "playcount": 1
+   "artist": "Ariel Pink"
   },
   {
    "name": "Big Picture (Just Passin' By)",
-   "artist": "Asif Illyas",
-   "playcount": 1
+   "artist": "Asif Illyas"
   },
   {
    "name": "Astrud Gilberto with Stanley Turrentine (with Stanley Turrentine)",
-   "artist": "Astrud Gilberto",
-   "playcount": 1
+   "artist": "Astrud Gilberto"
   },
   {
    "name": "Sweet but Psycho (Remixes)",
-   "artist": "Ava Max",
-   "playcount": 1
+   "artist": "Ava Max"
   },
   {
    "name": "Quarter Life Crisis (Deluxe)",
-   "artist": "Baby Queen",
-   "playcount": 1
+   "artist": "Baby Queen"
   },
   {
    "name": "Bad Company (Deluxe)",
-   "artist": "Bad Company",
-   "playcount": 1
+   "artist": "Bad Company"
   },
   {
    "name": "Hell N Back (Sped Up)",
-   "artist": "Bakar",
-   "playcount": 1
+   "artist": "Bakar"
   },
   {
    "name": "Original Songs, Vol.4 (Spécial)",
-   "artist": "Barrington Levy",
-   "playcount": 1
+   "artist": "Barrington Levy"
   },
   {
    "name": "Gloss Drop (Bonus Track Version)",
-   "artist": "Battles",
-   "playcount": 1
+   "artist": "Battles"
   },
   {
    "name": "Paradise (Bazzi vs. Vincent Remix)",
-   "artist": "Bazzi vs.",
-   "playcount": 1
+   "artist": "Bazzi vs."
   },
   {
    "name": "One Foot In The Grave (Expanded Edition)",
-   "artist": "Beck",
-   "playcount": 1
+   "artist": "Beck"
   },
   {
    "name": "Same Places (Slow Version)",
-   "artist": "Belong",
-   "playcount": 1
+   "artist": "Belong"
   },
   {
    "name": "Whatever And Ever Amen (Remastered Edition)",
-   "artist": "Ben Folds Five",
-   "playcount": 1
+   "artist": "Ben Folds Five"
   },
   {
    "name": "Masterpiece (2023 Remaster)",
-   "artist": "Big Thief",
-   "playcount": 1
+   "artist": "Big Thief"
   },
   {
    "name": "Waltz For Debby (Original Jazz Classics Remaster 2010)",
-   "artist": "Bill Evans Trio",
-   "playcount": 1
+   "artist": "Bill Evans Trio"
   },
   {
    "name": "lovely (with Khalid)",
-   "artist": "Billie Eilish",
-   "playcount": 1
+   "artist": "Billie Eilish"
   },
   {
    "name": "Bing's Gold Records - The Original Decca Recordings",
-   "artist": "Bing Crosby",
-   "playcount": 1
+   "artist": "Bing Crosby"
   },
   {
    "name": "After The Click (Retrospective 1980-1989)",
-   "artist": "Biting Tongues",
-   "playcount": 1
+   "artist": "Biting Tongues"
   },
   {
    "name": "Extra Flavor (Dandelion Gum-Era Sessions)",
-   "artist": "Black Moth Super Rainbow",
-   "playcount": 1
+   "artist": "Black Moth Super Rainbow"
   },
   {
    "name": "Gotham City (feat. Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 1
+   "artist": "Bladee"
   },
   {
    "name": "Parklife (Special Edition)",
-   "artist": "Blur",
-   "playcount": 1
+   "artist": "Blur"
   },
   {
    "name": "Inside (The Songs)",
-   "artist": "Bo Burnham",
-   "playcount": 1
+   "artist": "Bo Burnham"
   },
   {
    "name": "Legend - The Best Of Bob Marley And The Wailers",
-   "artist": "Bob Marley & The Wailers",
-   "playcount": 1
+   "artist": "Bob Marley & The Wailers"
   },
   {
    "name": "Home Plate (2008 Remaster)",
-   "artist": "Bonnie Raitt",
-   "playcount": 1
+   "artist": "Bonnie Raitt"
   },
   {
    "name": "Boris at Last - Feedbacker",
-   "artist": "Boris",
-   "playcount": 1
+   "artist": "Boris"
   },
   {
    "name": "Losing You - Single",
-   "artist": "boy pablo",
-   "playcount": 1
+   "artist": "boy pablo"
   },
   {
    "name": "DJ-Kicks (Brandt Brauer Frick) [DJ Mix]",
-   "artist": "Brandt Brauer Frick",
-   "playcount": 1
+   "artist": "Brandt Brauer Frick"
   },
   {
    "name": "The Super Mario Bros. Movie (Original Motion Picture Soundtrack)",
-   "artist": "Brian Tyler",
-   "playcount": 1
+   "artist": "Brian Tyler"
   },
   {
    "name": "...Baby One More Time (Digital Deluxe Version)",
-   "artist": "Britney Spears",
-   "playcount": 1
+   "artist": "Britney Spears"
   },
   {
    "name": "Femme Fatale (Deluxe Version)",
-   "artist": "Britney Spears",
-   "playcount": 1
+   "artist": "Britney Spears"
   },
   {
    "name": "Microtronics - Volumes 1 & 2",
-   "artist": "Broadcast",
-   "playcount": 1
+   "artist": "Broadcast"
   },
   {
    "name": "Video Game Music - The Greatest Hits",
-   "artist": "Bryan \"BrySi\" Simon",
-   "playcount": 1
+   "artist": "Bryan \"BrySi\" Simon"
   },
   {
    "name": "Squawk (2013 Remaster)",
-   "artist": "Budgie",
-   "playcount": 1
+   "artist": "Budgie"
   },
   {
    "name": "New Money (with 21 Savage)",
-   "artist": "Calvin Harris",
-   "playcount": 1
+   "artist": "Calvin Harris"
   },
   {
    "name": "The Christmas Shoes (Midwestern Emo Version)",
-   "artist": "Canadian Softball",
-   "playcount": 1
+   "artist": "Canadian Softball"
   },
   {
    "name": "Defected presents Frankie Knuckles In The House (DJ Mix)",
-   "artist": "Candi Staton",
-   "playcount": 1
+   "artist": "Candi Staton"
   },
   {
    "name": "Ceres & Calypso in the Deep Time - 10th Anniversary",
-   "artist": "Candy Claws",
-   "playcount": 1
+   "artist": "Candy Claws"
   },
   {
    "name": "Future Blues (Expanded Edition)",
-   "artist": "Canned Heat",
-   "playcount": 1
+   "artist": "Canned Heat"
   },
   {
    "name": "If I Could Do It All Over Again, I'd Do It All Over You (2013 Re-Issue)",
-   "artist": "Caravan",
-   "playcount": 1
+   "artist": "Caravan"
   },
   {
    "name": "Welcome To My Island (George Daniel & Charli XCX Remix)",
-   "artist": "Caroline Polachek",
-   "playcount": 1
+   "artist": "Caroline Polachek"
   },
   {
    "name": "Christmas Portrait (Special Edition/Reissue)",
-   "artist": "Carpenters",
-   "playcount": 1
+   "artist": "Carpenters"
   },
   {
    "name": "Cartola - 1976",
-   "artist": "Cartola",
-   "playcount": 1
+   "artist": "Cartola"
   },
   {
    "name": "3 - Supernature",
-   "artist": "Cerrone",
-   "playcount": 1
+   "artist": "Cerrone"
   },
   {
    "name": "Spacer woman (12 Inc, Mr. Disco)",
-   "artist": "Charlie",
-   "playcount": 1
+   "artist": "Charlie"
   },
   {
    "name": "Chet (Mono)",
-   "artist": "Chet Baker",
-   "playcount": 1
+   "artist": "Chet Baker"
   },
   {
    "name": "Christina Aguilera (Expanded Edition)",
-   "artist": "Christina Aguilera",
-   "playcount": 1
+   "artist": "Christina Aguilera"
   },
   {
    "name": "The Touch of Love (Vol.5 - Eclectic)",
-   "artist": "Cinnamon Orchestra",
-   "playcount": 1
+   "artist": "Cinnamon Orchestra"
   },
   {
    "name": "Tea For The Tillerman (Remastered 2020)",
-   "artist": "Yusuf / Cat Stevens",
-   "playcount": 1
+   "artist": "Yusuf / Cat Stevens"
   },
   {
    "name": "Teaser And The Firecat (Remastered 2021)",
-   "artist": "Yusuf / Cat Stevens",
-   "playcount": 1
+   "artist": "Yusuf / Cat Stevens"
   },
   {
    "name": "Praise a Lord Who Chews but Which Does Not Consume; (Or Simply, Hot Between Worlds)",
-   "artist": "Yves Tumor",
-   "playcount": 1
+   "artist": "Yves Tumor"
   },
   {
    "name": "Fandango! (Expanded 2006 Remaster)",
-   "artist": "ZZ Top",
-   "playcount": 1
+   "artist": "ZZ Top"
   },
   {
    "name": "L.O.L. (LACK OF LOVE)",
-   "artist": "坂本龍一",
-   "playcount": 1
+   "artist": "坂本龍一"
   },
   {
    "name": "Final Fantasy VII (Original Soundtrack)",
-   "artist": "植松伸夫",
-   "playcount": 1
+   "artist": "植松伸夫"
   },
   {
    "name": "Utamonogatari Special Edition (Original Soundtrack)",
-   "artist": "物語シリーズ",
-   "playcount": 1
+   "artist": "物語シリーズ"
   },
   {
    "name": "Rainforest (Deluxe Edition)",
-   "artist": "Clams Casino",
-   "playcount": 1
+   "artist": "Clams Casino"
   },
   {
    "name": "Bangers Vs. Fuckers (Remastered)",
-   "artist": "Coachwhips",
-   "playcount": 1
+   "artist": "Coachwhips"
   },
   {
    "name": "Lullabies To Violaine - Volume 2",
-   "artist": "Cocteau Twins",
-   "playcount": 1
+   "artist": "Cocteau Twins"
   },
   {
    "name": "The Very Best of Connie Francis - Connie's 21 Biggest Hits",
-   "artist": "Connie Francis",
-   "playcount": 1
+   "artist": "Connie Francis"
   },
   {
    "name": "Soul Jazz Records presents Count Ossie & The Mystic Revelation of Rastafari - Tales of Mozambique",
-   "artist": "Count Ossie & The Mystic Revelation of Rastafari",
-   "playcount": 1
+   "artist": "Count Ossie & The Mystic Revelation of Rastafari"
   },
   {
    "name": "Best Before 1984 (remastered)",
-   "artist": "Crass",
-   "playcount": 1
+   "artist": "Crass"
   },
   {
    "name": "Disraeli Gears (Deluxe Edition)",
-   "artist": "Cream",
-   "playcount": 1
+   "artist": "Cream"
   },
   {
    "name": "Green River (40th Anniversary Edition)",
-   "artist": "Creedence Clearwater Revival",
-   "playcount": 1
+   "artist": "Creedence Clearwater Revival"
   },
   {
    "name": "Homework (25th Anniversary Edition)",
-   "artist": "Daft Punk",
-   "playcount": 1
+   "artist": "Daft Punk"
   },
   {
    "name": "Smoke About It - EP",
-   "artist": "Daisy",
-   "playcount": 1
+   "artist": "Daisy"
   },
   {
    "name": "Theory of Colours - Versions",
-   "artist": "Dauwd",
-   "playcount": 1
+   "artist": "Dauwd"
   },
   {
    "name": "Gemini IIV (Radio Edit)",
-   "artist": "Dave-Eaux",
-   "playcount": 1
+   "artist": "Dave-Eaux"
   },
   {
    "name": "\"Heroes\" (2017 remaster)",
-   "artist": "David Bowie",
-   "playcount": 1
+   "artist": "David Bowie"
   },
   {
    "name": "Diamond Dogs (2016 Remaster)",
-   "artist": "David Bowie",
-   "playcount": 1
+   "artist": "David Bowie"
   },
   {
    "name": "Young Americans - 2016 Remaster",
-   "artist": "David Bowie",
-   "playcount": 1
+   "artist": "David Bowie"
   },
   {
    "name": "Young Americans (2016 Remaster)",
-   "artist": "David Bowie",
-   "playcount": 1
+   "artist": "David Bowie"
   },
   {
    "name": "Spiritchaser (Remastered)",
-   "artist": "Dead Can Dance",
-   "playcount": 1
+   "artist": "Dead Can Dance"
   },
   {
    "name": "ELVIS (Original Motion Picture Soundtrack)",
-   "artist": "Denzel Curry",
-   "playcount": 1
+   "artist": "Denzel Curry"
   },
   {
    "name": "101 (Live)",
-   "artist": "Depeche Mode",
-   "playcount": 1
+   "artist": "Depeche Mode"
   },
   {
    "name": "Speak and Spell (Deluxe)",
-   "artist": "Depeche Mode",
-   "playcount": 1
+   "artist": "Depeche Mode"
   },
   {
    "name": "Oasis (Remastered 2024)",
-   "artist": "Dettinger",
-   "playcount": 1
+   "artist": "Dettinger"
   },
   {
    "name": "Live at Rockpalast (Live, Bonn, 2008)",
-   "artist": "Dickey Betts",
-   "playcount": 1
+   "artist": "Dickey Betts"
   },
   {
    "name": "Chaos Club [CD2]",
-   "artist": "dieb13",
-   "playcount": 1
+   "artist": "dieb13"
   },
   {
    "name": "Settle (Special Edition)",
-   "artist": "Disclosure",
-   "playcount": 1
+   "artist": "Disclosure"
   },
   {
    "name": "The Inalienable Dreamless (Reissue)",
-   "artist": "Discordance Axis",
-   "playcount": 1
+   "artist": "Discordance Axis"
   },
   {
    "name": "DJ-Kicks (DJ Seinfeld) [DJ Mix]",
-   "artist": "DJ Seinfeld",
-   "playcount": 1
+   "artist": "DJ Seinfeld"
   },
   {
    "name": "The Private Press (Expanded Edition)",
-   "artist": "DJ Shadow",
-   "playcount": 1
+   "artist": "DJ Shadow"
   },
   {
    "name": "Bad Girls (Deluxe Edition)",
-   "artist": "Donna Summer",
-   "playcount": 1
+   "artist": "Donna Summer"
   },
   {
    "name": "Young At Heart (Bonus Tracks)",
-   "artist": "Doris Day",
-   "playcount": 1
+   "artist": "Doris Day"
   },
   {
    "name": "Descendants (Original TV Movie Soundtrack)",
-   "artist": "Dove Cameron",
-   "playcount": 1
+   "artist": "Dove Cameron"
   },
   {
    "name": "Take Care (Deluxe)",
-   "artist": "Drake",
-   "playcount": 1
+   "artist": "Drake"
   },
   {
    "name": "Future Nostalgia (The Moonlight Edition)",
-   "artist": "Dua Lipa",
-   "playcount": 1
+   "artist": "Dua Lipa"
   },
   {
    "name": "One of These Nights (2013 Remaster)",
-   "artist": "Eagles",
-   "playcount": 1
+   "artist": "Eagles"
   },
   {
    "name": "Please Come Home for Christmas / Funky New Year (2013 Remaster)",
-   "artist": "Eagles",
-   "playcount": 1
+   "artist": "Eagles"
   },
   {
    "name": "Porcupine (Expanded; 2004 Remaster)",
-   "artist": "Echo & the Bunnymen",
-   "playcount": 1
+   "artist": "Echo & the Bunnymen"
   },
   {
    "name": "Hiperasia by Wellness Pirate (Original Soundtrack)",
-   "artist": "El Guincho",
-   "playcount": 1
+   "artist": "El Guincho"
   },
   {
    "name": "Caribou (Remastered 1995)",
-   "artist": "Elton John",
-   "playcount": 1
+   "artist": "Elton John"
   },
   {
    "name": "Cold Heart (PNAU Remix)",
-   "artist": "Elton John",
-   "playcount": 1
+   "artist": "Elton John"
   },
   {
    "name": "This Year's Model (2021 Remaster)",
-   "artist": "Elvis Costello & The Attractions",
-   "playcount": 1
+   "artist": "Elvis Costello & The Attractions"
   },
   {
    "name": "Pieces Of The Sky (Expanded & Remastered)",
-   "artist": "Emmylou Harris",
-   "playcount": 1
+   "artist": "Emmylou Harris"
   },
   {
    "name": "Café Del Mar (Orbital Remix)",
-   "artist": "Energy 52",
-   "playcount": 1
+   "artist": "Energy 52"
   },
   {
    "name": "C'era una volta il west (Original Motion Picture Soundtrack) [Remastered]",
-   "artist": "Ennio Morricone",
-   "playcount": 1
+   "artist": "Ennio Morricone"
   },
   {
    "name": "Abe Lincoln vs Chuck Norris (feat. Nice Peter & Epiclloyd)",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Abe Lincoln Vs Chuck Norris (feat. Nice Peter & Epiclloyd) - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Alexander the Great vs. Ivan the Terrible - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Artists vs Turtles - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Deadpool vs. Boba Fett - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Epic Rap Battles Of History - Season 4",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Guy Fawkes vs Che Guevara - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Jim Henson vs Stan Lee - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Philosophers East vs West - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Rick Grimes vs Walter White - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "The Joker vs Pennywise - Single",
-   "artist": "Epic Rap Battles of History",
-   "playcount": 1
+   "artist": "Epic Rap Battles of History"
   },
   {
    "name": "Close To The Noise Floor Presents... Noise Reduction System (Formative European Electronica 1974-1984)",
-   "artist": "Ericka Irganon",
-   "playcount": 1
+   "artist": "Ericka Irganon"
   },
   {
    "name": "Peace (2018 Remastered)",
-   "artist": "Eurythmics",
-   "playcount": 1
+   "artist": "Eurythmics"
   },
   {
    "name": "Back to Mine (DJ Mix)",
-   "artist": "Fatboy Slim",
-   "playcount": 1
+   "artist": "Fatboy Slim"
   },
   {
    "name": "傳奇 - 胡思亂想",
-   "artist": "Faye Wong",
-   "playcount": 1
+   "artist": "Faye Wong"
   },
   {
    "name": "Dubnobasswithmyheadman (Deluxe / 20th Anniversary Edition)",
-   "artist": "Underworld",
-   "playcount": 1
+   "artist": "Underworld"
   },
   {
    "name": "1984 (Remastered)",
-   "artist": "Van Halen",
-   "playcount": 1
+   "artist": "Van Halen"
   },
   {
    "name": "African Scream Contest 2 (Analog Africa No. 26)",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Climax (Original Motion Picture Soundtrack)",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Further Nuggets - Luke Vibert's Selection",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Gilles Peterson - Magic Peterson Sunshine",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Muscut X (Test Pressing II)",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Muscut XX (Test Pressing III)",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Music For Mad Men - Swingin' Jazz",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Scott Pilgrim vs. the World (Original Motion Picture Soundtrack)",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Wheedle's Groove - Seattle's Finest in Funk & Soul 1965-75",
-   "artist": "Various Artists",
-   "playcount": 1
+   "artist": "Various Artists"
   },
   {
    "name": "Cave World (Deluxe)",
-   "artist": "Viagra Boys",
-   "playcount": 1
+   "artist": "Viagra Boys"
   },
   {
    "name": "Bach Reworks (Pt. 1)",
-   "artist": "Víkingur Ólafsson",
-   "playcount": 1
+   "artist": "Víkingur Ólafsson"
   },
   {
    "name": "Archives : Moments in Time (Remastered)",
-   "artist": "Vince Watson",
-   "playcount": 1
+   "artist": "Vince Watson"
   },
   {
    "name": "God Ween Satan: The Oneness (Anniversary Edition)",
-   "artist": "Ween",
-   "playcount": 1
+   "artist": "Ween"
   },
   {
    "name": "Shinola (Vol. 1)",
-   "artist": "Ween",
-   "playcount": 1
+   "artist": "Ween"
   },
   {
    "name": "Weezer (Teal Album)",
-   "artist": "Weezer",
-   "playcount": 1
+   "artist": "Weezer"
   },
   {
    "name": "The Disintegration Loops (Remastered)",
-   "artist": "William Basinski",
-   "playcount": 1
+   "artist": "William Basinski"
   },
   {
    "name": "At The Speed Of Sound (Archive Collection)",
-   "artist": "Wings",
-   "playcount": 1
+   "artist": "Wings"
   },
   {
    "name": "London Town (Expanded Edition)",
-   "artist": "Wings",
-   "playcount": 1
+   "artist": "Wings"
   },
   {
    "name": "Outtakes (1979-1983)",
-   "artist": "Wipers",
-   "playcount": 1
+   "artist": "Wipers"
   },
   {
    "name": "New Singers - New Songs 1994",
-   "artist": "Wolfgang Lackerschmid",
-   "playcount": 1
+   "artist": "Wolfgang Lackerschmid"
   },
   {
    "name": "Meow Meow Meow (Meme Hardstyle Mix)",
-   "artist": "Worst Kaas Scenario",
-   "playcount": 1
+   "artist": "Worst Kaas Scenario"
   },
   {
    "name": "Sunshine (My Girl)",
-   "artist": "Wuki",
-   "playcount": 1
+   "artist": "Wuki"
   },
   {
    "name": "Wild Gift (2019 Remaster)",
-   "artist": "X",
-   "playcount": 1
+   "artist": "X"
   },
   {
    "name": "Fragile (Super Deluxe)",
-   "artist": "Yes",
-   "playcount": 1
+   "artist": "Yes"
   },
   {
    "name": "Yessongs (Live)",
-   "artist": "Yes",
-   "playcount": 1
+   "artist": "Yes"
   },
   {
    "name": "MTV Unplugged (Live)",
-   "artist": "10,000 Maniacs",
-   "playcount": 1
+   "artist": "10,000 Maniacs"
   },
   {
    "name": "Gay (Ep)",
-   "artist": "12 Rods",
-   "playcount": 1
+   "artist": "12 Rods"
   },
   {
    "name": "Greatest Hits '93 - '03",
-   "artist": "311",
-   "playcount": 1
+   "artist": "311"
   },
   {
    "name": "Ninety (Remastered 2008)",
-   "artist": "808 State",
-   "playcount": 1
+   "artist": "808 State"
   },
   {
    "name": "a.s.o. (remixed)",
-   "artist": "a.s.o.",
-   "playcount": 1
+   "artist": "a.s.o."
   },
   {
    "name": "Move Ya Hips (feat. Nicki Minaj & MadeinTYO)",
-   "artist": "A$AP Ferg",
-   "playcount": 1
+   "artist": "A$AP Ferg"
   },
   {
    "name": "The Sign (Remastered)",
-   "artist": "Ace of Base",
-   "playcount": 1
+   "artist": "Ace of Base"
   },
   {
    "name": "Living In Darkness (30th Anniversary Edition)",
-   "artist": "Agent Orange",
-   "playcount": 1
+   "artist": "Agent Orange"
   },
   {
    "name": "The Virgin Suicides (Original Motion Picture Score)",
-   "artist": "Air",
-   "playcount": 1
+   "artist": "Air"
   },
   {
    "name": "Lost in Vivo (Original Game Soundtrack)",
-   "artist": "Akuma Kira",
-   "playcount": 1
+   "artist": "Akuma Kira"
   },
   {
    "name": "Breaking Bad (Music from the Original TV Series)",
-   "artist": "Alvin \"Red\" Tyler",
-   "playcount": 1
+   "artist": "Alvin \"Red\" Tyler"
   },
   {
    "name": "Kids On Holiday (Live)",
-   "artist": "Animal Collective",
-   "playcount": 1
+   "artist": "Animal Collective"
   },
   {
    "name": "The Idler Wheel Is Wiser Than the Driver of the Screw and Whipping Cords Will Serve You More Than Ropes Will Ever Do (Expanded Edition)",
-   "artist": "Fiona Apple",
-   "playcount": 1
+   "artist": "Fiona Apple"
   },
   {
    "name": "More Than Just a Dream (Deluxe Edition)",
-   "artist": "Fitz and the Tantrums",
-   "playcount": 1
+   "artist": "Fitz and the Tantrums"
   },
   {
    "name": "Mirage (Deluxe Edition)",
-   "artist": "Fleetwood Mac",
-   "playcount": 1
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "Tusk (Deluxe Edition)",
-   "artist": "Fleetwood Mac",
-   "playcount": 1
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "August (Acoustic)",
-   "artist": "Flipturn",
-   "playcount": 1
+   "artist": "Flipturn"
   },
   {
    "name": "R.O.O.T.S. (Route Of Overcoming The Struggle)",
-   "artist": "Flo Rida",
-   "playcount": 1
+   "artist": "Flo Rida"
   },
   {
    "name": "Hidden Cinema Soundtrack (2000)",
-   "artist": "Foehn",
-   "playcount": 1
+   "artist": "Foehn"
   },
   {
    "name": "4 (Expanded)",
-   "artist": "Foreigner",
-   "playcount": 1
+   "artist": "Foreigner"
   },
   {
    "name": "You Can Always Leave / Companion (Remastered)",
-   "artist": "Francis Harris",
-   "playcount": 1
+   "artist": "Francis Harris"
   },
   {
    "name": "Defected presents Frankie Knuckles In The House (DJ Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 1
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Jersey Beat: The Music of Frankie Valli & The Four Seasons (Remastered)",
-   "artist": "Frankie Valli & the Four Seasons",
-   "playcount": 1
+   "artist": "Frankie Valli & the Four Seasons"
   },
   {
    "name": "Getting Ready... (World)",
-   "artist": "Freddie King",
-   "playcount": 1
+   "artist": "Freddie King"
   },
   {
    "name": "The Mix Tape Volume III - 60 Minutes Of Funk - The Final Chapter",
-   "artist": "Funk Flex",
-   "playcount": 1
+   "artist": "Funk Flex"
   },
   {
    "name": "I Want A Hippopotamus For Christmas (Hippo The Hero)",
-   "artist": "Gayla Peevey",
-   "playcount": 1
+   "artist": "Gayla Peevey"
   },
   {
    "name": "Breezin' (Expanded)",
-   "artist": "George Benson",
-   "playcount": 1
+   "artist": "George Benson"
   },
   {
    "name": "v2.0 (Deluxe Edition)",
-   "artist": "GoGo Penguin",
-   "playcount": 1
+   "artist": "GoGo Penguin"
   },
   {
    "name": "Blues for Allah (2013 Remaster)",
-   "artist": "Grateful Dead",
-   "playcount": 1
+   "artist": "Grateful Dead"
   },
   {
    "name": "Dick's Picks Vol. 33: 10/9/76 & 10/10/76 (Oakland Coliseum Stadium, Oakland, CA)",
-   "artist": "Grateful Dead",
-   "playcount": 1
+   "artist": "Grateful Dead"
   },
   {
    "name": "Red Rocks Amphitheatre, Morrison, CO 7/8/78 (Live)",
-   "artist": "Grateful Dead",
-   "playcount": 1
+   "artist": "Grateful Dead"
   },
   {
    "name": "Flood Dosed - Single",
-   "artist": "Guerilla Toss",
-   "playcount": 1
+   "artist": "Guerilla Toss"
   },
   {
    "name": "WUNNA - Deluxe",
-   "artist": "Gunna",
-   "playcount": 1
+   "artist": "Gunna"
   },
   {
    "name": "Love. Angel. Music. Baby. (Deluxe Version)",
-   "artist": "Gwen Stefani",
-   "playcount": 1
+   "artist": "Gwen Stefani"
   },
   {
    "name": "The SLAM! Years: 1983 - 1988 (Habibi Funk 018)",
-   "artist": "Hamid Al Shaeri",
-   "playcount": 1
+   "artist": "Hamid Al Shaeri"
   },
   {
    "name": "DUETS - intonations with Farfisa",
-   "artist": "Hans Schleckner",
-   "playcount": 1
+   "artist": "Hans Schleckner"
   },
   {
    "name": "Interstellar (Original Motion Picture Soundtrack)",
-   "artist": "Hans Zimmer",
-   "playcount": 1
+   "artist": "Hans Zimmer"
   },
   {
    "name": "Kollektion 02: Roedelius (Electronic Music)",
-   "artist": "Hans-Joachim Roedelius",
-   "playcount": 1
+   "artist": "Hans-Joachim Roedelius"
   },
   {
    "name": "DNA Repair (528 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 1
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "Guilt Removal (396 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 1
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "Sounds of the Universe (432 Hz)",
-   "artist": "Harmonic Pulse FM",
-   "playcount": 1
+   "artist": "Harmonic Pulse FM"
   },
   {
    "name": "Neva Play (feat. RM of BTS)",
-   "artist": "Megan Thee Stallion",
-   "playcount": 1
+   "artist": "Megan Thee Stallion"
   },
   {
    "name": "Deserter's Songs (Disc 2)",
-   "artist": "Mercury Rev",
-   "playcount": 1
+   "artist": "Mercury Rev"
   },
   {
    "name": "Ride the Lightning (Deluxe Remaster)",
-   "artist": "Metallica",
-   "playcount": 1
+   "artist": "Metallica"
   },
   {
    "name": "Metal Fingers Presents: Special Herbs, The Box Set Vol. 0 - 9",
-   "artist": "MF DOOM",
-   "playcount": 1
+   "artist": "MF DOOM"
   },
   {
    "name": "Niwa - EP",
-   "artist": "Micromelancolie",
-   "playcount": 1
+   "artist": "Micromelancolie"
   },
   {
    "name": "Bangerz (Deluxe Version)",
-   "artist": "Miley Cyrus",
-   "playcount": 1
+   "artist": "Miley Cyrus"
   },
   {
    "name": "Young Team (Deluxe Edition)",
-   "artist": "Mogwai",
-   "playcount": 1
+   "artist": "Mogwai"
   },
   {
    "name": "Gomorra: la serie (Colonna Sonora Originale)",
-   "artist": "Mokadelic",
-   "playcount": 1
+   "artist": "Mokadelic"
   },
   {
    "name": "Inside (Deluxe)",
-   "artist": "Mother Mother",
-   "playcount": 1
+   "artist": "Mother Mother"
   },
   {
    "name": "Building Bridges (DJ Mix)",
-   "artist": "Move D",
-   "playcount": 1
+   "artist": "Move D"
   },
   {
    "name": "Yesterday Was Dramatic - Today Is OK",
-   "artist": "múm",
-   "playcount": 1
+   "artist": "múm"
   },
   {
    "name": "Infinite Tape Loops: Tampura And Organ Meditations (G)",
-   "artist": "Music for sleep",
-   "playcount": 1
+   "artist": "Music for sleep"
   },
   {
    "name": "Pure Water (with Migos)",
-   "artist": "Mustard",
-   "playcount": 1
+   "artist": "Mustard"
   },
   {
    "name": "Veracruz - Single",
-   "artist": "Natalia Lafourcade",
-   "playcount": 1
+   "artist": "Natalia Lafourcade"
   },
   {
    "name": "After The Gold Rush (2009 Remaster)",
-   "artist": "Neil Young",
-   "playcount": 1
+   "artist": "Neil Young"
   },
   {
    "name": "Let Love In (2011 Remaster)",
-   "artist": "Nick Cave & the Bad Seeds",
-   "playcount": 1
+   "artist": "Nick Cave & the Bad Seeds"
   },
   {
    "name": "Sirens (Deluxe Edition)",
-   "artist": "Nicolas Jaar",
-   "playcount": 1
+   "artist": "Nicolas Jaar"
   },
   {
    "name": "Dial Drunk (with Post Malone)",
-   "artist": "Noah Kahan",
-   "playcount": 1
+   "artist": "Noah Kahan"
   },
   {
    "name": "Stick Season (Forever)",
-   "artist": "Noah Kahan",
-   "playcount": 1
+   "artist": "Noah Kahan"
   },
   {
    "name": "Come Away With Me (Super Deluxe Edition)",
-   "artist": "Norah Jones",
-   "playcount": 1
+   "artist": "Norah Jones"
   },
   {
    "name": "So Close (feat. Georgia Ku)",
-   "artist": "NOTD",
-   "playcount": 1
+   "artist": "NOTD"
   },
   {
    "name": "Darklands (Expanded Version)",
-   "artist": "The Jesus and Mary Chain",
-   "playcount": 1
+   "artist": "The Jesus and Mary Chain"
   },
   {
    "name": "Psychocandy - Barrowlands Live",
-   "artist": "The Jesus and Mary Chain",
-   "playcount": 1
+   "artist": "The Jesus and Mary Chain"
   },
   {
    "name": "Goat (Remaster / Reissue)",
-   "artist": "The Jesus Lizard",
-   "playcount": 1
+   "artist": "The Jesus Lizard"
   },
   {
    "name": "Dirty Shirt Rock 'n' Roll - The First Ten Years",
-   "artist": "The Jon Spencer Blues Explosion",
-   "playcount": 1
+   "artist": "The Jon Spencer Blues Explosion"
   },
   {
    "name": "Heartbeats (Remixes)",
-   "artist": "The Knife",
-   "playcount": 1
+   "artist": "The Knife"
   },
   {
    "name": "The Wayward Bus / Distant Plastic Trees (Remastered)",
-   "artist": "The Magnetic Fields",
-   "playcount": 1
+   "artist": "The Magnetic Fields"
   },
   {
    "name": "Precise Modern Lovers Order (Live In Berkeley And Boston)",
-   "artist": "The Modern Lovers",
-   "playcount": 1
+   "artist": "The Modern Lovers"
   },
   {
    "name": "Rhino Hi-Five: The Monkees (Vol. 2)",
-   "artist": "The Monkees",
-   "playcount": 1
+   "artist": "The Monkees"
   },
   {
    "name": "If I Should Fall from Grace with God (Expanded Edition)",
-   "artist": "The Pogues",
-   "playcount": 1
+   "artist": "The Pogues"
   },
   {
    "name": "Rum Sodomy & The Lash (Expanded Edition)",
-   "artist": "The Pogues",
-   "playcount": 1
+   "artist": "The Pogues"
   },
   {
    "name": "Get Close (Expanded & Remastered)",
-   "artist": "The Pretenders",
-   "playcount": 1
+   "artist": "The Pretenders"
   },
   {
    "name": "Sticky Fingers (Remastered)",
-   "artist": "The Rolling Stones",
-   "playcount": 1
+   "artist": "The Rolling Stones"
   },
   {
    "name": "Tattoo You (2009 Re-Mastered)",
-   "artist": "The Rolling Stones",
-   "playcount": 1
+   "artist": "The Rolling Stones"
   },
   {
    "name": "(I'm) Stranded [2004 Remaster]",
-   "artist": "The Saints",
-   "playcount": 1
+   "artist": "The Saints"
   },
   {
    "name": "Christmas Jollies (Tom Moulton Remix;2022 - Remaster)",
-   "artist": "The Salsoul Orchestra",
-   "playcount": 1
+   "artist": "The Salsoul Orchestra"
   },
   {
    "name": "The Stooges (50th Anniversary Deluxe Edition) [2019 Remaster]",
-   "artist": "The Stooges",
-   "playcount": 1
+   "artist": "The Stooges"
   },
   {
    "name": "Reality Check (North American Edition)",
-   "artist": "The Teenagers",
-   "playcount": 1
+   "artist": "The Teenagers"
   },
   {
    "name": "The Velvet Underground & Nico (45th Anniversary / Super Deluxe Edition)",
-   "artist": "The Velvet Underground",
-   "playcount": 1
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Who's Next (Deluxe Edition)",
-   "artist": "The Who",
-   "playcount": 1
+   "artist": "The Who"
   },
   {
    "name": "Who’s Next : Life House (Super Deluxe)",
-   "artist": "The Who",
-   "playcount": 1
+   "artist": "The Who"
   },
   {
    "name": "Groovin' (Mono)",
-   "artist": "The Young Rascals",
-   "playcount": 1
+   "artist": "The Young Rascals"
   },
   {
    "name": "Bad Reputation (Expanded Edition)",
-   "artist": "Thin Lizzy",
-   "playcount": 1
+   "artist": "Thin Lizzy"
   },
   {
    "name": "Tubby Turdners's Celebrity Avalanche (Bob Dinners and Larry Noodles Present)",
-   "artist": "Thinking Fellers Union Local 282",
-   "playcount": 1
+   "artist": "Thinking Fellers Union Local 282"
   },
   {
    "name": "Alchemy (Remastered & Expanded Edition)",
-   "artist": "Third Ear Band",
-   "playcount": 1
+   "artist": "Third Ear Band"
   },
   {
    "name": "Symphonies of the Planets (Complete Nasa Voyager Recordings)",
-   "artist": "Timothy Drake",
-   "playcount": 1
+   "artist": "Timothy Drake"
   },
   {
    "name": "Private Dancer (30th Anniversary Issue)",
-   "artist": "Tina Turner",
-   "playcount": 1
+   "artist": "Tina Turner"
   },
   {
    "name": "Tír Na NÓg (2012 Remaster)",
-   "artist": "Tír na nÓg",
-   "playcount": 1
+   "artist": "Tír na nÓg"
   },
   {
    "name": "Electric Feel (Spotify Singles)",
-   "artist": "Tkay Maidza",
-   "playcount": 1
+   "artist": "Tkay Maidza"
   },
   {
    "name": "Defected Presents House Masters - Todd Edwards Deluxe Edition",
-   "artist": "Todd Edwards",
-   "playcount": 1
+   "artist": "Todd Edwards"
   },
   {
    "name": "Mdnght (Side B) - EP",
-   "artist": "TOKYO’S REVENGE",
-   "playcount": 1
+   "artist": "TOKYO’S REVENGE"
   },
   {
    "name": "Purrfect Night (slowed)",
-   "artist": "Tomasz Bednarczyk",
-   "playcount": 1
+   "artist": "Tomasz Bednarczyk"
   },
   {
    "name": "A Swingin' Christmas (feat. Count Basie Big Band)",
-   "artist": "Tony Bennett",
-   "playcount": 1
+   "artist": "Tony Bennett"
   },
   {
    "name": "Re-Verbed (No-Input Mixing Board 9)",
-   "artist": "Toshimaru Nakamura",
-   "playcount": 1
+   "artist": "Toshimaru Nakamura"
   },
   {
    "name": "BLUE LIPS (lady wood phase II)",
-   "artist": "Tove Lo",
-   "playcount": 1
+   "artist": "Tove Lo"
   },
   {
    "name": "Dirt Femme (Extended Cut)",
-   "artist": "Tove Lo",
-   "playcount": 1
+   "artist": "Tove Lo"
   },
   {
    "name": "Franchise (Remix)",
-   "artist": "Travis Scott",
-   "playcount": 1
+   "artist": "Travis Scott"
   },
   {
    "name": "The Book Of Mormon (Original Broadway Cast Recording)",
-   "artist": "Trey Parker",
-   "playcount": 1
+   "artist": "Trey Parker"
   },
   {
    "name": "Trio Ternura (Compacto 1973)",
-   "artist": "Trio Ternura",
-   "playcount": 1
+   "artist": "Trio Ternura"
   },
   {
    "name": "Kuro (OST)",
-   "artist": "Tujiko Noriko",
-   "playcount": 1
+   "artist": "Tujiko Noriko"
   },
   {
    "name": "Lethal Lava Land (Original)",
-   "artist": "Super Mario 64",
-   "playcount": 1
+   "artist": "Super Mario 64"
   },
   {
    "name": "I Should Coco (20th Anniversary Collector's Edition)",
-   "artist": "Supergrass",
-   "playcount": 1
+   "artist": "Supergrass"
   },
   {
    "name": "Defected presents Frankie Knuckles In The House (DJ Mix)",
-   "artist": "Sybil",
-   "playcount": 1
+   "artist": "Sybil"
   },
   {
    "name": "Kill Bill (feat. Doja Cat)",
-   "artist": "SZA",
-   "playcount": 1
+   "artist": "SZA"
   },
   {
    "name": "Epiphany (Expanded Edition)",
-   "artist": "T-Pain",
-   "playcount": 1
+   "artist": "T-Pain"
   },
   {
    "name": "Salt Lick (Deluxe Edition)",
-   "artist": "Tad",
-   "playcount": 1
+   "artist": "Tad"
   },
   {
    "name": "Operette (Opera Remixes)",
-   "artist": "Tape",
-   "playcount": 1
+   "artist": "Tape"
   },
   {
    "name": "#SantanaWorld (+)",
-   "artist": "Tay-K",
-   "playcount": 1
+   "artist": "Tay-K"
   },
   {
    "name": "Red (Taylor's Version)",
-   "artist": "Taylor Swift",
-   "playcount": 1
+   "artist": "Taylor Swift"
   },
   {
    "name": "Taylor Swift (Deluxe Edition)",
-   "artist": "Taylor Swift",
-   "playcount": 1
+   "artist": "Taylor Swift"
   },
   {
    "name": "Everybody's Talkin' / Revelator (Australian Special Edition)",
-   "artist": "Tedeschi Trucks Band",
-   "playcount": 1
+   "artist": "Tedeschi Trucks Band"
   },
   {
    "name": "Cosmic Thing (30th Anniversary Expanded Edition)",
-   "artist": "The B-52's",
-   "playcount": 1
+   "artist": "The B-52's"
   },
   {
    "name": "Carl & The Passions - So Tough (Remastered)",
-   "artist": "The Beach Boys",
-   "playcount": 1
+   "artist": "The Beach Boys"
   },
   {
    "name": "Smiley Smile (Remastered)",
-   "artist": "The Beach Boys",
-   "playcount": 1
+   "artist": "The Beach Boys"
   },
   {
    "name": "The Beatles 1967 - 1970 (Remastered)",
-   "artist": "The Beatles",
-   "playcount": 1
+   "artist": "The Beatles"
   },
   {
    "name": "Everywhere at the end of time (Stage 1)",
-   "artist": "The Caretaker",
-   "playcount": 1
+   "artist": "The Caretaker"
   },
   {
    "name": "Heartbeat City (Expanded Edition)",
-   "artist": "The Cars",
-   "playcount": 1
+   "artist": "The Cars"
   },
   {
    "name": "Script Of The Bridge (Remastered)",
-   "artist": "The Chameleons",
-   "playcount": 1
+   "artist": "The Chameleons"
   },
   {
    "name": "Sandinista! (Remastered)",
-   "artist": "The Clash",
-   "playcount": 1
+   "artist": "The Clash"
   },
   {
    "name": "Disintegration (Deluxe Edition)",
-   "artist": "The Cure",
-   "playcount": 1
+   "artist": "The Cure"
   },
   {
    "name": "What's Wrong With New York? (Deluxe)",
-   "artist": "The Dare",
-   "playcount": 1
+   "artist": "The Dare"
   },
   {
    "name": "Special Beat Service (Expanded) [2012 Remaster]",
-   "artist": "The English Beat",
-   "playcount": 1
+   "artist": "The English Beat"
   },
   {
    "name": "Perverted By Language (Expanded Edition)",
-   "artist": "The Fall",
-   "playcount": 1
+   "artist": "The Fall"
   },
   {
    "name": "Inside Out - The Disco Revolution",
-   "artist": "The Foundations",
-   "playcount": 1
+   "artist": "The Foundations"
   },
   {
    "name": "American Woman (Expanded Edition)",
-   "artist": "The Guess Who",
-   "playcount": 1
+   "artist": "The Guess Who"
   },
   {
    "name": "Fire of Love (Remastered 2020)",
-   "artist": "The Gun Club",
-   "playcount": 1
+   "artist": "The Gun Club"
   },
   {
    "name": "Mother Juno (Deluxe Remastered 2023)",
-   "artist": "The Gun Club",
-   "playcount": 1
+   "artist": "The Gun Club"
   },
   {
    "name": "Claws (o0o rmx)",
-   "artist": "o0o",
-   "playcount": 1
+   "artist": "o0o"
   },
   {
    "name": "Al-'An! (And Your Night Is Your Shadow / A Fairy-Tale Piece of Land to Make Our Dreams)",
-   "artist": "Oiseaux-Tempête",
-   "playcount": 1
+   "artist": "Oiseaux-Tempête"
   },
   {
    "name": "Alien Boy - EP",
-   "artist": "Oliver Tree",
-   "playcount": 1
+   "artist": "Oliver Tree"
   },
   {
    "name": "Volume - The Best Of Omni Trio",
-   "artist": "Omni Trio",
-   "playcount": 1
+   "artist": "Omni Trio"
   },
   {
    "name": "Made in the A.M. (Deluxe Edition)",
-   "artist": "One Direction",
-   "playcount": 1
+   "artist": "One Direction"
   },
   {
    "name": "M.Y.R.I.A.D (Live at the Roundhouse)",
-   "artist": "Oneohtrix Point Never",
-   "playcount": 1
+   "artist": "Oneohtrix Point Never"
   },
   {
    "name": "Midnight In Paris (Music from the Motion Picture)",
-   "artist": "Original Paris Swing",
-   "playcount": 1
+   "artist": "Original Paris Swing"
   },
   {
    "name": "M!ssundaztood (Expanded Edition)",
-   "artist": "P!nk",
-   "playcount": 1
+   "artist": "P!nk"
   },
   {
    "name": "Parry Gripp Mega-Party (2008 - 2012)",
-   "artist": "Parry Gripp",
-   "playcount": 1
+   "artist": "Parry Gripp"
   },
   {
    "name": "Into the Night (A Hocus Pocus Collection)",
-   "artist": "Pattycake",
-   "playcount": 1
+   "artist": "Pattycake"
   },
   {
    "name": "Still Groovin (Remastered)",
-   "artist": "Paul Carrack",
-   "playcount": 1
+   "artist": "Paul Carrack"
   },
   {
    "name": "McCartney (Special Edition)",
-   "artist": "Paul McCartney",
-   "playcount": 1
+   "artist": "Paul McCartney"
   },
   {
    "name": "Graceland (25th Anniversary Deluxe Edition)",
-   "artist": "Paul Simon",
-   "playcount": 1
+   "artist": "Paul Simon"
   },
   {
    "name": "Dying Light (Original Game Soundtrack)",
-   "artist": "Pawel Blaszczak",
-   "playcount": 1
+   "artist": "Pawel Blaszczak"
   },
   {
    "name": "Please: Further Listening 1984 - 1986 (2018 Remaster)",
-   "artist": "Pet Shop Boys",
-   "playcount": 1
+   "artist": "Pet Shop Boys"
   },
   {
    "name": "Peter Gabriel 3: Melt (Remastered)",
-   "artist": "Peter Gabriel",
-   "playcount": 1
+   "artist": "Peter Gabriel"
   },
   {
    "name": "So (25th Anniversary Deluxe Edition)",
-   "artist": "Peter Gabriel",
-   "playcount": 1
+   "artist": "Peter Gabriel"
   },
   {
    "name": "Hello, I Must Be Going! (Deluxe Edition)",
-   "artist": "Phil Collins",
-   "playcount": 1
+   "artist": "Phil Collins"
   },
   {
    "name": "Alone on Christmas Day (feat. Bill Murray, Buster Poindexter, Jason Schwartzmann & Paul Shaffer) - Single",
-   "artist": "Phoenix",
-   "playcount": 1
+   "artist": "Phoenix"
   },
   {
    "name": "Camille 2000 (Original Motion Picture Soundtrack)",
-   "artist": "Piero Piccioni",
-   "playcount": 1
+   "artist": "Piero Piccioni"
   },
   {
    "name": "Svezia, inferno e paradiso (outtakes)",
-   "artist": "Piero Umiliani",
-   "playcount": 1
+   "artist": "Piero Umiliani"
   },
   {
    "name": "Meddle (2011 Remastered Version)",
-   "artist": "Pink Floyd",
-   "playcount": 1
+   "artist": "Pink Floyd"
   },
   {
    "name": "The Wall [2011 - Remaster] (2011 Remastered Version)",
-   "artist": "Pink Floyd",
-   "playcount": 1
+   "artist": "Pink Floyd"
   },
   {
    "name": "Yamerarena-I - EP",
-   "artist": "Pixeltan",
-   "playcount": 1
+   "artist": "Pixeltan"
   },
   {
    "name": "Parade - Music From the Motion Picture Under the Cherry Moon",
-   "artist": "Prince",
-   "playcount": 1
+   "artist": "Prince"
   },
   {
    "name": "Frankfurt - Peking",
-   "artist": "Heiner Goebbels & Alfred Harth",
-   "playcount": 1
+   "artist": "Heiner Goebbels & Alfred Harth"
   },
   {
    "name": "Bodily Functions (Special Edition)",
-   "artist": "Herbert",
-   "playcount": 1
+   "artist": "Herbert"
   },
   {
    "name": "Maiden Voyage (Remastered 1999/Rudy Van Gelder Edition)",
-   "artist": "Herbie Hancock",
-   "playcount": 1
+   "artist": "Herbie Hancock"
   },
   {
    "name": "Hildegard von Bingen - Canticles Of Ecstasy",
-   "artist": "Hildegard von Bingen",
-   "playcount": 1
+   "artist": "Hildegard von Bingen"
   },
   {
    "name": "All the Mirrors In the House (Home Recordings 1979 - 1986)",
-   "artist": "His Name Is Alive",
-   "playcount": 1
+   "artist": "His Name Is Alive"
   },
   {
    "name": "Vintage (1948-51)",
-   "artist": "Humphrey Lyttelton",
-   "playcount": 1
+   "artist": "Humphrey Lyttelton"
   },
   {
    "name": "Replay - Single",
-   "artist": "Iyaz",
-   "playcount": 1
+   "artist": "Iyaz"
   },
   {
    "name": "Ruff Draft (Dilla's Mix)",
-   "artist": "J Dilla",
-   "playcount": 1
+   "artist": "J Dilla"
   },
   {
    "name": "Brushfire Fairytales [Remastered (Bonus Version)]",
-   "artist": "Jack Johnson",
-   "playcount": 1
+   "artist": "Jack Johnson"
   },
   {
    "name": "Call of Duty Black Ops II (Original Game Soundtrack)",
-   "artist": "Jack Wall",
-   "playcount": 1
+   "artist": "Jack Wall"
   },
   {
    "name": "Call of Duty®: Black Ops 4 (Official Soundtrack)",
-   "artist": "Jack Wall",
-   "playcount": 1
+   "artist": "Jack Wall"
   },
   {
    "name": "Jackson C. Frank (2001 Remastered Version)",
-   "artist": "Jackson C. Frank",
-   "playcount": 1
+   "artist": "Jackson C. Frank"
   },
   {
    "name": "Resurrection Of The Bayou Maharajah (Live At The Maple Leaf Bar, New Orleans, LA / 1977-1982)",
-   "artist": "James Booker",
-   "playcount": 1
+   "artist": "James Booker"
   },
   {
    "name": "Oedipus Orca / Una spirale di nebbia (Original Motion Picture Soundracks From \"Oedipus Orca\" and \"Una spirale di nebbia\")",
-   "artist": "James Dashow",
-   "playcount": 1
+   "artist": "James Dashow"
   },
   {
    "name": "Got No Bread, No Milk, No Money, But We Sure Got a Lot of Love (30th Anniversary Edition)",
-   "artist": "James Talley",
-   "playcount": 1
+   "artist": "James Talley"
   },
   {
    "name": "Miscontinuum Album (Fiepblatter Catalogue #3)",
-   "artist": "Jan St. Werner",
-   "playcount": 1
+   "artist": "Jan St. Werner"
   },
   {
    "name": "Savage Love (Laxed - Siren Beat)",
-   "artist": "Jawsh 685 x Jason Derulo",
-   "playcount": 1
+   "artist": "Jawsh 685 x Jason Derulo"
   },
   {
    "name": "Top Five (Music From And Inspired By The Motion Picture)",
-   "artist": "JAY-Z",
-   "playcount": 1
+   "artist": "JAY-Z"
   },
   {
    "name": "In Summer - EP",
-   "artist": "Jefre Cantu-Ledesma",
-   "playcount": 1
+   "artist": "Jefre Cantu-Ledesma"
   },
   {
    "name": "Amnesia: A Machine for Pigs (Original Game Soundtrack)",
-   "artist": "Jessica Curry",
-   "playcount": 1
+   "artist": "Jessica Curry"
   },
   {
    "name": "Drill a Hole In That Substrate and Tell Me What You See (Deluxe Version)",
-   "artist": "Jim White",
-   "playcount": 1
+   "artist": "Jim White"
   },
   {
    "name": "NO HANDS (Deluxe Edition)",
-   "artist": "Joey Valence & Brae",
-   "playcount": 1
+   "artist": "Joey Valence & Brae"
   },
   {
    "name": "You Can't See Me (WWE)",
-   "artist": "John Cena & Tha Trademarc",
-   "playcount": 1
+   "artist": "John Cena & Tha Trademarc"
   }
  ],
  "tracks": [
   {
    "name": "Jazz (We've Got)",
-   "artist": "A Tribe Called Quest",
-   "playcount": 73
+   "artist": "A Tribe Called Quest"
   },
   {
    "name": "Don't Talk (Put Your Head on My Shoulder)",
-   "artist": "The Beach Boys",
-   "playcount": 65
+   "artist": "The Beach Boys"
   },
   {
    "name": "Double Groove [Unfinished Outtake]",
-   "artist": "Talking Heads",
-   "playcount": 52
+   "artist": "Talking Heads"
   },
   {
    "name": "Yeah (Crass Version)",
-   "artist": "LCD Soundsystem",
-   "playcount": 49
+   "artist": "LCD Soundsystem"
   },
   {
    "name": "Cartier'god Icedancer (Intermission)",
-   "artist": "Bladee",
-   "playcount": 48
+   "artist": "Bladee"
   },
   {
    "name": "Born Under Punches (The Heat Goes On)",
-   "artist": "Talking Heads",
-   "playcount": 47
+   "artist": "Talking Heads"
   },
   {
    "name": "Manoo & François A - The Deep",
-   "artist": "DJ Sprinkles",
-   "playcount": 46
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "This Must Be the Place (Naive Melody)",
-   "artist": "Talking Heads",
-   "playcount": 46
+   "artist": "Talking Heads"
   },
   {
    "name": "There Are Other Worlds (They Have Not Told You Of)",
-   "artist": "Jan Jelinek",
-   "playcount": 43
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Meditation on Wage Labor and the Death of the Album (Sprinkles' Unpaid Overtime)",
-   "artist": "DJ Sprinkles",
-   "playcount": 42
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Long Time (Intro)",
-   "artist": "Playboi Carti",
-   "playcount": 42
+   "artist": "Playboi Carti"
   },
   {
    "name": "Do You Like Worms (Roll Plymouth Rock)",
-   "artist": "The Beach Boys",
-   "playcount": 42
+   "artist": "The Beach Boys"
   },
   {
    "name": "Memory Lane (Sittin' in da Park)",
-   "artist": "Nas",
-   "playcount": 41
+   "artist": "Nas"
   },
   {
    "name": "Whatever I Want (Fuck Who's Watching)",
-   "artist": "Death Grips",
-   "playcount": 40
+   "artist": "Death Grips"
   },
   {
    "name": "Yeah (Pretentious Mix)",
-   "artist": "LCD Soundsystem",
-   "playcount": 40
+   "artist": "LCD Soundsystem"
   },
   {
    "name": "Everybody's Got Something To Hide (Except Me And My Monkey)",
-   "artist": "The Feelies",
-   "playcount": 40
+   "artist": "The Feelies"
   },
   {
    "name": "Strobelite Honey (Def Version)",
-   "artist": "Frankie Knuckles",
-   "playcount": 39
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Krystle (URL Cyber Palace Mix)",
-   "artist": "Machine Girl",
-   "playcount": 38
+   "artist": "Machine Girl"
   },
   {
    "name": "Two Note Swivel [Unfinished Outtake]",
-   "artist": "Talking Heads",
-   "playcount": 37
+   "artist": "Talking Heads"
   },
   {
    "name": "Dee — Feeling Hm-Pa-Paa-Paaa (Solitaire Vocal Mix)",
-   "artist": "Gemini",
-   "playcount": 36
+   "artist": "Gemini"
   },
   {
    "name": "Brooklyn (Owes The Charmer Under Me)",
-   "artist": "Steely Dan",
-   "playcount": 35
+   "artist": "Steely Dan"
   },
   {
    "name": "Ball'r (Madonna-Free Zone)",
-   "artist": "DJ Sprinkles",
-   "playcount": 34
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "moiré (piano & organ)",
-   "artist": "Jan Jelinek",
-   "playcount": 34
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Into the Deep Time (One Sun)",
-   "artist": "Candy Claws",
-   "playcount": 33
+   "artist": "Candy Claws"
   },
   {
    "name": "Davos S (Trio 'Round Midnight)",
-   "artist": "Jan Jelinek",
-   "playcount": 33
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Thick Jungle (river)",
-   "artist": "Soichi Terada",
-   "playcount": 33
+   "artist": "Soichi Terada"
   },
   {
    "name": "The Silent Boy Cries (RipSquadd Outro)",
-   "artist": "Bladee",
-   "playcount": 30
+   "artist": "Bladee"
   },
   {
    "name": "Steve Biko (Stir It Up)",
-   "artist": "A Tribe Called Quest",
-   "playcount": 28
+   "artist": "A Tribe Called Quest"
   },
   {
    "name": "FUN FACT (feat. Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 28
+   "artist": "Bladee"
   },
   {
    "name": "Moiré (Strings)",
-   "artist": "Jan Jelinek",
-   "playcount": 28
+   "artist": "Jan Jelinek"
   },
   {
    "name": "Home (KOD)",
-   "artist": "Playboi Carti",
-   "playcount": 28
+   "artist": "Playboi Carti"
   },
   {
    "name": "Right Start [Unfinished Outtake]",
-   "artist": "Talking Heads",
-   "playcount": 28
+   "artist": "Talking Heads"
   },
   {
    "name": "N.G.R.I (Bloodstain)",
-   "artist": "King Gizzard & The Lizard Wizard",
-   "playcount": 27
+   "artist": "King Gizzard & The Lizard Wizard"
   },
   {
    "name": "I Wanna Sleep In Your Arms (Live)",
-   "artist": "The Feelies",
-   "playcount": 27
+   "artist": "The Feelies"
   },
   {
    "name": "Lollipop (Ode To Jim)",
-   "artist": "Alvvays",
-   "playcount": 26
+   "artist": "Alvvays"
   },
   {
    "name": "This Is Violence Now (Don't Get Me Wrong)",
-   "artist": "Death Grips",
-   "playcount": 26
+   "artist": "Death Grips"
   },
   {
    "name": "Preaching the Blues (Live in Rotterdam 1984)",
-   "artist": "The Gun Club",
-   "playcount": 26
+   "artist": "The Gun Club"
   },
   {
    "name": "smallest weird number (reversed)",
-   "artist": "Boards of Canada",
-   "playcount": 25
+   "artist": "Boards of Canada"
   },
   {
    "name": "Pangaea Girls (Magic Feeling)",
-   "artist": "Candy Claws",
-   "playcount": 25
+   "artist": "Candy Claws"
   },
   {
    "name": "Transitional Bird (Clever Girl)",
-   "artist": "Candy Claws",
-   "playcount": 25
+   "artist": "Candy Claws"
   },
   {
    "name": "4k Murmurs (feat. J)",
-   "artist": "Purelink",
-   "playcount": 25
+   "artist": "Purelink"
   },
   {
    "name": "One (Blake's Got a New Face)",
-   "artist": "Vampire Weekend",
-   "playcount": 25
+   "artist": "Vampire Weekend"
   },
   {
    "name": "Blue Nudes (I-IV)",
-   "artist": "Jefre Cantu-Ledesma",
-   "playcount": 24
+   "artist": "Jefre Cantu-Ledesma"
   },
   {
    "name": "Sento (Pt. II)",
-   "artist": "Meitei",
-   "playcount": 24
+   "artist": "Meitei"
   },
   {
    "name": "Talk (ICYTWAT REMIX)",
-   "artist": "Playboi Carti",
-   "playcount": 24
+   "artist": "Playboi Carti"
   },
   {
    "name": "Friendly Pressure (Into The Sunshine Mix)",
-   "artist": "Sunship",
-   "playcount": 24
+   "artist": "Sunship"
   },
   {
    "name": "Electricity (Drugs)",
-   "artist": "Talking Heads",
-   "playcount": 24
+   "artist": "Talking Heads"
   },
   {
    "name": "The Doo Doo Song (Newspaper Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 23
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Molly's Lips - BBC John Peel Session 1990",
-   "artist": "Nirvana",
-   "playcount": 23
+   "artist": "Nirvana"
   },
   {
    "name": "Breathe (In the Air)",
-   "artist": "Pink Floyd",
-   "playcount": 23
+   "artist": "Pink Floyd"
   },
   {
    "name": "R.I.P. Fredo (Notice Me)",
-   "artist": "Playboi Carti",
-   "playcount": 23
+   "artist": "Playboi Carti"
   },
   {
    "name": "Duppy Drill + FEBPHONZO (evilgiane)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 23
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "My Only Sunshine (The Old Master Painter / You Are My Sunshine)",
-   "artist": "The Beach Boys",
-   "playcount": 23
+   "artist": "The Beach Boys"
   },
   {
    "name": "Gut Feeling / (Slap Your Mammy)",
-   "artist": "Devo",
-   "playcount": 22
+   "artist": "Devo"
   },
   {
    "name": "Been A Son - BBC Mark Goodier Session",
-   "artist": "Nirvana",
-   "playcount": 22
+   "artist": "Nirvana"
   },
   {
    "name": "It's Alright, Ma (I'm Only Bleeding)",
-   "artist": "Bob Dylan",
-   "playcount": 21
+   "artist": "Bob Dylan"
   },
   {
    "name": "Birth of the Flower (Seagreen)",
-   "artist": "Candy Claws",
-   "playcount": 21
+   "artist": "Candy Claws"
   },
   {
    "name": "Surrender Yourself (Ballroom Version)",
-   "artist": "Frankie Knuckles",
-   "playcount": 21
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Kawanabe Kyosai (Pt. II)",
-   "artist": "Meitei",
-   "playcount": 21
+   "artist": "Meitei"
   },
   {
    "name": "Molten Lava (t-rex)",
-   "artist": "Soichi Terada",
-   "playcount": 21
+   "artist": "Soichi Terada"
   },
   {
    "name": "Never Find A Girl (To Love Me Like You Do)",
-   "artist": "Steve Hiett",
-   "playcount": 21
+   "artist": "Steve Hiett"
   },
   {
    "name": "minipops 67 [120.2][source field mix]",
-   "artist": "Aphex Twin",
-   "playcount": 20
+   "artist": "Aphex Twin"
   },
   {
    "name": "I DONT LIKE PEOPLE (feat. Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 20
+   "artist": "Bladee"
   },
   {
    "name": "ONE SECOND (feat. Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 20
+   "artist": "Bladee"
   },
   {
    "name": "100,000 (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 20
+   "artist": "Jai Paul"
   },
   {
    "name": "Dark Passage (avocado)",
-   "artist": "Stewart Copeland",
-   "playcount": 20
+   "artist": "Stewart Copeland"
   },
   {
    "name": "Genius Of Love (Tom Tom Club)",
-   "artist": "Talking Heads",
-   "playcount": 20
+   "artist": "Talking Heads"
   },
   {
    "name": "I'm Waiting For The Man - Version 2 / Live",
-   "artist": "The Velvet Underground",
-   "playcount": 20
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Classic Man - Rapid Winds (75 MPH Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 19
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Big Love (Pete Heller's Original Mix)",
-   "artist": "Pete Heller",
-   "playcount": 19
+   "artist": "Pete Heller"
   },
   {
    "name": "Shawty in Luv (Version 4)",
-   "artist": "Playboi Carti",
-   "playcount": 19
+   "artist": "Playboi Carti"
   },
   {
    "name": "Not Another Teen Movie (Tommytohotty)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 18
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Tanned (with BRRD)",
-   "artist": "R. Yaba",
-   "playcount": 18
+   "artist": "R. Yaba"
   },
   {
    "name": "Rayuela (ii)",
-   "artist": "Sora",
-   "playcount": 18
+   "artist": "Sora"
   },
   {
    "name": "Any World (That I'm Welcome To)",
-   "artist": "Steely Dan",
-   "playcount": 18
+   "artist": "Steely Dan"
   },
   {
    "name": "Look (Song for Children)",
-   "artist": "The Beach Boys",
-   "playcount": 18
+   "artist": "The Beach Boys"
   },
   {
    "name": "She Came In Through The Bathroom Window (Take 27)",
-   "artist": "The Beatles",
-   "playcount": 18
+   "artist": "The Beatles"
   },
   {
    "name": "Mister (feat. 21 Savage)",
-   "artist": "Young Nudy",
-   "playcount": 18
+   "artist": "Young Nudy"
   },
   {
    "name": "쇠사슬 (Ahhhh, These Chains!)",
-   "artist": "공중도둑",
-   "playcount": 18
+   "artist": "공중도둑"
   },
   {
    "name": "180db_ [130]",
-   "artist": "Aphex Twin",
-   "playcount": 18
+   "artist": "Aphex Twin"
   },
   {
    "name": "Ever Fallen In Love (With Someone You Shouldn't've?)",
-   "artist": "Buzzcocks",
-   "playcount": 18
+   "artist": "Buzzcocks"
   },
   {
    "name": "Understars - Forestfunk I (No Damkkb Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 18
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "wealmostmadeit (Extended)",
-   "artist": "EASTGHOST",
-   "playcount": 18
+   "artist": "EASTGHOST"
   },
   {
    "name": "Dentaku - Live",
-   "artist": "Kraftwerk",
-   "playcount": 18
+   "artist": "Kraftwerk"
   },
   {
    "name": "Radiation (Lung Pollution)",
-   "artist": "Lil Ugly Mane",
-   "playcount": 18
+   "artist": "Lil Ugly Mane"
   },
   {
    "name": "Cloud99 (As Above Mix)",
-   "artist": "Machine Girl",
-   "playcount": 18
+   "artist": "Machine Girl"
   },
   {
    "name": "Out By 16 (ACIDPUNKMIX)",
-   "artist": "Machine Girl",
-   "playcount": 18
+   "artist": "Machine Girl"
   },
   {
    "name": "Alicia Key$ (80DimeBag$ Remix)",
-   "artist": "Black Kray",
-   "playcount": 17
+   "artist": "Black Kray"
   },
   {
    "name": "Gene Farris - Good Feeling",
-   "artist": "DJ Sprinkles",
-   "playcount": 17
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "I:Cube — Disco Cubizm (Daft Punk Mix)",
-   "artist": "Gemini",
-   "playcount": 17
+   "artist": "Gemini"
   },
   {
    "name": "Thick Jungle (woods)",
-   "artist": "Soichi Terada",
-   "playcount": 17
+   "artist": "Soichi Terada"
   },
   {
    "name": "Fela's Riff [Unfinished Outtake]",
-   "artist": "Talking Heads",
-   "playcount": 17
+   "artist": "Talking Heads"
   },
   {
    "name": "Eternally Is Here (Live in Rotterdam 1984)",
-   "artist": "The Gun Club",
-   "playcount": 17
+   "artist": "The Gun Club"
   },
   {
    "name": "I Can't Stand It - Version 1 / Live",
-   "artist": "The Velvet Underground",
-   "playcount": 17
+   "artist": "The Velvet Underground"
   },
   {
    "name": "4 bit 9d api+e+6 [126.26]",
-   "artist": "Aphex Twin",
-   "playcount": 16
+   "artist": "Aphex Twin"
   },
   {
    "name": "YUNG SHERMAN (feat. Yung Sherman)",
-   "artist": "Bladee",
-   "playcount": 16
+   "artist": "Bladee"
   },
   {
    "name": "White Seal (Shell & Spine)",
-   "artist": "Candy Claws",
-   "playcount": 16
+   "artist": "Candy Claws"
   },
   {
    "name": "Choo-ables - Hard To Get (BT's Massive Groove)",
-   "artist": "DJ Sprinkles",
-   "playcount": 16
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "On Another Ocean (January / June)",
-   "artist": "Fleet Foxes",
-   "playcount": 16
+   "artist": "Fleet Foxes"
   },
   {
    "name": "04.2 B2 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 16
+   "artist": "Seidensticker"
   },
   {
    "name": "Blue Beach - Welcome To Your Beach",
-   "artist": "Steve Hiett",
-   "playcount": 16
+   "artist": "Steve Hiett"
   },
   {
    "name": "Burning Down The House [Alternate Version]",
-   "artist": "Talking Heads",
-   "playcount": 16
+   "artist": "Talking Heads"
   },
   {
    "name": "White Light/White Heat - Version 1 / Live",
-   "artist": "The Velvet Underground",
-   "playcount": 16
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Hi Baku Shyo (Suffer Bomb Disease)",
-   "artist": "This Heat",
-   "playcount": 16
+   "artist": "This Heat"
   },
   {
    "name": "Testcard (Blue)",
-   "artist": "This Heat",
-   "playcount": 16
+   "artist": "This Heat"
   },
   {
    "name": "It Takes Two to Tango (This Is for the Girls)",
-   "artist": "Todd Rundgren",
-   "playcount": 16
+   "artist": "Todd Rundgren"
   },
   {
    "name": "감은 듯 (Gameun Deut)",
-   "artist": "공중도둑",
-   "playcount": 16
+   "artist": "공중도둑"
   },
   {
    "name": "All of a Sudden (It's Too Late)",
-   "artist": "XTC",
-   "playcount": 15
+   "artist": "XTC"
   },
   {
    "name": "왜? (Why?)",
-   "artist": "공중도둑",
-   "playcount": 15
+   "artist": "공중도둑"
   },
   {
    "name": "우 (Woo)",
-   "artist": "공중도둑",
-   "playcount": 15
+   "artist": "공중도둑"
   },
   {
    "name": "Fonseca Winds (Lament)",
-   "artist": "Andrew Pekler",
-   "playcount": 15
+   "artist": "Andrew Pekler"
   },
   {
    "name": "Wett (Water2)",
-   "artist": "Bladee",
-   "playcount": 15
+   "artist": "Bladee"
   },
   {
    "name": "Bootleg (Dont need your help)",
-   "artist": "Death Grips",
-   "playcount": 15
+   "artist": "Death Grips"
   },
   {
    "name": "An Expresso - Club Called The Garage",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 15
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Nereus (Spirits Over the Lake)",
-   "artist": "Emeralds",
-   "playcount": 15
+   "artist": "Emeralds"
   },
   {
    "name": "Folsom Prison Blues - Live at Folsom State Prison, Folsom, CA - January 1968",
-   "artist": "Johnny Cash",
-   "playcount": 15
+   "artist": "Johnny Cash"
   },
   {
    "name": "So weit wie noch nie (Original Mix)",
-   "artist": "Jürgen Paape",
-   "playcount": 15
+   "artist": "Jürgen Paape"
   },
   {
    "name": "Hidden Power (∞ x 235BPM Mix)",
-   "artist": "Machine Girl",
-   "playcount": 15
+   "artist": "Machine Girl"
   },
   {
    "name": "Out of Step (With the World)",
-   "artist": "Minor Threat",
-   "playcount": 15
+   "artist": "Minor Threat"
   },
   {
    "name": "Son Of A Gun - BBC John Peel Session 1990",
-   "artist": "Nirvana",
-   "playcount": 15
+   "artist": "Nirvana"
   },
   {
    "name": "EVERLONG (evil giane)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 15
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Id (1999)",
-   "artist": "Seaes",
-   "playcount": 15
+   "artist": "Seaes"
   },
   {
    "name": "04.2 B1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 15
+   "artist": "Seidensticker"
   },
   {
    "name": "Infrared (Country Boyz)",
-   "artist": "SICKBOYRARI",
-   "playcount": 15
+   "artist": "SICKBOYRARI"
   },
   {
    "name": "Specter's Factory (outside)",
-   "artist": "Soichi Terada",
-   "playcount": 15
+   "artist": "Soichi Terada"
   },
   {
    "name": "Lectroluv - If We Try (Ambient Dub)",
-   "artist": "DJ Sprinkles",
-   "playcount": 14
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "The Rude Awakening - The Dip (5 AM Dipsco Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 14
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "DOUGHBOY (feat. Terror Reid)",
-   "artist": "Joey Valence & Brae",
-   "playcount": 14
+   "artist": "Joey Valence & Brae"
   },
   {
    "name": "04.1 A1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 14
+   "artist": "Seidensticker"
   },
   {
    "name": "A Clean Break (Let's Work)",
-   "artist": "Talking Heads",
-   "playcount": 14
+   "artist": "Talking Heads"
   },
   {
    "name": "Unison [Unfinished Outtake]",
-   "artist": "Talking Heads",
-   "playcount": 14
+   "artist": "Talking Heads"
   },
   {
    "name": "Norwegian Wood (This Bird Has Flown)",
-   "artist": "The Beatles",
-   "playcount": 14
+   "artist": "The Beatles"
   },
   {
    "name": "Victoria (2019 Remaster)",
-   "artist": "The Kinks",
-   "playcount": 14
+   "artist": "The Kinks"
   },
   {
    "name": "Gotta Touch 'Em - (Pt. 2)",
-   "artist": "Three 6 Mafia",
-   "playcount": 14
+   "artist": "Three 6 Mafia"
   },
   {
    "name": "Tear Da Club Up (DJ Herb's Crunk & Tear It Up Remix) - Radio Edit",
-   "artist": "Three 6 Mafia",
-   "playcount": 14
+   "artist": "Three 6 Mafia"
   },
   {
    "name": "Most Likely You Go Your Way (And I'll Go Mine)",
-   "artist": "Bob Dylan",
-   "playcount": 13
+   "artist": "Bob Dylan"
   },
   {
    "name": "Fell in Love (At the Water)",
-   "artist": "Candy Claws",
-   "playcount": 13
+   "artist": "Candy Claws"
   },
   {
    "name": "New Forest (Five Heads of the Sun)",
-   "artist": "Candy Claws",
-   "playcount": 13
+   "artist": "Candy Claws"
   },
   {
    "name": "Names Have Been Changed (Sprinkles' House Arrest)",
-   "artist": "DJ Sprinkles",
-   "playcount": 13
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Crystalline Shoot (Falling1)",
-   "artist": "Machine Girl",
-   "playcount": 13
+   "artist": "Machine Girl"
   },
   {
    "name": "Dead on the Scene (So Below Mix)",
-   "artist": "Machine Girl",
-   "playcount": 13
+   "artist": "Machine Girl"
   },
   {
    "name": "Domina - Maurizio Mix",
-   "artist": "Maurizio",
-   "playcount": 13
+   "artist": "Maurizio"
   },
   {
    "name": "Been a Son (BBC Mark Goodier Session)",
-   "artist": "Nirvana",
-   "playcount": 13
+   "artist": "Nirvana"
   },
   {
    "name": "Molly / No Stylist (Velo Mix)",
-   "artist": "Playboi Carti",
-   "playcount": 13
+   "artist": "Playboi Carti"
   },
   {
    "name": "Dozen Sunbeams - Nice Girl version",
-   "artist": "Purelink",
-   "playcount": 13
+   "artist": "Purelink"
   },
   {
    "name": "Carnival of Sorts (Box Cars)",
-   "artist": "R.E.M.",
-   "playcount": 13
+   "artist": "R.E.M."
   },
   {
    "name": "04.3 A1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 13
+   "artist": "Seidensticker"
   },
   {
    "name": "Drugs (Electricity)",
-   "artist": "Talking Heads",
-   "playcount": 13
+   "artist": "Talking Heads"
   },
   {
    "name": "Poppin' My Collar (feat. Project Pat)",
-   "artist": "Three 6 Mafia",
-   "playcount": 13
+   "artist": "Three 6 Mafia"
   },
   {
    "name": "Cowgirl - Remastered",
-   "artist": "Underworld",
-   "playcount": 13
+   "artist": "Underworld"
   },
   {
    "name": "곡선과 투과광 (Curve And Light)",
-   "artist": "공중도둑",
-   "playcount": 13
+   "artist": "공중도둑"
   },
   {
    "name": "Description of Rain (Over Frisland)",
-   "artist": "Andrew Pekler",
-   "playcount": 12
+   "artist": "Andrew Pekler"
   },
   {
    "name": "Samba De Cherbourg (Les Parapluies De Verao)",
-   "artist": "Andrew Pekler",
-   "playcount": 12
+   "artist": "Andrew Pekler"
   },
   {
    "name": "fz pseudotimestretch+e+3 [138.85]",
-   "artist": "Aphex Twin",
-   "playcount": 12
+   "artist": "Aphex Twin"
   },
   {
    "name": "RAIN3OW STAR (LOVE IS ALL)",
-   "artist": "Bladee",
-   "playcount": 12
+   "artist": "Bladee"
   },
   {
    "name": "Rebirth of Slick (Cool Like Dat)",
-   "artist": "Digable Planets",
-   "playcount": 12
+   "artist": "Digable Planets"
   },
   {
    "name": "MyMy - Everybody's Talkin' (Original Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 12
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Jason Grove - John blue",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 12
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Blue Moon - 1999 Remastered",
-   "artist": "Frank Sinatra",
-   "playcount": 12
+   "artist": "Frank Sinatra"
   },
   {
    "name": "The Theme (The Legend)",
-   "artist": "Frankie Knuckles",
-   "playcount": 12
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Desert River (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 12
+   "artist": "Jai Paul"
   },
   {
    "name": "Tour de France (Etape 2) - Live",
-   "artist": "Kraftwerk",
-   "playcount": 12
+   "artist": "Kraftwerk"
   },
   {
    "name": "You Can't Hide (Shame On You)",
-   "artist": "LCD Soundsystem",
-   "playcount": 12
+   "artist": "LCD Soundsystem"
   },
   {
    "name": "Rock and Roll - Remaster",
-   "artist": "Led Zeppelin",
-   "playcount": 12
+   "artist": "Led Zeppelin"
   },
   {
    "name": "Sento (Pt. I)",
-   "artist": "Meitei",
-   "playcount": 12
+   "artist": "Meitei"
   },
   {
    "name": "Baby Jane (Mo-Mo Jane)",
-   "artist": "Mitch Ryder & The Detroit Wheels",
-   "playcount": 12
+   "artist": "Mitch Ryder & The Detroit Wheels"
   },
   {
    "name": "snowpatrol (GonerProd)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 12
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "SomethingThatMatters (GonerProd)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 12
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Time to Find Me - AFX Fast Mix",
-   "artist": "Seefeel",
-   "playcount": 12
+   "artist": "Seefeel"
   },
   {
    "name": "04.1 B1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 12
+   "artist": "Seidensticker"
   },
   {
    "name": "04.3 B1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 12
+   "artist": "Seidensticker"
   },
   {
    "name": "Last Dayz (S.i.p Willie & Bogle)",
-   "artist": "SICKBOYRARI",
-   "playcount": 12
+   "artist": "SICKBOYRARI"
   },
   {
    "name": "Tone Burst [Country]",
-   "artist": "Stereolab",
-   "playcount": 12
+   "artist": "Stereolab"
   },
   {
    "name": "The Elements: Fire (Mrs. O'Leary's Cow)",
-   "artist": "The Beach Boys",
-   "playcount": 12
+   "artist": "The Beach Boys"
   },
   {
    "name": "Fire of Love (Live in Rotterdam 1984)",
-   "artist": "The Gun Club",
-   "playcount": 12
+   "artist": "The Gun Club"
   },
   {
    "name": "Christmas Time Is Here (vocal)",
-   "artist": "Vince Guaraldi Trio",
-   "playcount": 12
+   "artist": "Vince Guaraldi Trio"
   },
   {
    "name": "Trilla (feat. A$AP Nast & A$AP Twelvyy)",
-   "artist": "A$AP Rocky",
-   "playcount": 11
+   "artist": "A$AP Rocky"
   },
   {
    "name": "aisatsana [102]",
-   "artist": "Aphex Twin",
-   "playcount": 11
+   "artist": "Aphex Twin"
   },
   {
    "name": "CIRCLONT6A [141.98][syrobonkus mix]",
-   "artist": "Aphex Twin",
-   "playcount": 11
+   "artist": "Aphex Twin"
   },
   {
    "name": "deletee (intro)",
-   "artist": "Bladee",
-   "playcount": 11
+   "artist": "Bladee"
   },
   {
    "name": "LUCKY LUKE (feat. Thaiboy Digital & Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 11
+   "artist": "Bladee"
   },
   {
    "name": "OTHERSIDE (feat. Sickboyrari )",
-   "artist": "Bladee",
-   "playcount": 11
+   "artist": "Bladee"
   },
   {
    "name": "5 Star Crest (4 Vattenrum)",
-   "artist": "Bladee & Ecco2K",
-   "playcount": 11
+   "artist": "Bladee & Ecco2K"
   },
   {
    "name": "Love To Love You (And Tonight Pigs Will Fly)",
-   "artist": "Caravan",
-   "playcount": 11
+   "artist": "Caravan"
   },
   {
    "name": "Sloppy (I Saw My Baby Gettin')",
-   "artist": "Devo",
-   "playcount": 11
+   "artist": "Devo"
   },
   {
    "name": "Jason Grove - Streets",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 11
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Club Lonely (I'm on the Guest List Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 11
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Make It on My Own (Tony Humphries Rave Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 11
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Workout (Workin' Dub)",
-   "artist": "Frankie Knuckles",
-   "playcount": 11
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Requiem For Mississippi John Hurt - Live",
-   "artist": "John Fahey",
-   "playcount": 11
+   "artist": "John Fahey"
   },
   {
    "name": "Gentle Story (Part 2)",
-   "artist": "Mark Templeton",
-   "playcount": 11
+   "artist": "Mark Templeton"
   },
   {
    "name": "Hello (feat. Dragonette)",
-   "artist": "Martin Solveig",
-   "playcount": 11
+   "artist": "Martin Solveig"
   },
   {
    "name": "Kawanabe Kyosai (Pt. I)",
-   "artist": "Meitei",
-   "playcount": 11
+   "artist": "Meitei"
   },
   {
    "name": "Poke It Out (with Nicki Minaj)",
-   "artist": "Playboi Carti",
-   "playcount": 11
+   "artist": "Playboi Carti"
   },
   {
    "name": "Red on Red (I Promise You)",
-   "artist": "Playboi Carti",
-   "playcount": 11
+   "artist": "Playboi Carti"
   },
   {
    "name": "Who Killed Kenny (Evil Giane, Tommytohotty)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 11
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Ny (2004)",
-   "artist": "Seaes",
-   "playcount": 11
+   "artist": "Seaes"
   },
   {
    "name": "Mushroom Speedway (lol)",
-   "artist": "Stewart Copeland",
-   "playcount": 11
+   "artist": "Stewart Copeland"
   },
   {
    "name": "Making Flippy Floppy - Live",
-   "artist": "Talking Heads",
-   "playcount": 11
+   "artist": "Talking Heads"
   },
   {
    "name": "God Only Knows - Remastered 1996",
-   "artist": "The Beach Boys",
-   "playcount": 11
+   "artist": "The Beach Boys"
   },
   {
    "name": "Winter (Hostel-Maxi)",
-   "artist": "The Fall",
-   "playcount": 11
+   "artist": "The Fall"
   },
   {
    "name": "Tear Da Club Up - (Da Real)",
-   "artist": "Three 6 Mafia",
-   "playcount": 11
+   "artist": "Three 6 Mafia"
   },
   {
    "name": "Spoonman - Remastered",
-   "artist": "Underworld",
-   "playcount": 11
+   "artist": "Underworld"
   },
   {
    "name": "Spinal Meningitis (Got Me Down)",
-   "artist": "Ween",
-   "playcount": 11
+   "artist": "Ween"
   },
   {
    "name": "Senses Working Overtime - Remastered 2001",
-   "artist": "XTC",
-   "playcount": 11
+   "artist": "XTC"
   },
   {
    "name": "212 (feat. Lazy Jay)",
-   "artist": "Azealia Banks",
-   "playcount": 10
+   "artist": "Azealia Banks"
   },
   {
    "name": "One of Us Must Know (Sooner or Later)",
-   "artist": "Bob Dylan",
-   "playcount": 10
+   "artist": "Bob Dylan"
   },
   {
    "name": "Fallen Tree Bridge (Brave Rainbow Rider)",
-   "artist": "Candy Claws",
-   "playcount": 10
+   "artist": "Candy Claws"
   },
   {
    "name": "Braxton Holmes - 12 Inches Of Pleasure (Ron's Foreplay)",
-   "artist": "DJ Sprinkles",
-   "playcount": 10
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Grand Central, Pt. I (Deep Into the Bowel of House)",
-   "artist": "DJ Sprinkles",
-   "playcount": 10
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Sloppy 42nds (Terre's Neu Wuss Fusion)",
-   "artist": "DJ Sprinkles",
-   "playcount": 10
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "F.T.G. & Belfie & Alex Tea - Public Enemy",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 10
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "4 You (MK Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 10
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Circuit Breaker - Overkill",
-   "artist": "Jeff Mills",
-   "playcount": 10
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - Changes Of Life",
-   "artist": "Jeff Mills",
-   "playcount": 10
+   "artist": "Jeff Mills"
   },
   {
    "name": "Wicked Wipe - Rock Da House (Ian Pooley Mix)",
-   "artist": "Jeff Mills",
-   "playcount": 10
+   "artist": "Jeff Mills"
   },
   {
    "name": "Street Fighting Man - 50th Anniversary Edition",
-   "artist": "Keith Richards",
-   "playcount": 10
+   "artist": "Keith Richards"
   },
   {
    "name": "Gentle Story (Part 1)",
-   "artist": "Mark Templeton",
-   "playcount": 10
+   "artist": "Mark Templeton"
   },
   {
    "name": "おおはる - ぴあの",
-   "artist": "Masakatsu Takagi",
-   "playcount": 10
+   "artist": "Masakatsu Takagi"
   },
   {
    "name": "Big Love - Original Edit",
-   "artist": "Pete Heller",
-   "playcount": 10
+   "artist": "Pete Heller"
   },
   {
    "name": "Break It Off - Bonus",
-   "artist": "PinkPantheress",
-   "playcount": 10
+   "artist": "PinkPantheress"
   },
   {
    "name": "Helena (Tommytohotty)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 10
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "04.2 A1 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 10
+   "artist": "Seidensticker"
   },
   {
    "name": "Dungtitled (in A major)",
-   "artist": "Stars of the Lid",
-   "playcount": 10
+   "artist": "Stars of the Lid"
   },
   {
    "name": "Ngiculela - Es Una Historia - I Am Singing",
-   "artist": "Stevie Wonder",
-   "playcount": 10
+   "artist": "Stevie Wonder"
   },
   {
    "name": "Sex Sux (Amen)",
-   "artist": "The Vaselines",
-   "playcount": 10
+   "artist": "The Vaselines"
   },
   {
    "name": "Sweet Bonnie Brown / It's Just Too Much - Live",
-   "artist": "The Velvet Underground",
-   "playcount": 10
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Toe Cutter - Thumb Buster",
-   "artist": "Thee Oh Sees",
-   "playcount": 10
+   "artist": "Thee Oh Sees"
   },
   {
    "name": "Never Let You Go - 2008 Remaster",
-   "artist": "Third Eye Blind",
-   "playcount": 10
+   "artist": "Third Eye Blind"
   },
   {
    "name": "수호자 (Protector)",
-   "artist": "공중도둑",
-   "playcount": 10
+   "artist": "공중도둑"
   },
   {
    "name": "dog (mt-32)",
-   "artist": "/F",
-   "playcount": 10
+   "artist": "/F"
   },
   {
    "name": "Moon Velvet (Shadows, Whispers, Rivers, Windmills)",
-   "artist": "Andrew Pekler",
-   "playcount": 10
+   "artist": "Andrew Pekler"
   },
   {
    "name": "CIRCLONT14 [152.97][shrymoming mix]",
-   "artist": "Aphex Twin",
-   "playcount": 10
+   "artist": "Aphex Twin"
   },
   {
    "name": "04.1 B2 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 9
+   "artist": "Seidensticker"
   },
   {
    "name": "Memories (Can't Wait)",
-   "artist": "Talking Heads",
-   "playcount": 9
+   "artist": "Talking Heads"
   },
   {
    "name": "Snow (Dusk, Dawn)",
-   "artist": "Taylor Deupree",
-   "playcount": 9
+   "artist": "Taylor Deupree"
   },
   {
    "name": "Lookin' at Tomorrow (A Welfare Song)",
-   "artist": "The Beach Boys",
-   "playcount": 9
+   "artist": "The Beach Boys"
   },
   {
    "name": "You've Got To Hide Your Love Away - Remastered 2009",
-   "artist": "The Beatles",
-   "playcount": 9
+   "artist": "The Beatles"
   },
   {
    "name": "She's Like Heroin to Me (Live in Rotterdam 1984)",
-   "artist": "The Gun Club",
-   "playcount": 9
+   "artist": "The Gun Club"
   },
   {
    "name": "Some Kinda Love - Version 1 / Live",
-   "artist": "The Velvet Underground",
-   "playcount": 9
+   "artist": "The Velvet Underground"
   },
   {
    "name": "White Light/White Heat - Live",
-   "artist": "The Velvet Underground",
-   "playcount": 9
+   "artist": "The Velvet Underground"
   },
   {
    "name": "They Say That (Everything's Alright)",
-   "artist": "The Zeros",
-   "playcount": 9
+   "artist": "The Zeros"
   },
   {
    "name": "Butcher's Tale (Western Front 1914)",
-   "artist": "The Zombies",
-   "playcount": 9
+   "artist": "The Zombies"
   },
   {
    "name": "Corprophagist (A Bath Perhaps)",
-   "artist": "Thee Oh Sees",
-   "playcount": 9
+   "artist": "Thee Oh Sees"
   },
   {
    "name": "Side 8 (Big Gums Version)",
-   "artist": "Tobacco",
-   "playcount": 9
+   "artist": "Tobacco"
   },
   {
    "name": "River Of Bass - Remastered",
-   "artist": "Underworld",
-   "playcount": 9
+   "artist": "Underworld"
   },
   {
    "name": "Generals And Majors - 2001 Remaster",
-   "artist": "XTC",
-   "playcount": 9
+   "artist": "XTC"
   },
   {
    "name": "Scenario (feat. Busta Rhymes, Dinco D & Charlie Brown) - LP Mix",
-   "artist": "A Tribe Called Quest",
-   "playcount": 9
+   "artist": "A Tribe Called Quest"
   },
   {
    "name": "irlite (get 0)",
-   "artist": "Autechre",
-   "playcount": 9
+   "artist": "Autechre"
   },
   {
    "name": "Todd Rundgren - Cold Morning Light",
-   "artist": "avlaki",
-   "playcount": 9
+   "artist": "avlaki"
   },
   {
    "name": "Crack Cloud$ Over Arts Kitchen (Intro)",
-   "artist": "Black Kray",
-   "playcount": 9
+   "artist": "Black Kray"
   },
   {
    "name": "TERRIBLE EXCELLENCE (feat. Yung Lean)",
-   "artist": "Bladee",
-   "playcount": 9
+   "artist": "Bladee"
   },
   {
    "name": "Dave (I'm a Real Traditionalist)",
-   "artist": "Boards of Canada",
-   "playcount": 9
+   "artist": "Boards of Canada"
   },
   {
    "name": "Charade (Fern Prairie)",
-   "artist": "Candy Claws",
-   "playcount": 9
+   "artist": "Candy Claws"
   },
   {
    "name": "Always (Edit)",
-   "artist": "Delroy Edwards",
-   "playcount": 9
+   "artist": "Delroy Edwards"
   },
   {
    "name": "Alex Danilov - Deep S",
-   "artist": "DJ Sprinkles",
-   "playcount": 9
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Grand Central, Pt. II (72 hrs. By Rail From Missouri)",
-   "artist": "DJ Sprinkles",
-   "playcount": 9
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Keys & Tronics Ensemble - Calypso Of House (Paradise Version)",
-   "artist": "DJ Sprinkles",
-   "playcount": 9
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Just My Imagination (Running Away With Me)",
-   "artist": "Donald Byrd",
-   "playcount": 9
+   "artist": "Donald Byrd"
   },
   {
    "name": "Fly Like an Eagle (Masters at Work Slippin Dub)",
-   "artist": "Frankie Knuckles",
-   "playcount": 9
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Para los rumberos (Puente's Vibe Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 9
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Rain Falls (David's 12\" Soakin Wet Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 9
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "4th Measure Men — The Need (Basement Jaxx Release Mix)",
-   "artist": "Gemini",
-   "playcount": 9
+   "artist": "Gemini"
   },
   {
    "name": "Adonis — No Way Back (Vocal)",
-   "artist": "Gemini",
-   "playcount": 9
+   "artist": "Gemini"
   },
   {
    "name": "Cultured Pearls — Tic Toc (Mousse T's Mood Mix)",
-   "artist": "Gemini",
-   "playcount": 9
+   "artist": "Gemini"
   },
   {
    "name": "pop a green goblin (frakenstn wlk)",
-   "artist": "Hi-C",
-   "playcount": 9
+   "artist": "Hi-C"
   },
   {
    "name": "Jesus to a Child (reprise)",
-   "artist": "Hype Williams",
-   "playcount": 9
+   "artist": "Hype Williams"
   },
   {
    "name": "Baby Beat (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 9
+   "artist": "Jai Paul"
   },
   {
    "name": "Jeff Mills - Detached",
-   "artist": "Jeff Mills",
-   "playcount": 9
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - Utopia",
-   "artist": "Jeff Mills",
-   "playcount": 9
+   "artist": "Jeff Mills"
   },
   {
    "name": "The Advent - Bad Boy",
-   "artist": "Jeff Mills",
-   "playcount": 9
+   "artist": "Jeff Mills"
   },
   {
    "name": "Distant Star (For Pete Swanson)",
-   "artist": "Jefre Cantu-Ledesma",
-   "playcount": 9
+   "artist": "Jefre Cantu-Ledesma"
   },
   {
    "name": "You Ain't Gotta Lie (Momma Said)",
-   "artist": "Kendrick Lamar",
-   "playcount": 9
+   "artist": "Kendrick Lamar"
   },
   {
    "name": "Tired / Heart of the Sunrise (Excerpt)",
-   "artist": "LCD Soundsystem",
-   "playcount": 9
+   "artist": "LCD Soundsystem"
   },
   {
    "name": "Alone and Suffering (Interlude)",
-   "artist": "Lil Ugly Mane",
-   "playcount": 9
+   "artist": "Lil Ugly Mane"
   },
   {
    "name": "Last Breath (Outroduction)",
-   "artist": "Lil Ugly Mane",
-   "playcount": 9
+   "artist": "Lil Ugly Mane"
   },
   {
    "name": "Pardon Me (Lil Yachty feat. Future & Mike WiLL Made-It)",
-   "artist": "Lil Yachty",
-   "playcount": 9
+   "artist": "Lil Yachty"
   },
   {
    "name": "Emma - Remastered 2022",
-   "artist": "Little River Band",
-   "playcount": 9
+   "artist": "Little River Band"
   },
   {
    "name": "Freewill (Phase β)",
-   "artist": "Machine Girl",
-   "playcount": 9
+   "artist": "Machine Girl"
   },
   {
    "name": "Mentira (Chega De Mentira)",
-   "artist": "Marcos Valle",
-   "playcount": 9
+   "artist": "Marcos Valle"
   },
   {
    "name": "Miles Runs the Voodoo Down (feat. Wayne Shorter, Bennie Maupin, John McLaughlin, Chick Corea, Joe Zawinul, Dave Holland & Harvey Brooks)",
-   "artist": "Miles Davis",
-   "playcount": 9
+   "artist": "Miles Davis"
   },
   {
    "name": "Preta pretinha (reprise)",
-   "artist": "Novos Baianos",
-   "playcount": 9
+   "artist": "Novos Baianos"
   },
   {
    "name": "drops in the water (with tcs)",
-   "artist": "Picnic",
-   "playcount": 9
+   "artist": "Picnic"
   },
   {
    "name": "No Time (feat. Gunna)",
-   "artist": "Playboi Carti",
-   "playcount": 9
+   "artist": "Playboi Carti"
   },
   {
    "name": "Whole Lotta (Neon)",
-   "artist": "Playboi Carti",
-   "playcount": 9
+   "artist": "Playboi Carti"
   },
   {
    "name": "200ACUP+RIPSMITHY (Evil Giane)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 9
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "MAPS + YEAH YEAH YEAH (Evil Giane)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 9
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Time After Time (Annelise)",
-   "artist": "R.E.M.",
-   "playcount": 9
+   "artist": "R.E.M."
   },
   {
    "name": "Yellow Sox — Flim Flam (Original Mix)",
-   "artist": "Gemini",
-   "playcount": 8
+   "artist": "Gemini"
   },
   {
    "name": "Untitled (Andrea Lopez)",
-   "artist": "Hype Williams",
-   "playcount": 8
+   "artist": "Hype Williams"
   },
   {
    "name": "Claude Young - Nocturnal",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Club MCM - Club MCM (K.A. Happy Mix)",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "iO - Eternal Sun",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - Ax-009",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - i9",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Joey Beltram - Game Form (Robert Armani Remix)",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Surgeon - Move",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Traxmen - Wet Floor",
-   "artist": "Jeff Mills",
-   "playcount": 8
+   "artist": "Jeff Mills"
   },
   {
    "name": "Flash of the Spirit (Laughter)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 8
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "She's Lost Control - 2019 Digital Master",
-   "artist": "Joy Division",
-   "playcount": 8
+   "artist": "Joy Division"
   },
   {
    "name": "Ionic Funk (20XXX Battle Music)",
-   "artist": "Machine Girl",
-   "playcount": 8
+   "artist": "Machine Girl"
   },
   {
    "name": "La Chapelle (Dub Mix)",
-   "artist": "Mad Rey",
-   "playcount": 8
+   "artist": "Mad Rey"
   },
   {
    "name": "You (Full Vocal Mix)",
-   "artist": "Mark E",
-   "playcount": 8
+   "artist": "Mark E"
   },
   {
    "name": "かみしゃま - 語り",
-   "artist": "Masakatsu Takagi",
-   "playcount": 8
+   "artist": "Masakatsu Takagi"
   },
   {
    "name": "Good Guys (Don't Wear White)",
-   "artist": "Minor Threat",
-   "playcount": 8
+   "artist": "Minor Threat"
   },
   {
    "name": "6669 (I Don't Know If You Know)",
-   "artist": "Neon Indian",
-   "playcount": 8
+   "artist": "Neon Indian"
   },
   {
    "name": "Fleeting Moments Of Freedom (Wooo)",
-   "artist": "Octo Octa",
-   "playcount": 8
+   "artist": "Octo Octa"
   },
   {
    "name": "By 5's (For 27)",
-   "artist": "Pimmon",
-   "playcount": 8
+   "artist": "Pimmon"
   },
   {
    "name": "Hellcat (Version 4)",
-   "artist": "Playboi Carti",
-   "playcount": 8
+   "artist": "Playboi Carti"
   },
   {
    "name": "Mr.Brightside (Tommytohotty)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 8
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Psyche - Elements",
-   "artist": "Psyche / BFC",
-   "playcount": 8
+   "artist": "Psyche / BFC"
   },
   {
    "name": "Fine Pink Mist - Low Flung version",
-   "artist": "Purelink",
-   "playcount": 8
+   "artist": "Purelink"
   },
   {
    "name": "Hang On to Your Love - Long Version",
-   "artist": "Sade",
-   "playcount": 8
+   "artist": "Sade"
   },
   {
    "name": "FD (2004)",
-   "artist": "Seaes",
-   "playcount": 8
+   "artist": "Seaes"
   },
   {
    "name": "SM (2003)",
-   "artist": "Seaes",
-   "playcount": 8
+   "artist": "Seaes"
   },
   {
    "name": "Tokyo 018 (Watashi Wa Tokyo Suki)",
-   "artist": "Shinichiro Yokota",
-   "playcount": 8
+   "artist": "Shinichiro Yokota"
   },
   {
    "name": "Flash Out (Free C Murder)",
-   "artist": "SICKBOYRARI",
-   "playcount": 8
+   "artist": "SICKBOYRARI"
   },
   {
    "name": "Apreludes (in C sharp major)",
-   "artist": "Stars of the Lid",
-   "playcount": 8
+   "artist": "Stars of the Lid"
   },
   {
    "name": "Spyro 1 Main Theme (orbit)",
-   "artist": "Stewart Copeland",
-   "playcount": 8
+   "artist": "Stewart Copeland"
   },
   {
    "name": "Heaven Knows I'm Miserable Now - 2011 Remaster",
-   "artist": "The Smiths",
-   "playcount": 8
+   "artist": "The Smiths"
   },
   {
    "name": "Today's The Day (I Finally Kissed You)",
-   "artist": "The Unlovables",
-   "playcount": 8
+   "artist": "The Unlovables"
   },
   {
    "name": "Gruv'n Disco Affair - You Don't Want To Lose It (Todd's Remix)",
-   "artist": "Todd Edwards",
-   "playcount": 8
+   "artist": "Todd Edwards"
   },
   {
    "name": "Inside of a Pipe - Radio And Water Level",
-   "artist": "Toshiya Tsunoda",
-   "playcount": 8
+   "artist": "Toshiya Tsunoda"
   },
   {
    "name": "Part One (Live)",
-   "artist": "Aidan Baker",
-   "playcount": 8
+   "artist": "Aidan Baker"
   },
   {
    "name": "PAPAT4 [155][pineal mix]",
-   "artist": "Aphex Twin",
-   "playcount": 8
+   "artist": "Aphex Twin"
   },
   {
    "name": "syro u473t8+e [141.98][piezoluminescence mix]",
-   "artist": "Aphex Twin",
-   "playcount": 8
+   "artist": "Aphex Twin"
   },
   {
    "name": "A National Acrobat - 2013 Remaster",
-   "artist": "Black Sabbath",
-   "playcount": 8
+   "artist": "Black Sabbath"
   },
   {
    "name": "I DONT LIKE PEOPLE (WHITEARMOR INTERLUDE)",
-   "artist": "Bladee",
-   "playcount": 8
+   "artist": "Bladee"
   },
   {
    "name": "Sound Mechanix - I Can't Forget",
-   "artist": "DJ Sprinkles",
-   "playcount": 8
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "The Rhythm Slaves - The Light You Will See (Trentemoller's Deep Dub Mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 8
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Groove Riddim feat. Nathaniel X Project - The Difference",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 8
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Simoncino - Inga's Creme (Chez Damier Morning After Mix part One)",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 8
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Soul System - Everything Must Change",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 8
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "My Peace of Heaven (International Mix)",
-   "artist": "Frankie Knuckles",
-   "playcount": 8
+   "artist": "Frankie Knuckles"
   },
   {
    "name": "Meli'sa Morgan — Still In Love With You (Hard Love Dub)",
-   "artist": "Gemini",
-   "playcount": 8
+   "artist": "Gemini"
   },
   {
    "name": "Dark & Long - Remastered",
-   "artist": "Underworld",
-   "playcount": 8
+   "artist": "Underworld"
   },
   {
    "name": "M.E. - Remastered",
-   "artist": "Underworld",
-   "playcount": 8
+   "artist": "Underworld"
   },
   {
    "name": "I'm A Snake In The Grass (Money Rolls Remix)",
-   "artist": "Viper",
-   "playcount": 8
+   "artist": "Viper"
   },
   {
    "name": "Love At First Sight - 2001 Remaster",
-   "artist": "XTC",
-   "playcount": 8
+   "artist": "XTC"
   },
   {
    "name": "tattoo (petrol)",
-   "artist": "Yearning Kru",
-   "playcount": 8
+   "artist": "Yearning Kru"
   },
   {
    "name": "함께 무너지기 (Crumbling Together)",
-   "artist": "공중도둑",
-   "playcount": 8
+   "artist": "공중도둑"
   },
   {
    "name": "DJ Skull - The 187 Skillz",
-   "artist": "Jeff Mills",
-   "playcount": 7
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - The extremist",
-   "artist": "Jeff Mills",
-   "playcount": 7
+   "artist": "Jeff Mills"
   },
   {
    "name": "Joe T. Vannelli feat. Csilla - Play With The Voice In USA (Joey Beltram Remix)",
-   "artist": "Jeff Mills",
-   "playcount": 7
+   "artist": "Jeff Mills"
   },
   {
    "name": "Surgeon - Magneze",
-   "artist": "Jeff Mills",
-   "playcount": 7
+   "artist": "Jeff Mills"
   },
   {
    "name": "NO HANDS (feat. Z-Trip)",
-   "artist": "Joey Valence & Brae",
-   "playcount": 7
+   "artist": "Joey Valence & Brae"
   },
   {
    "name": "(Like) Warriors Everywhere (Courage)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 7
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Air Afrique (Wind)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 7
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Kaboo (Play)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 7
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Night Moves (Fear)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 7
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Out Pours (Kongo) Blue (Prayer)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 7
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Cinco Minutos (5 Minutos)",
-   "artist": "Jorge Ben",
-   "playcount": 7
+   "artist": "Jorge Ben"
   },
   {
    "name": "Colony - 2020 Digital Master",
-   "artist": "Joy Division",
-   "playcount": 7
+   "artist": "Joy Division"
   },
   {
    "name": "Enchanted Sky Machines - Remastered",
-   "artist": "Judee Sill",
-   "playcount": 7
+   "artist": "Judee Sill"
   },
   {
    "name": "Mama's lamp - American mix",
-   "artist": "Kitty Craft",
-   "playcount": 7
+   "artist": "Kitty Craft"
   },
   {
    "name": "夜の収穫者達 (Reapers of the Night)",
-   "artist": "Les Rallizes Dénudés",
-   "playcount": 7
+   "artist": "Les Rallizes Dénudés"
   },
   {
    "name": "Fokus - On Line (DrumnBass Mix)",
-   "artist": "LTJ Bukem",
-   "playcount": 7
+   "artist": "LTJ Bukem"
   },
   {
    "name": "The Spirit - Mendacity",
-   "artist": "LTJ Bukem",
-   "playcount": 7
+   "artist": "LTJ Bukem"
   },
   {
    "name": "Tak Phonk (Dub)",
-   "artist": "Mad Rey",
-   "playcount": 7
+   "artist": "Mad Rey"
   },
   {
    "name": "Mamushi (feat. Yuki Chiba)",
-   "artist": "Megan Thee Stallion",
-   "playcount": 7
+   "artist": "Megan Thee Stallion"
   },
   {
    "name": "Mommy, Can I Go Out And Kill Tonight? (live)",
-   "artist": "Misfits",
-   "playcount": 7
+   "artist": "Misfits"
   },
   {
    "name": "Eye for a Eye (Your Beef Is Mines) (feat. Nas & Raekwon)",
-   "artist": "Mobb Deep",
-   "playcount": 7
+   "artist": "Mobb Deep"
   },
   {
    "name": "The Start of Your Ending (41st Side)",
-   "artist": "Mobb Deep",
-   "playcount": 7
+   "artist": "Mobb Deep"
   },
   {
    "name": "Gedenkminute (Für a + K)",
-   "artist": "NEU!",
-   "playcount": 7
+   "artist": "NEU!"
   },
   {
    "name": "Lila Engel (Lilac Angel)",
-   "artist": "NEU!",
-   "playcount": 7
+   "artist": "NEU!"
   },
   {
    "name": "all apologies - live",
-   "artist": "Nirvana",
-   "playcount": 7
+   "artist": "Nirvana"
   },
   {
    "name": "jesus doesn't want me for a sunbeam - live",
-   "artist": "Nirvana",
-   "playcount": 7
+   "artist": "Nirvana"
   },
   {
    "name": "Penguin Cafe Single - 2008 Digital Remaster",
-   "artist": "Penguin Cafe Orchestra",
-   "playcount": 7
+   "artist": "Penguin Cafe Orchestra"
   },
   {
    "name": "Big Love (The Dronez mix)",
-   "artist": "Pete Heller",
-   "playcount": 7
+   "artist": "Pete Heller"
   },
   {
    "name": "i91 (SkrappDollaz)",
-   "artist": "POLO PERKS <3 <3 <3",
-   "playcount": 7
+   "artist": "POLO PERKS <3 <3 <3"
   },
   {
    "name": "Seam of the Ocean (QA. 1)",
-   "artist": "Sean McCann",
-   "playcount": 7
+   "artist": "Sean McCann"
   },
   {
    "name": "time to find me - afx slow mix",
-   "artist": "Seefeel",
-   "playcount": 7
+   "artist": "Seefeel"
   },
   {
    "name": "Grippin Woodgrain (feat. ASAP Rocky)",
-   "artist": "Seth Narley",
-   "playcount": 7
+   "artist": "Seth Narley"
   },
   {
    "name": "Lens (1992)",
-   "artist": "Shinichiro Yokota",
-   "playcount": 7
+   "artist": "Shinichiro Yokota"
   },
   {
    "name": "Hot Springs (maze)",
-   "artist": "Soichi Terada",
-   "playcount": 7
+   "artist": "Soichi Terada"
   },
   {
    "name": "Crystal Islands (aft)",
-   "artist": "Stewart Copeland",
-   "playcount": 7
+   "artist": "Stewart Copeland"
   },
   {
    "name": "Trans Am (Punched To The Floor)",
-   "artist": "Terre Thaemlitz",
-   "playcount": 7
+   "artist": "Terre Thaemlitz"
   },
   {
    "name": "Close to Me - 2006 Remaster",
-   "artist": "The Cure",
-   "playcount": 7
+   "artist": "The Cure"
   },
   {
    "name": "Pictures of You - 2010 Remaster",
-   "artist": "The Cure",
-   "playcount": 7
+   "artist": "The Cure"
   },
   {
    "name": "Bad America (Live in Rotterdam 1984)",
-   "artist": "The Gun Club",
-   "playcount": 7
+   "artist": "The Gun Club"
   },
   {
    "name": "Fire Spirit (Live in Amsterdam 1983)",
-   "artist": "The Gun Club",
-   "playcount": 7
+   "artist": "The Gun Club"
   },
   {
    "name": "Interview (Live in Amsterdam 1983)",
-   "artist": "The Gun Club",
-   "playcount": 7
+   "artist": "The Gun Club"
   },
   {
    "name": "Conférence N°2 (33 RPM)",
-   "artist": "Accident du travail",
-   "playcount": 7
+   "artist": "Accident du travail"
   },
   {
    "name": "Vanishing Point (Image Man Remix)",
-   "artist": "Alexis Georgopoulos & Jefre Cantu-Ledesma",
-   "playcount": 7
+   "artist": "Alexis Georgopoulos & Jefre Cantu-Ledesma"
   },
   {
    "name": "Suddenly (Naturally)",
-   "artist": "Andrew Pekler",
-   "playcount": 7
+   "artist": "Andrew Pekler"
   },
   {
    "name": "s950tx16wasr10 [163.97][earth portal mix]",
-   "artist": "Aphex Twin",
-   "playcount": 7
+   "artist": "Aphex Twin"
   },
   {
    "name": "XMAS_EVET10 [120][thanaton3 mix]",
-   "artist": "Aphex Twin",
-   "playcount": 7
+   "artist": "Aphex Twin"
   },
   {
    "name": "Yeses (Red Cross)",
-   "artist": "Bladee & Ecco2K",
-   "playcount": 7
+   "artist": "Bladee & Ecco2K"
   },
   {
    "name": "? Vs. Scratch (The Token DJ Cut)",
-   "artist": "The Roots",
-   "playcount": 7
+   "artist": "The Roots"
   },
   {
    "name": "Ital (The Universal Side)",
-   "artist": "The Roots",
-   "playcount": 7
+   "artist": "The Roots"
   },
   {
    "name": "Table Of Contents (pts 1 & 2)",
-   "artist": "The Roots",
-   "playcount": 7
+   "artist": "The Roots"
   },
   {
    "name": "Venus In Furs - Live At The Matrix, San Francisco 12-01-69",
-   "artist": "The Velvet Underground",
-   "playcount": 7
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Istanbul (Not Constantinople)",
-   "artist": "They Might Be Giants",
-   "playcount": 7
+   "artist": "They Might Be Giants"
   },
   {
    "name": "Balcony I - α",
-   "artist": "Toshimaru Nakamura + Ken Ikeda + Tomoyoshi Date",
-   "playcount": 7
+   "artist": "Toshimaru Nakamura + Ken Ikeda + Tomoyoshi Date"
   },
   {
    "name": "Delayed Sleep Phase (Melatonin)",
-   "artist": "Ubik",
-   "playcount": 7
+   "artist": "Ubik"
   },
   {
    "name": "Irregular Sleep Wake (Tryptophan)",
-   "artist": "Ubik",
-   "playcount": 7
+   "artist": "Ubik"
   },
   {
    "name": "Int'l Players Anthem (I Choose You) (feat. Outkast)",
-   "artist": "UGK",
-   "playcount": 7
+   "artist": "UGK"
   },
   {
    "name": "Banstyle / Sappys Curry - Remastered",
-   "artist": "Underworld",
-   "playcount": 7
+   "artist": "Underworld"
   },
   {
    "name": "Surfboy - Remastered",
-   "artist": "Underworld",
-   "playcount": 7
+   "artist": "Underworld"
   },
   {
    "name": "If You Could Save Yourself (You'd Save Us All)",
-   "artist": "Ween",
-   "playcount": 7
+   "artist": "Ween"
   },
   {
    "name": "Karangailyg Kara Hovaa (Dyngyldai)",
-   "artist": "Yat-Kha",
-   "playcount": 7
+   "artist": "Yat-Kha"
   },
   {
    "name": "The Clap (Live)",
-   "artist": "Yes",
-   "playcount": 7
+   "artist": "Yes"
   },
   {
    "name": "늪지대 (Swamp)",
-   "artist": "공중도둑",
-   "playcount": 7
+   "artist": "공중도둑"
   },
   {
    "name": "Hard To Get - Bt's Massive Groove",
-   "artist": "Choo-Ables",
-   "playcount": 7
+   "artist": "Choo-Ables"
   },
   {
    "name": "Fingers Inc. - Never No More Lonely",
-   "artist": "DJ Sprinkles",
-   "playcount": 7
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "June - Lost Area (Sprinkles' Empty Dancefloor, Orig. Ver.)",
-   "artist": "DJ Sprinkles",
-   "playcount": 7
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Water Theme (Le Château De Corail)",
-   "artist": "Domenique Dumont",
-   "playcount": 7
+   "artist": "Domenique Dumont"
   },
   {
    "name": "Want 2 - Purelink Remix",
-   "artist": "Eden Aurelius",
-   "playcount": 7
+   "artist": "Eden Aurelius"
   },
   {
    "name": "Solo (Reprise)",
-   "artist": "Frank Ocean",
-   "playcount": 7
+   "artist": "Frank Ocean"
   },
   {
    "name": "Ty Brunson / Chanelle — All of Me (Mount Rushmore's Ol' Jersey Vibe)",
-   "artist": "Gemini",
-   "playcount": 7
+   "artist": "Gemini"
   },
   {
    "name": "Alone Again (Naturally)",
-   "artist": "Gilbert O'Sullivan",
-   "playcount": 7
+   "artist": "Gilbert O'Sullivan"
   },
   {
    "name": "Little Glass Of Sherry (Little Glass Of Wine)",
-   "artist": "Graham Lambkin / Jason Lescalleet",
-   "playcount": 7
+   "artist": "Graham Lambkin / Jason Lescalleet"
   },
   {
    "name": "Franklin's Tower - Live at Pembroke Pines, FL, May 22, 1977",
-   "artist": "Grateful Dead",
-   "playcount": 7
+   "artist": "Grateful Dead"
   },
   {
    "name": "Defective Trip (Trippin')",
-   "artist": "Gravediggaz",
-   "playcount": 7
+   "artist": "Gravediggaz"
   },
   {
    "name": "Yene Nesh Wey (Amalele)",
-   "artist": "Hailu Mergia",
-   "playcount": 7
+   "artist": "Hailu Mergia"
   },
   {
    "name": "Vibin' (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 7
+   "artist": "Jai Paul"
   },
   {
    "name": "Aire (Memory)",
-   "artist": "EldIA",
-   "playcount": 6
+   "artist": "EldIA"
   },
   {
    "name": "My Melody (feat. Shawnee Taylor) [Morillo & Romero Dirty Mix] [Mixed]",
-   "artist": "Erick Morillo, Jose Nunez & Harry Romero",
-   "playcount": 6
+   "artist": "Erick Morillo, Jose Nunez & Harry Romero"
   },
   {
    "name": "Silver Springs - 2004 Remaster",
-   "artist": "Fleetwood Mac",
-   "playcount": 6
+   "artist": "Fleetwood Mac"
   },
   {
    "name": "Canal Din (Open Voice)",
-   "artist": "Georgia",
-   "playcount": 6
+   "artist": "Georgia"
   },
   {
    "name": "Singing Stream (Spring Mix)",
-   "artist": "Hiroshi Yoshimura",
-   "playcount": 6
+   "artist": "Hiroshi Yoshimura"
   },
   {
    "name": "Genevieve (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 6
+   "artist": "Jai Paul"
   },
   {
    "name": "DJ Funk - Work That Body",
-   "artist": "Jeff Mills",
-   "playcount": 6
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - The Bells",
-   "artist": "Jeff Mills",
-   "playcount": 6
+   "artist": "Jeff Mills"
   },
   {
    "name": "Joey Beltram - The Start It Up",
-   "artist": "Jeff Mills",
-   "playcount": 6
+   "artist": "Jeff Mills"
   },
   {
    "name": "Millsart - Step To Enchantment (Stringent) #1",
-   "artist": "Jeff Mills",
-   "playcount": 6
+   "artist": "Jeff Mills"
   },
   {
    "name": "Dreamworld (Dance)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 6
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Tales of the Near Future (Clairvoyance)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 6
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "Isolation - 2020 Digital Master",
-   "artist": "Joy Division",
-   "playcount": 6
+   "artist": "Joy Division"
   },
   {
    "name": "La Tierra de la Culebra (2.8.20)",
-   "artist": "Julia Bloop",
-   "playcount": 6
+   "artist": "Julia Bloop"
   },
   {
    "name": "Tomentum Totem - A Center Of Steam",
-   "artist": "Jüppala Kääpiö",
-   "playcount": 6
+   "artist": "Jüppala Kääpiö"
   },
   {
    "name": "Running Up That Hill (A Deal with God)",
-   "artist": "Kate Bush",
-   "playcount": 6
+   "artist": "Kate Bush"
   },
   {
    "name": "Pursuit of Happiness (Nightmare)",
-   "artist": "Kid Cudi",
-   "playcount": 6
+   "artist": "Kid Cudi"
   },
   {
    "name": "Pocket Calculator - 2009 Remaster",
-   "artist": "Kraftwerk",
-   "playcount": 6
+   "artist": "Kraftwerk"
   },
   {
    "name": "Mental Power & DJ SS - Blue (Side B)",
-   "artist": "LTJ Bukem",
-   "playcount": 6
+   "artist": "LTJ Bukem"
   },
   {
    "name": "MSW (Dub Mix)",
-   "artist": "Mad Rey",
-   "playcount": 6
+   "artist": "Mad Rey"
   },
   {
    "name": "For My Mans (Prelude)",
-   "artist": "Madlib",
-   "playcount": 6
+   "artist": "Madlib"
   },
   {
    "name": "J's Day Theme #3 (Support)",
-   "artist": "Madlib",
-   "playcount": 6
+   "artist": "Madlib"
   },
   {
    "name": "The Mystery (Dilla's Still Here)",
-   "artist": "Madlib",
-   "playcount": 6
+   "artist": "Madlib"
   },
   {
    "name": "Não Tem Nada Não (II)",
-   "artist": "Marcos Valle",
-   "playcount": 6
+   "artist": "Marcos Valle"
   },
   {
    "name": "Rama (Cornelius Remix)",
-   "artist": "Masakatsu Takagi",
-   "playcount": 6
+   "artist": "Masakatsu Takagi"
   },
   {
    "name": "Kawanabe Kyōsai - Pt. 1",
-   "artist": "Meitei",
-   "playcount": 6
+   "artist": "Meitei"
   },
   {
    "name": "All Blues (feat. John Coltrane, Cannonball Adderley & Bill Evans)",
-   "artist": "Miles Davis",
-   "playcount": 6
+   "artist": "Miles Davis"
   },
   {
    "name": "Right Off (feat. Steve Grossman, John McLaughlin, Herbie Hancock, Michael Henderson & Billy Cobham)",
-   "artist": "Miles Davis",
-   "playcount": 6
+   "artist": "Miles Davis"
   },
   {
    "name": "So What (feat. John Coltrane, Cannonball Adderley & Bill Evans)",
-   "artist": "Miles Davis",
-   "playcount": 6
+   "artist": "Miles Davis"
   },
   {
    "name": "Give Up the Goods (Just Step) (feat. Big Noyd)",
-   "artist": "Mobb Deep",
-   "playcount": 6
+   "artist": "Mobb Deep"
   },
   {
    "name": "Temperature's Rising (feat. Crystal Johnson)",
-   "artist": "Mobb Deep",
-   "playcount": 6
+   "artist": "Mobb Deep"
   },
   {
    "name": "(New Wave) Polly - BBC Mark Goodier Session",
-   "artist": "Nirvana",
-   "playcount": 6
+   "artist": "Nirvana"
   },
   {
    "name": "about a girl - live",
-   "artist": "Nirvana",
-   "playcount": 6
+   "artist": "Nirvana"
   },
   {
    "name": "I Know What I Know (with General M.D.Shirinda & The Gaza Sisters)",
-   "artist": "Paul Simon",
-   "playcount": 6
+   "artist": "Paul Simon"
   },
   {
    "name": "Air À Danser - Remastered 2008",
-   "artist": "Penguin Cafe Orchestra",
-   "playcount": 6
+   "artist": "Penguin Cafe Orchestra"
   },
   {
    "name": "Lobby (Velo Mix)",
-   "artist": "Playboi Carti",
-   "playcount": 6
+   "artist": "Playboi Carti"
   },
   {
    "name": "cskass (ule)",
-   "artist": "R. Yaba",
-   "playcount": 6
+   "artist": "R. Yaba"
   },
   {
    "name": "Stevie (For Steven S.)",
-   "artist": "Royal Trux",
-   "playcount": 6
+   "artist": "Royal Trux"
   },
   {
    "name": "The Look (Director's Cut Signature Mix) [Mixed]",
-   "artist": "Spencer Parker & Dan Beaumont",
-   "playcount": 6
+   "artist": "Spencer Parker & Dan Beaumont"
   },
   {
    "name": "Friendly Pressure - Into The Sunshine Mix",
-   "artist": "Sunship",
-   "playcount": 6
+   "artist": "Sunship"
   },
   {
    "name": "Heaven (Smoove Step Mix)",
-   "artist": "Sunship",
-   "playcount": 6
+   "artist": "Sunship"
   },
   {
    "name": "Burning Down the House - 2005 Remaster",
-   "artist": "Talking Heads",
-   "playcount": 6
+   "artist": "Talking Heads"
   },
   {
    "name": "Moon Rocks - 2005 Remaster",
-   "artist": "Talking Heads",
-   "playcount": 6
+   "artist": "Talking Heads"
   },
   {
    "name": "Pulled Up - Live at WCOZ, Massachusetts; 2004 Remaster",
-   "artist": "Talking Heads",
-   "playcount": 6
+   "artist": "Talking Heads"
   },
   {
    "name": "Disney Girls (1957)",
-   "artist": "The Beach Boys",
-   "playcount": 6
+   "artist": "The Beach Boys"
   },
   {
    "name": "Heroes and Villains (Stereo Mix)",
-   "artist": "The Beach Boys",
-   "playcount": 6
+   "artist": "The Beach Boys"
   },
   {
    "name": "Come And Get It (Studio Demo)",
-   "artist": "The Beatles",
-   "playcount": 6
+   "artist": "The Beatles"
   },
   {
    "name": "Swingin Party - 2008 Remaster",
-   "artist": "The Replacements",
-   "playcount": 6
+   "artist": "The Replacements"
   },
   {
    "name": "Stop Me If You Think You've Heard This One Before - 2011 Remaster",
-   "artist": "The Smiths",
-   "playcount": 6
+   "artist": "The Smiths"
   },
   {
    "name": "I've Been Waitin' for Tomorrow (All of My Life)",
-   "artist": "The The",
-   "playcount": 6
+   "artist": "The The"
   },
   {
    "name": "I'm Waiting For the Man - Live",
-   "artist": "The Velvet Underground",
-   "playcount": 6
+   "artist": "The Velvet Underground"
   },
   {
    "name": "New Age - live",
-   "artist": "The Velvet Underground",
-   "playcount": 6
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Sister Ray - Live",
-   "artist": "The Velvet Underground",
-   "playcount": 6
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Some Kinda Love - live",
-   "artist": "The Velvet Underground",
-   "playcount": 6
+   "artist": "The Velvet Underground"
   },
   {
    "name": "Eruption (Gonna Get My Hair Cut at the End of the Summer)",
-   "artist": "Tobacco",
-   "playcount": 6
+   "artist": "Tobacco"
   },
   {
    "name": "One More Day (No Word)",
-   "artist": "Todd Rundgren",
-   "playcount": 6
+   "artist": "Todd Rundgren"
   },
   {
    "name": "Periodic Limb Movement Disorder (light therapy)",
-   "artist": "Ubik",
-   "playcount": 6
+   "artist": "Ubik"
   },
   {
    "name": "Jumbo - Live / Brussels, Belgium / 1999",
-   "artist": "Underworld",
-   "playcount": 6
+   "artist": "Underworld"
   },
   {
    "name": "Mmm...Skyscraper I Love You - Remastered",
-   "artist": "Underworld",
-   "playcount": 6
+   "artist": "Underworld"
   },
   {
    "name": "Christmas Time Is Here (instrumental)",
-   "artist": "Vince Guaraldi Trio",
-   "playcount": 6
+   "artist": "Vince Guaraldi Trio"
   },
   {
    "name": "Paper and Iron (Notes and Coins)",
-   "artist": "XTC",
-   "playcount": 6
+   "artist": "XTC"
   },
   {
    "name": "흙 (Dirt)",
-   "artist": "공중도둑",
-   "playcount": 6
+   "artist": "공중도둑"
   },
   {
    "name": "Shabba (feat. A$AP Rocky)",
-   "artist": "A$AP Ferg",
-   "playcount": 6
+   "artist": "A$AP Ferg"
   },
   {
    "name": "Praise the Lord (Da Shine) (feat. Skepta)",
-   "artist": "A$AP Rocky",
-   "playcount": 6
+   "artist": "A$AP Rocky"
   },
   {
    "name": "Part Two (Live)",
-   "artist": "Aidan Baker",
-   "playcount": 6
+   "artist": "Aidan Baker"
   },
   {
    "name": "Girl/Boy Song (£18 Snare Rush Mix)",
-   "artist": "Aphex Twin",
-   "playcount": 6
+   "artist": "Aphex Twin"
   },
   {
    "name": "produk 29 [101]",
-   "artist": "Aphex Twin",
-   "playcount": 6
+   "artist": "Aphex Twin"
   },
   {
    "name": "Baby I (Director's Cut Remix) [Mixed]",
-   "artist": "Ariana Grande",
-   "playcount": 6
+   "artist": "Ariana Grande"
   },
   {
    "name": "Hand of Doom - 2012 - Remaster",
-   "artist": "Black Sabbath",
-   "playcount": 6
+   "artist": "Black Sabbath"
   },
   {
    "name": "Sabbra Cadabra - 2013 Remaster",
-   "artist": "Black Sabbath",
-   "playcount": 6
+   "artist": "Black Sabbath"
   },
   {
    "name": "Illusion (Fern Lake)",
-   "artist": "Candy Claws",
-   "playcount": 6
+   "artist": "Candy Claws"
   },
   {
    "name": "Poor Moon - Bonus Track",
-   "artist": "Canned Heat",
-   "playcount": 6
+   "artist": "Canned Heat"
   },
   {
    "name": "I Can't Go For That (No Can Do)",
-   "artist": "Daryl Hall & John Oates",
-   "playcount": 6
+   "artist": "Daryl Hall & John Oates"
   },
   {
    "name": "Get Involved (Director's Cut Classic House Mix) [Mixed]",
-   "artist": "Dbow",
-   "playcount": 6
+   "artist": "Dbow"
   },
   {
    "name": "Hard Ton - Food Of Love (Sprinkles' Dubberama)",
-   "artist": "DJ Sprinkles",
-   "playcount": 6
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Streets - Mixed",
-   "artist": "DJ Sprinkles",
-   "playcount": 6
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Damien Zala - Shake Vibration",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 6
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Nick Beringer - Gasp",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 6
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "My Sweet Lord (2014 Remaster)",
-   "artist": "George Harrison",
-   "playcount": 5
+   "artist": "George Harrison"
   },
   {
    "name": "Kingdom 1 (Knobs)",
-   "artist": "Graham Lambkin / Jason Lescalleet",
-   "playcount": 5
+   "artist": "Graham Lambkin / Jason Lescalleet"
   },
   {
    "name": "Kingdom 2 (Laughing)",
-   "artist": "Graham Lambkin / Jason Lescalleet",
-   "playcount": 5
+   "artist": "Graham Lambkin / Jason Lescalleet"
   },
   {
    "name": "Kingdom 3 (Submerge)",
-   "artist": "Graham Lambkin / Jason Lescalleet",
-   "playcount": 5
+   "artist": "Graham Lambkin / Jason Lescalleet"
   },
   {
    "name": "Truckin' - Live in London 1972",
-   "artist": "Grateful Dead",
-   "playcount": 5
+   "artist": "Grateful Dead"
   },
   {
    "name": "B.I.B.L.E. (Basic Instructions Before Leaving Earth)",
-   "artist": "GZA/Genius",
-   "playcount": 5
+   "artist": "GZA/Genius"
   },
   {
    "name": "Chix (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 5
+   "artist": "Jai Paul"
   },
   {
    "name": "Zion Wolf Theme (unfinished)",
-   "artist": "Jai Paul",
-   "playcount": 5
+   "artist": "Jai Paul"
   },
   {
    "name": "DJ Funk - Run",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "H&M - Suspense",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "Jeff Mills - Humana",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "jeff mills - life cycle #1",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "Rhythim Is Rhythim - Strings Of Life",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "The Shadow - The Other Side",
-   "artist": "Jeff Mills",
-   "playcount": 5
+   "artist": "Jeff Mills"
   },
   {
    "name": "PACKAPUNCH (feat. Danny Brown)",
-   "artist": "Joey Valence & Brae",
-   "playcount": 5
+   "artist": "Joey Valence & Brae"
   },
   {
    "name": "Fahey Blows His Nose - Live",
-   "artist": "John Fahey",
-   "playcount": 5
+   "artist": "John Fahey"
   },
   {
    "name": "Cocaine Blues - Live at Folsom State Prison, Folsom, CA - January 1968",
-   "artist": "Johnny Cash",
-   "playcount": 5
+   "artist": "Johnny Cash"
   },
   {
    "name": "A Vampire Dances (Symmetry)",
-   "artist": "Jon Hassell & Farafina",
-   "playcount": 5
+   "artist": "Jon Hassell & Farafina"
   },
   {
    "name": "áfrica brasil (zumbi)",
-   "artist": "Jorge Ben",
-   "playcount": 5
+   "artist": "Jorge Ben"
   },
   {
    "name": "Disorder - 2019 Digital Master",
-   "artist": "Joy Division",
-   "playcount": 5
+   "artist": "Joy Division"
   },
   {
    "name": "The Archetypal Man - Remastered",
-   "artist": "Judee Sill",
-   "playcount": 5
+   "artist": "Judee Sill"
   },
   {
    "name": "The Lamb Ran Away With The Crown - Remastered",
-   "artist": "Judee Sill",
-   "playcount": 5
+   "artist": "Judee Sill"
   },
   {
    "name": "Title (Wii Sports)",
-   "artist": "Kazumi Totaka",
-   "playcount": 5
+   "artist": "Kazumi Totaka"
   },
   {
    "name": "Pocket Calculator - live",
-   "artist": "Kraftwerk",
-   "playcount": 5
+   "artist": "Kraftwerk"
   },
   {
    "name": "If We Try - Ambient Dub",
-   "artist": "Lectroluv",
-   "playcount": 5
+   "artist": "Lectroluv"
   },
   {
    "name": "Mista Thug Isolation (12th Movement)",
-   "artist": "Lil Ugly Mane",
-   "playcount": 5
+   "artist": "Lil Ugly Mane"
   },
   {
    "name": "Hidden Power (Phase δ)",
-   "artist": "Machine Girl",
-   "playcount": 5
+   "artist": "Machine Girl"
   },
   {
    "name": "覆面調査員 (GabberTrap Mix) [Frenesi remix]",
-   "artist": "Machine Girl",
-   "playcount": 5
+   "artist": "Machine Girl"
   },
   {
    "name": "Beat Provider (Through the Years)",
-   "artist": "Madlib",
-   "playcount": 5
+   "artist": "Madlib"
   },
   {
    "name": "Get Dollaz (24-7)",
-   "artist": "Madlib",
-   "playcount": 5
+   "artist": "Madlib"
   },
   {
    "name": "In Jah Hands (Dilla's Lament)",
-   "artist": "Madlib",
-   "playcount": 5
+   "artist": "Madlib"
   },
   {
    "name": "Antrieb - Mix Cut",
-   "artist": "Meta.83",
-   "playcount": 5
+   "artist": "Meta.83"
   },
   {
    "name": "Ommadawn Pt.2 / On Horseback - 2010 Mix",
-   "artist": "Mike Oldfield",
-   "playcount": 5
+   "artist": "Mike Oldfield"
   },
   {
    "name": "History Lesson - Part II",
-   "artist": "Minutemen",
-   "playcount": 5
+   "artist": "Minutemen"
   },
   {
    "name": "Q.U. - Hectic",
-   "artist": "Mobb Deep",
-   "playcount": 5
+   "artist": "Mobb Deep"
   },
   {
    "name": "Right Back At You (feat. Ghostface Killah, Raekwon & Big Noyd)",
-   "artist": "Mobb Deep",
-   "playcount": 5
+   "artist": "Mobb Deep"
   },
   {
    "name": "The Workshop (Interlude)",
-   "artist": "Mr. Wax",
-   "playcount": 5
+   "artist": "Mr. Wax"
   },
   {
    "name": "yelepio (test 28)",
-   "artist": "/F",
-   "playcount": 5
+   "artist": "/F"
   },
   {
    "name": "b.b.v.u. (give me give me)",
-   "artist": "800 Cherries",
-   "playcount": 5
+   "artist": "800 Cherries"
   },
   {
    "name": "Brand New Guy (feat. ScHoolboy Q)",
-   "artist": "A$AP Rocky",
-   "playcount": 5
+   "artist": "A$AP Rocky"
   },
   {
    "name": "Ce matin-là - From \"L'uomo in più\"",
-   "artist": "Air",
-   "playcount": 5
+   "artist": "Air"
   },
   {
    "name": "Down In A Hole (2022 Remaster)",
-   "artist": "Alice in Chains",
-   "playcount": 5
+   "artist": "Alice in Chains"
   },
   {
    "name": "Silhouette Couple (On the Beach)",
-   "artist": "Andrew Pekler",
-   "playcount": 5
+   "artist": "Andrew Pekler"
   },
   {
    "name": "Acreage III (Free Map)",
-   "artist": "Bastian Void",
-   "playcount": 5
+   "artist": "Bastian Void"
   },
   {
    "name": "Up North (Lunar Mix)",
-   "artist": "Bastian Void",
-   "playcount": 5
+   "artist": "Bastian Void"
   },
   {
    "name": "Drip (Remix)",
-   "artist": "Black Kray",
-   "playcount": 5
+   "artist": "Black Kray"
   },
   {
    "name": "ICECREAM$TONEDSTRIPPAH$ (OUTRO)",
-   "artist": "Black Kray",
-   "playcount": 5
+   "artist": "Black Kray"
   },
   {
    "name": "COLD VISIONS (OUTRO 2)",
-   "artist": "Bladee",
-   "playcount": 5
+   "artist": "Bladee"
   },
   {
    "name": "Say Word (feat. Jungle Brown)",
-   "artist": "Camp Lo",
-   "playcount": 5
+   "artist": "Camp Lo"
   },
   {
    "name": "Night Ela (Mystic Thing)",
-   "artist": "Candy Claws",
-   "playcount": 5
+   "artist": "Candy Claws"
   },
   {
    "name": "I Get Along Without You Very Well (Except Sometimes)",
-   "artist": "Chet Baker",
-   "playcount": 5
+   "artist": "Chet Baker"
   },
   {
    "name": "Zombie Warfare (Can’t Let You Down)",
-   "artist": "Chrome",
-   "playcount": 5
+   "artist": "Chrome"
   },
   {
    "name": "Rapid Winds - 75 MPH Mix",
-   "artist": "Classic Man",
-   "playcount": 5
+   "artist": "Classic Man"
   },
   {
    "name": "392 - 2509:Walk This Way",
-   "artist": "Club Casualties",
-   "playcount": 5
+   "artist": "Club Casualties"
   },
   {
    "name": "Sound and Vision - 2017 Remaster",
-   "artist": "David Bowie",
-   "playcount": 5
+   "artist": "David Bowie"
   },
   {
    "name": "Pacifics - From The Original Motion Picture Soundtrack “N.Y. Is Red Hot\"",
-   "artist": "Digable Planets",
-   "playcount": 5
+   "artist": "Digable Planets"
   },
   {
    "name": "Drank, Kush, Barz (feat. DJ Spinn)",
-   "artist": "DJ Rashad",
-   "playcount": 5
+   "artist": "DJ Rashad"
   },
   {
    "name": "Inga's Creme - Mixed",
-   "artist": "DJ Sprinkles",
-   "playcount": 5
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Kuniyuki - Between Shadow And Lights (Sprinkles' Lights Out Dub)",
-   "artist": "DJ Sprinkles",
-   "playcount": 5
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Parallax Beat Brothers - Exhalation (dj sprinkles' deep breath mix)",
-   "artist": "DJ Sprinkles",
-   "playcount": 5
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Sloppy 42nds (Sprinkles' Deeperama)",
-   "artist": "DJ Sprinkles",
-   "playcount": 5
+   "artist": "DJ Sprinkles"
   },
   {
    "name": "Garage Shelter - Attempt (Lonely Heart Dub)",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 5
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Sameed - Bad You",
-   "artist": "DJ Sprinkles & Hardrock Striker",
-   "playcount": 5
+   "artist": "DJ Sprinkles & Hardrock Striker"
   },
   {
    "name": "Hot Stuff (Frankie Knuckles & Eric Kupper as Director's Cut Signature Mix) [Mixed]",
-   "artist": "Donna Summer",
-   "playcount": 5
+   "artist": "Donna Summer"
   },
   {
    "name": "Levitating (feat. DaBaby)",
-   "artist": "Dua Lipa",
-   "playcount": 5
+   "artist": "Dua Lipa"
   },
   {
    "name": "Rio - 2001 Remaster",
-   "artist": "Duran Duran",
-   "playcount": 5
+   "artist": "Duran Duran"
   },
   {
    "name": "I'll Be There (Original 1993 Mix)",
-   "artist": "Enrico Mantini",
-   "playcount": 5
+   "artist": "Enrico Mantini"
   },
   {
    "name": "Altered States - Club Mix",
-   "artist": "Fallout",
-   "playcount": 5
+   "artist": "Fallout"
   },
   {
    "name": "Jeun Ko Ku (Chop'n Quench)",
-   "artist": "Fela Kuti",
-   "playcount": 5
+   "artist": "Fela Kuti"
   },
   {
    "name": "Blue Monday '88 - 2015 Remaster",
-   "artist": "New Order",
-   "playcount": 5
+   "artist": "New Order"
   },
   {
    "name": "(New Wave) Polly (BBC Mark Goodier Session)",
-   "artist": "Nirvana",
-   "playcount": 5
+   "artist": "Nirvana"
   },
   {
    "name": "come as you are - live",
-   "artist": "Nirvana",
-   "playcount": 5
+   "artist": "Nirvana"
   },
   {
    "name": "lake of fire - live",
-   "artist": "Nirvana",
-   "playcount": 5
+   "artist": "Nirvana"
   },
   {
    "name": "Turnaround (BBC John Peel Session 1990)",
-   "artist": "Nirvana",
-   "playcount": 5
+   "artist": "Nirvana"
   },
   {
    "name": "Move On (Let Go) (De-stress Mix)",
-   "artist": "Octo Octa",
-   "playcount": 5
+   "artist": "Octo Octa"
   },
   {
    "name": "Groovin' - 2014 Remaster",
-   "artist": "Paul Carrack",
-   "playcount": 5
+   "artist": "Paul Carrack"
   },
   {
    "name": "Summer Babe - Winter Version",
-   "artist": "Pavement",
-   "playcount": 5
+   "artist": "Pavement"
   },
   {
    "name": "In The Back Of A Taxi - 2008 Digital Remaster",
-   "artist": "Penguin Cafe Orchestra",
-   "playcount": 5
+   "artist": "Penguin Cafe Orchestra"
   },
   {
    "name": "Isle of View (Music for Helicopter Pilots)",
-   "artist": "Penguin Cafe Orchestra",
-   "playcount": 5
+   "artist": "Penguin Cafe Orchestra"
   },
   {
    "name": "Ascendant Cancer 29° 1st [Eclipse @ 4:24, Moon-Libra*]",
-   "artist": "Pisaura",
-   "playcount": 5
+   "artist": "Pisaura"
   },
   {
    "name": "Life We Live (feat. Namond Lumpkin & Edgar Fletcher)",
-   "artist": "Project Pat",
-   "playcount": 5
+   "artist": "Project Pat"
   },
   {
    "name": "Psyche - Neurotic Behavior",
-   "artist": "Psyche / BFC",
-   "playcount": 5
+   "artist": "Psyche / BFC"
   },
   {
    "name": "Butterfly Jam - xphresh Bad Girl version",
-   "artist": "Purelink",
-   "playcount": 5
+   "artist": "Purelink"
   },
   {
    "name": "Butterfly Jam - xphresh Good Girl No Infringement dub",
-   "artist": "Purelink",
-   "playcount": 5
+   "artist": "Purelink"
   },
   {
    "name": "Just Being Fooled - 4/4 Mix",
-   "artist": "Qualifide",
-   "playcount": 5
+   "artist": "Qualifide"
   },
   {
    "name": "Just Being Fooled - Broken Beats Mix",
-   "artist": "Qualifide",
-   "playcount": 5
+   "artist": "Qualifide"
   },
   {
    "name": "I Look Around - 2023 Remaster",
-   "artist": "Rain Parade",
-   "playcount": 5
+   "artist": "Rain Parade"
   },
   {
    "name": "Feel It (Don't Fight It) - Live at the Harlem Square Club, Miami, FL - January 1963",
-   "artist": "Sam Cooke",
-   "playcount": 5
+   "artist": "Sam Cooke"
   },
   {
    "name": "Medley: It's All Right / For Sentimental Reasons - Live at the Harlem Square Club, Miami, FL - January 1963",
-   "artist": "Sam Cooke",
-   "playcount": 5
+   "artist": "Sam Cooke"
   },
   {
    "name": "plainsong - sine bubble embossed dub",
-   "artist": "Seefeel",
-   "playcount": 5
+   "artist": "Seefeel"
   },
   {
    "name": "04.3 B2 - Lowtec Extendend Mix",
-   "artist": "Seidensticker",
-   "playcount": 5
+   "artist": "Seidensticker"
   }
  ]
 }
