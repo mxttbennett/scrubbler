@@ -61,6 +61,9 @@ export function groupKeyOf(group: EditGroup): string {
   return createHash('sha256').update([group.kind, ...keys].join('|')).digest('hex');
 }
 
+/** resumable() bakes its token into each edit; proposing never POSTs, so it needs no real one. */
+export const CARRY_OVER_TOKEN = 'carry-over-has-no-token';
+
 export class Approvals {
   constructor(private readonly deps: ApprovalDeps) {}
 
@@ -220,11 +223,15 @@ export class Approvals {
   }
 
   /**
-   * The blocker fix: approval mode must never let the resume path write a carried row without a
-   * decision. Called instead of applyCarried, never alongside it.
+   * A carried row belonging to a gated rule must never be written without a decision. Proposing
+   * needs no CSRF token, hence the sentinel — and because proposing moves these rows to
+   * `awaiting_approval`, a later resumable() cannot see them. Never runs for the *same row* as
+   * applyCarried; both may run in one cycle when tiers are mixed.
    */
-  async carryOver(): Promise<{ proposed: number; duplicate: number; failed: number }> {
-    const carried = this.deps.executor.resumable('carry-over-has-no-token');
+  async carryOver(
+    rows?: ResumableEdit[],
+  ): Promise<{ proposed: number; duplicate: number; failed: number }> {
+    const carried = rows ?? this.deps.executor.resumable(CARRY_OVER_TOKEN);
     const out = { proposed: 0, duplicate: 0, failed: 0 };
     for (const group of groupCarried(carried)) {
       const result = await this.propose(group);

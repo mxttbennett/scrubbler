@@ -367,7 +367,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
         },
         {
           name: 'rule',
-          value: `\`${hit.rule}\` is off — set RULES_EXPERIMENTAL_ENABLED to turn it on`,
+          value: `\`${hit.rule}\` is off — set it to \`gated\` or \`auto\` in RULES to turn it on`,
         },
       ],
       footer: {

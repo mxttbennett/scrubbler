@@ -77,7 +77,7 @@ describe('Reporter.shadow', () => {
     await reporter.shadow(HIT, 0);
 
     expect(sent[0]!.fields?.find((f) => f.name === 'rule')?.value).toContain(
-      'RULES_EXPERIMENTAL_ENABLED',
+      'RULES',
     );
   });
 

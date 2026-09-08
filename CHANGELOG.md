@@ -7,6 +7,26 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.1.0] - 2026-09-08
+
+- Rule groups now have a **tier** instead of being on or off: `auto` applies as before, `gated` fires
+  but turns every candidate into a Discord card with **Apply**/**Never**, and `off` never fires. Set
+  them with `RULES=remaster:auto,live-album:gated`; a group you do not name keeps its default. This
+  is what "experimental" always meant to gesture at — how much supervision a rule gets — except it is
+  now your choice per rule rather than a fixed property of the rule.
+- Tiers can be mixed within one sweep, and within one candidate: a candidate whose tuples span both
+  tiers proposes the gated ones and writes the rest. A tuple tagged with both an auto and a gated
+  group is gated, because a tuple is a single request and cannot be half-applied.
+- `RULES_ENABLED` and `RULES_EXPERIMENTAL_ENABLED` still work, map to `auto`, and log a deprecation
+  notice; they cannot be combined with `RULES`. Nothing in an existing `.env` needs to change.
+- `APPROVAL_MODE=true` is now shorthand for promoting every `auto` group to `gated`, so its
+  behaviour is unchanged.
+- Shadow mode reports for any rule that is `off`, not only the ones that used to be called
+  experimental — so a default-on rule you switch off can now be surveyed too.
+- `/scrub status` gains a `rules` line naming the groups by tier, and `/scrub pending` no longer
+  claims there is nothing to approve when a gated rule is configured without `APPROVAL_MODE`.
+- Any gated group now requires the Discord owner/guild config that only `APPROVAL_MODE=true` used to.
+
 ## [1.0.1] - 2026-09-08
 
 - Internal: the release step no longer fails when the tag already points at the commit being

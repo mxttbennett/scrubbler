@@ -1,5 +1,5 @@
 import { cleanTitle, type OverrideLookup } from './engine.js';
-import { EXPERIMENTAL_GROUPS, type Field, type GroupName, MARKER_GROUPS } from './markers.js';
+import { ALL_GROUPS, type Field, type GroupName, MARKER_GROUPS } from './markers.js';
 
 export interface ShadowVerdict {
   rule: GroupName;
@@ -13,7 +13,8 @@ export interface ShadowHit extends ShadowVerdict {
 }
 
 /**
- * What each *disabled* experimental rule would do to this title, and nothing else.
+ * What each rule that is *off* would do to this title, and nothing else. An `auto` or `gated` rule is
+ * excluded by the `enabled` check below — a gated rule already shows its candidates as real cards.
  *
  * The comparison is against the currently-enabled result, not the raw title: most titles are already
  * handled by a stable group, and the only interesting event is an experimental group producing a
@@ -33,7 +34,7 @@ export function shadowVerdicts(
   const actual = cleanTitle(title, field, enabled, override)?.clean ?? null;
   const out: ShadowVerdict[] = [];
 
-  for (const rule of EXPERIMENTAL_GROUPS) {
+  for (const rule of ALL_GROUPS) {
     if (enabled.has(rule)) continue;
     if (!MARKER_GROUPS[rule].appliesTo.includes(field)) continue;
 

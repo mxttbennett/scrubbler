@@ -29,6 +29,7 @@ const transport: ProposalTransport = {
 function harness(
   opts: {
     approvalMode?: boolean;
+    gatedRules?: ReadonlySet<string>;
     dryRun?: boolean;
     applyNow?: () => Promise<string>;
     shadowMode?: boolean;
@@ -63,7 +64,7 @@ function harness(
       applied.push(rule);
       return opts.applyNow === undefined ? 'Applied now: 1 write(s), 1 verified.' : await opts.applyNow();
     },
-    approvalMode: opts.approvalMode ?? true,
+    gatedRules: opts.gatedRules ?? new Set<string>(opts.approvalMode ?? true ? ['remaster'] : []),
     dryRun: opts.dryRun ?? false,
     shadowStore,
     shadowMode: opts.shadowMode ?? true,
@@ -453,9 +454,9 @@ describe('approval-only commands with the mode off', () => {
     const pending = (await h.commands.handle('pending')).text;
     const approveAll = (await h.commands.handle('approve-all')).text;
 
-    expect(pending).toContain('Approval mode is off');
-    expect(approveAll).toContain('Approval mode is off');
-    expect(pending).toContain('APPROVAL_MODE=true');
+    expect(pending).toContain('No rule is gated');
+    expect(approveAll).toContain('No rule is gated');
+    expect(pending).toContain('gated');
   });
 
   it('still answers status and stats with the mode off', async () => {
@@ -496,20 +497,49 @@ describe('/scrub shadow', () => {
     expect(text).toContain('live-track 1');
   });
 
-  it('refuses a rule that is not experimental', async () => {
+  /** Every group is nameable now that tiers are the operator's choice, so only a typo is refused. */
+  /** A gated tier creates proposals on its own, so the command surface must not deny them. */
+  it('offers the approval commands for a gated rule with no APPROVAL_MODE', async () => {
+    const h = harness({ gatedRules: new Set(['live-album']) });
+
+    expect((await h.commands.handle('pending')).text).not.toContain('No rule is gated');
+    expect((await h.commands.handle('approve-all')).text).not.toContain('No rule is gated');
+  });
+
+  it('names the groups by tier on the status card', async () => {
+    const h = harness({
+      gatedRules: new Set(['live-album']),
+      enabledRules: new Set(['remaster', 'live-album']),
+    });
+
+    const text = (await h.commands.handle('status')).text;
+
+    expect(text).toContain('1 auto (remaster)');
+    expect(text).toContain('1 gated (live-album)');
+  });
+
+  it('refuses a name that is not a rule at all', async () => {
     const h = harness();
 
-    expect((await h.commands.handle('shadow', { rule: 'remaster' })).text).toContain(
-      'not an experimental rule',
+    expect((await h.commands.handle('shadow', { rule: 'remastr' })).text).toContain(
+      'is not a rule',
     );
   });
 
-  it('says so when the named rule is already enabled, not that it is clean', async () => {
+  it('accepts a default-on rule, which is shadowable once it is off', async () => {
+    const h = harness();
+
+    expect((await h.commands.handle('shadow', { rule: 'remaster' })).text).not.toContain(
+      'is not a rule',
+    );
+  });
+
+  it('says so when the named rule is not off, not that it is clean', async () => {
     const h = harness({ enabledRules: new Set(['live-track']) });
 
     const text = (await h.commands.handle('shadow', { rule: 'live-track' })).text;
 
-    expect(text).toContain('already enabled');
+    expect(text).toContain('is not off');
     expect(text).not.toContain('Nothing recorded');
   });
 

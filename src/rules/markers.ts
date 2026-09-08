@@ -18,9 +18,22 @@ export type GroupName =
  */
 export type RuleTag = GroupName | 'custom';
 
+/**
+ * How much supervision a group gets: `auto` applies, `gated` proposes a Discord card first, `off`
+ * never fires. Deliberately the operator's choice per group rather than a property of the rule.
+ */
+export type Tier = 'auto' | 'gated' | 'off';
+
+const TIERS: readonly Tier[] = ['auto', 'gated', 'off'];
+
+export function isTier(value: string): value is Tier {
+  return (TIERS as readonly string[]).includes(value);
+}
+
 export interface MarkerGroup {
   appliesTo: readonly Field[];
-  experimental: boolean;
+  /** The tier this group takes when `RULES` does not name it. */
+  defaultTier: 'auto' | 'off';
   patterns: readonly RegExp[];
 }
 
@@ -31,12 +44,12 @@ const YEAR = String.raw`(?:19|20)\d{2}`;
 // Rotterdam 1984`), so anything matched by shape rather than by name destroys real metadata.
 function group(
   appliesTo: readonly Field[],
-  experimental: boolean,
+  defaultTier: 'auto' | 'off',
   sources: readonly string[],
 ): MarkerGroup {
   return {
     appliesTo,
-    experimental,
+    defaultTier,
     patterns: sources.map((p) => new RegExp(String.raw`^\s*(?:${p})\s*$`, 'iu')),
   };
 }
@@ -111,7 +124,7 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // and enumerating them by hand kept missing one ("2006 Remastered Version", "Expanded 2004
   // Remaster"). Every combination still requires the literal word "remaster", so this stays a
   // closed catalogue of named cruft and never matches by shape.
-  remaster: group(['track', 'album'], false, [
+  remaster: group(['track', 'album'], 'auto', [
     ...remasterOrders(),
     // Redundant with editionOrders, kept so these stay tagged `remaster`: `groups` is persisted.
     String.raw`expanded\s*&\s*remastered`,
@@ -121,14 +134,14 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   // Generated for the same reason as remaster: the words combine freely ("Expanded Deluxe Edition",
   // "30th Anniversary Super Deluxe") and hand-listing the combinations kept missing one.
-  edition: group(['track', 'album'], false, [
+  edition: group(['track', 'album'], 'auto', [
     editionOrders(),
     String.raw`bonus\s+tracks?\s+version`,
     String.raw`expanded\s+${YEAR}`,
     String.raw`deluxe\s+${YEAR}`,
   ]),
 
-  bonus: group(['track', 'album'], false, [
+  bonus: group(['track', 'album'], 'auto', [
     String.raw`bonus\s+tracks?`,
     String.raw`bonus\s+versions?`,
     String.raw`explicit(?:\s+version)?`,
@@ -137,36 +150,36 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   // Split from feat-track because deleting a credit from an *album* title drops store cruft, while
   // deleting it from a track title destroys real information.
-  'feat-album': group(['album'], true, [
+  'feat-album': group(['album'], 'off', [
     String.raw`feat\.?\s+.+`,
     String.raw`featuring\s+.+`,
     String.raw`ft\.?\s+.+`,
   ]),
 
-  'feat-track': group(['track'], true, [
+  'feat-track': group(['track'], 'off', [
     String.raw`feat\.?\s+.+`,
     String.raw`featuring\s+.+`,
     String.raw`ft\.?\s+.+`,
   ]),
 
-  'ep-single': group(['album'], true, [String.raw`ep`, String.raw`single`]),
+  'ep-single': group(['album'], 'off', [String.raw`ep`, String.raw`single`]),
 
   // Split by field, and both off. A live *album* labelled "(Live)" is usually a release that only
   // exists live, so the label is redundant — 14 in a real library, none with a studio twin. A live
   // *track* sits beside the studio take you also own, and merging them is irreversible. Use shadow
   // mode to see what either would do before enabling it.
-  'live-album': group(['album'], true, [String.raw`live`]),
+  'live-album': group(['album'], 'off', [String.raw`live`]),
 
-  'live-track': group(['track'], true, [String.raw`live`]),
+  'live-track': group(['track'], 'off', [String.raw`live`]),
 
   // These name *which recording* it is, so merging them loses information: off by default.
-  version: group(['track', 'album'], true, [
+  version: group(['track', 'album'], 'off', [
     String.raw`radio\s+edit`,
     String.raw`single\s+version`,
     String.raw`album\s+version`,
   ]),
 
-  'mono-stereo': group(['track', 'album'], true, [
+  'mono-stereo': group(['track', 'album'], 'off', [
     String.raw`mono(?:\s+version)?`,
     String.raw`stereo(?:\s+version)?`,
   ]),
@@ -174,9 +187,12 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
 export const ALL_GROUPS = Object.keys(MARKER_GROUPS) as GroupName[];
 
-export const DEFAULT_ENABLED = ALL_GROUPS.filter((g) => !MARKER_GROUPS[g].experimental);
+export const DEFAULT_TIERS: Record<GroupName, Tier> = Object.fromEntries(
+  ALL_GROUPS.map((g) => [g, MARKER_GROUPS[g].defaultTier]),
+) as Record<GroupName, Tier>;
 
-export const EXPERIMENTAL_GROUPS = ALL_GROUPS.filter((g) => MARKER_GROUPS[g].experimental);
+export const DEFAULT_ENABLED = ALL_GROUPS.filter((g) => MARKER_GROUPS[g].defaultTier === 'auto');
+
 
 export function isGroupName(value: string): value is GroupName {
   return Object.hasOwn(MARKER_GROUPS, value);

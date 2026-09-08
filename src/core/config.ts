@@ -3,6 +3,9 @@ import { z } from 'zod';
 import {
   ALL_GROUPS,
   DEFAULT_ENABLED,
+  DEFAULT_TIERS,
+  type Tier,
+  isTier,
   type GroupName,
   MARKER_GROUPS,
   isGroupName,
@@ -28,6 +31,7 @@ const envSchema = z.object({
   SHADOW_MAX_PER_SWEEP: z.string().default('50'),
   DIGEST_EVERY: z.string().default('1'),
   DRY_RUN: z.string().default('true'),
+  RULES: z.string().default(''),
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
   RULES_EXPERIMENTAL_ENABLED: z.string().default(''),
   SWEEP_INTERVAL_MS: z.string().default('21600000'),
@@ -63,7 +67,14 @@ export interface Config {
   shadowMaxPerSweep: number;
   digestEvery: number;
   dryRun: boolean;
+  /** Every group's tier. `enabledGroups` and `gatedGroups` are views of this. */
+  tiers: Record<GroupName, Tier>;
+  /** auto ∪ gated — what the rule engine may fire. */
   enabledGroups: Set<GroupName>;
+  /** Firing, but a candidate must be approved in Discord before it is written. */
+  gatedGroups: Set<GroupName>;
+  /** Deprecation notices for the caller to log; empty when the new config surface is used. */
+  configWarnings: string[];
   sweepIntervalMs: number;
   fullSweepIntervalMs: number;
   deadCandidateAttempts: number;
@@ -88,13 +99,43 @@ function parseGroups(raw: string, label: string, expectExperimental: boolean): G
     if (!isGroupName(name)) {
       throw new Error(`Invalid ${label} entry: "${name}" (known groups: ${ALL_GROUPS.join(', ')})`);
     }
-    if (MARKER_GROUPS[name].experimental !== expectExperimental) {
+    if ((MARKER_GROUPS[name].defaultTier === 'off') !== expectExperimental) {
       const belongs = expectExperimental ? 'RULES_ENABLED' : 'RULES_EXPERIMENTAL_ENABLED';
       throw new Error(`Group "${name}" belongs in ${belongs}, not ${label}`);
     }
   }
 
   return names as GroupName[];
+}
+
+/** `group:tier` pairs. A group left unnamed keeps its default tier, so a partial RULES is legal. */
+function parseTiers(raw: string): Partial<Record<GroupName, Tier>> {
+  const out: Partial<Record<GroupName, Tier>> = {};
+  for (const entry of raw.split(',').map((v) => v.trim())) {
+    if (entry === '') continue;
+    const split = entry.indexOf(':');
+    if (split === -1) throw new Error(`Invalid RULES entry: "${entry}" (want group:tier)`);
+    const name = entry.slice(0, split).trim();
+    const tier = entry.slice(split + 1).trim();
+    if (!isGroupName(name)) {
+      throw new Error(`Invalid RULES entry: "${name}" (known groups: ${ALL_GROUPS.join(', ')})`);
+    }
+    if (!isTier(tier)) {
+      throw new Error(`Invalid RULES tier for "${name}": "${tier}" (want auto, gated or off)`);
+    }
+    out[name] = tier;
+  }
+  return out;
+}
+
+/**
+ * Presence is read from the raw env, never the parsed object: the legacy vars carry schema defaults,
+ * so `parsed.data.RULES_ENABLED` is never empty and cannot answer "did the operator set this?".
+ */
+function legacyKeysIn(env: NodeJS.ProcessEnv): string[] {
+  return (['RULES_ENABLED', 'RULES_EXPERIMENTAL_ENABLED'] as const).filter(
+    (k) => env[k] !== undefined,
+  );
 }
 
 function parseBool(raw: string, label: string): boolean {
@@ -121,8 +162,45 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const e = parsed.data;
 
   const approvalMode = parseBool(e.APPROVAL_MODE, 'APPROVAL_MODE');
+
+  const configWarnings: string[] = [];
+  const legacy = legacyKeysIn(env);
+  const rulesSet = e.RULES.trim() !== '';
+  if (rulesSet && legacy.length > 0) {
+    throw new Error(`RULES cannot be combined with ${legacy.join(' or ')}; remove the older setting`);
+  }
+
+  let tiers: Record<GroupName, Tier>;
+  if (rulesSet) {
+    tiers = { ...DEFAULT_TIERS, ...parseTiers(e.RULES) };
+  } else if (legacy.length > 0) {
+    const enabled = new Set<GroupName>([
+      ...parseGroups(e.RULES_ENABLED, 'RULES_ENABLED', false),
+      ...parseGroups(e.RULES_EXPERIMENTAL_ENABLED, 'RULES_EXPERIMENTAL_ENABLED', true),
+    ]);
+    tiers = Object.fromEntries(
+      ALL_GROUPS.map((g) => [g, enabled.has(g) ? 'auto' : 'off']),
+    ) as Record<GroupName, Tier>;
+    configWarnings.push(
+      `${legacy.join(' and ')} ${legacy.length === 1 ? 'is' : 'are'} deprecated; ` +
+        `use RULES=${[...enabled].map((g) => `${g}:auto`).join(',') || 'group:tier'}`,
+    );
+  } else {
+    tiers = { ...DEFAULT_TIERS };
+  }
+
+  // APPROVAL_MODE is kept as sugar for "supervise everything", so its behaviour is unchanged and
+  // there is one rule for how the two settings interact instead of two switches to reconcile.
   if (approvalMode) {
-    // A proposal nobody can see or click is worse than no approval gate at all.
+    for (const g of ALL_GROUPS) if (tiers[g] === 'auto') tiers[g] = 'gated';
+  }
+
+  const enabledGroups = new Set<GroupName>(ALL_GROUPS.filter((g) => tiers[g] !== 'off'));
+  const gatedGroups = new Set<GroupName>(ALL_GROUPS.filter((g) => tiers[g] === 'gated'));
+
+  // A proposal nobody can see or click is worse than no approval gate at all. Any gated group needs
+  // the full Discord set, not just the legacy global — a gated tier creates cards on its own.
+  if (gatedGroups.size > 0) {
     const missing = (
       [
         ['DISCORD_BOT_TOKEN', e.DISCORD_BOT_TOKEN],
@@ -134,14 +212,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       .filter(([, value]) => value === undefined || value.trim() === '')
       .map(([name]) => name);
     if (missing.length > 0) {
-      throw new Error(`APPROVAL_MODE=true requires ${missing.join(', ')}`);
+      const cause = approvalMode ? 'APPROVAL_MODE=true' : `A gated rule (${[...gatedGroups].join(', ')})`;
+      throw new Error(`${cause} requires ${missing.join(', ')}`);
     }
   }
-
-  const enabledGroups = new Set<GroupName>([
-    ...parseGroups(e.RULES_ENABLED, 'RULES_ENABLED', false),
-    ...parseGroups(e.RULES_EXPERIMENTAL_ENABLED, 'RULES_EXPERIMENTAL_ENABLED', true),
-  ]);
 
   return {
     username: e.LASTFM_USERNAME,
@@ -159,7 +233,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     shadowMaxPerSweep: parsePositiveInt(e.SHADOW_MAX_PER_SWEEP, 'SHADOW_MAX_PER_SWEEP'),
     digestEvery: parsePositiveInt(e.DIGEST_EVERY, 'DIGEST_EVERY'),
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
+    tiers,
     enabledGroups,
+    gatedGroups,
+    configWarnings,
     sweepIntervalMs: parsePositiveInt(e.SWEEP_INTERVAL_MS, 'SWEEP_INTERVAL_MS'),
     fullSweepIntervalMs: parsePositiveInt(e.FULL_SWEEP_INTERVAL_MS, 'FULL_SWEEP_INTERVAL_MS'),
     deadCandidateAttempts: parsePositiveInt(e.DEAD_CANDIDATE_ATTEMPTS, 'DEAD_CANDIDATE_ATTEMPTS'),
