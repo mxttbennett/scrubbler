@@ -114,4 +114,21 @@ describe('loadConfig — approval mode', () => {
       /known groups: .*live-track/,
     );
   });
+
+  it('leaves shadow mode off, so updating the code cannot change what the channel shows', () => {
+    expect(loadConfig({ ...BASE }).shadowMode).toBe(false);
+  });
+
+  it('caps shadow posting per sweep, and treats 0 as record-only rather than an error', () => {
+    expect(loadConfig({ ...BASE }).shadowMaxPerSweep).toBe(50);
+    expect(loadConfig({ ...BASE, SHADOW_MAX_PER_SWEEP: '0' }).shadowMaxPerSweep).toBe(0);
+    expect(loadConfig({ ...BASE, SHADOW_MODE: 'true' }).shadowMode).toBe(true);
+  });
+
+  it('rejects a shadow cap that is not a number', () => {
+    expect(() => loadConfig({ ...BASE, SHADOW_MAX_PER_SWEEP: 'lots' })).toThrow(
+      /Invalid SHADOW_MAX_PER_SWEEP/,
+    );
+    expect(() => loadConfig({ ...BASE, SHADOW_MODE: 'maybe' })).toThrow(/Invalid SHADOW_MODE/);
+  });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
 import { Commands } from '../../src/report/commands.js';
 import { CustomRules } from '../../src/rules/customRules.js';
+import { ShadowStore } from '../../src/scrub/shadowStore.js';
 import { Approvals } from '../../src/scrub/approvals.js';
 import { Executor } from '../../src/scrub/executor.js';
 import { Planner } from '../../src/scrub/planner.js';
@@ -13,6 +14,7 @@ const silent: Reporter = {
   group: async () => {},
   summary: async () => {},
   report: async () => {},
+  shadow: async () => {},
 };
 
 const transport: ProposalTransport = {
@@ -23,7 +25,13 @@ const transport: ProposalTransport = {
 };
 
 function harness(
-  opts: { approvalMode?: boolean; dryRun?: boolean; applyNow?: () => Promise<string> } = {},
+  opts: {
+    approvalMode?: boolean;
+    dryRun?: boolean;
+    applyNow?: () => Promise<string>;
+    shadowMode?: boolean;
+    enabledRules?: ReadonlySet<string>;
+  } = {},
 ) {
   const d = createDb(':memory:');
   runMigrations(d);
@@ -43,6 +51,7 @@ function harness(
     log: () => {},
   });
   const customRules = new CustomRules(d);
+  const shadowStore = new ShadowStore(d);
   const applied: { kind: string; artist: string; fromTitle: string }[] = [];
   const commands = new Commands({
     db: d,
@@ -54,10 +63,13 @@ function harness(
     },
     approvalMode: opts.approvalMode ?? true,
     dryRun: opts.dryRun ?? false,
+    shadowStore,
+    shadowMode: opts.shadowMode ?? true,
+    enabledRules: opts.enabledRules ?? new Set<string>(),
     channelId: 'chan',
     guildId: 'guild',
   });
-  return { d, commands, approvals, executor, customRules, applied };
+  return { d, commands, approvals, executor, customRules, shadowStore, applied };
 }
 
 function seedLedger(d: ReturnType<typeof createDb>) {
@@ -435,5 +447,79 @@ describe('approval-only commands with the mode off', () => {
 
     expect((await h.commands.handle('status')).text).toContain('unattended');
     expect((await h.commands.handle('stats')).text).toContain('total corrected');
+  });
+});
+
+describe('/scrub shadow', () => {
+  it('explains that shadow mode is off rather than showing an empty list', async () => {
+    const h = harness({ shadowMode: false });
+
+    expect((await h.commands.handle('shadow')).text).toContain('Shadow mode is off');
+  });
+
+  it('says nothing is recorded yet when it is on but the sweep has not run', async () => {
+    const h = harness({ shadowMode: true });
+
+    expect((await h.commands.handle('shadow')).text).toContain('Nothing recorded yet');
+  });
+
+  it('lists what a disabled rule would have caught, with per-rule counts', async () => {
+    const h = harness();
+    h.shadowStore.record({
+      rule: 'live-track',
+      kind: 'track',
+      artist: 'Nirvana',
+      title: 'all apologies - live',
+      wouldBe: 'all apologies',
+    });
+
+    const text = (await h.commands.handle('shadow')).text;
+
+    expect(text).toContain('[live-track]');
+    expect(text).toContain('all apologies');
+    expect(text).toContain('live-track 1');
+  });
+
+  it('refuses a rule that is not experimental', async () => {
+    const h = harness();
+
+    expect((await h.commands.handle('shadow', { rule: 'remaster' })).text).toContain(
+      'not an experimental rule',
+    );
+  });
+
+  it('says so when the named rule is already enabled, not that it is clean', async () => {
+    const h = harness({ enabledRules: new Set(['live-track']) });
+
+    const text = (await h.commands.handle('shadow', { rule: 'live-track' })).text;
+
+    expect(text).toContain('already enabled');
+    expect(text).not.toContain('Nothing recorded');
+  });
+
+  it('forgets hits so they are announced again', async () => {
+    const h = harness();
+    h.shadowStore.record({
+      rule: 'live-track',
+      kind: 'track',
+      artist: 'Nirvana',
+      title: 'all apologies - live',
+      wouldBe: 'all apologies',
+    });
+
+    const text = (await h.commands.handle('shadow-clear')).text;
+
+    expect(text).toContain('Forgot 1');
+    expect(h.shadowStore.list()).toEqual([]);
+  });
+
+  it('clears only the named rule', async () => {
+    const h = harness();
+    h.shadowStore.record({ rule: 'live-track', kind: 'track', artist: 'A', title: 'a - live', wouldBe: 'a' });
+    h.shadowStore.record({ rule: 'version', kind: 'track', artist: 'A', title: 'b (radio edit)', wouldBe: 'b' });
+
+    await h.commands.handle('shadow-clear', { rule: 'version' });
+
+    expect(h.shadowStore.list().map((r) => r.rule)).toEqual(['live-track']);
   });
 });

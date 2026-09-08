@@ -43,6 +43,13 @@
       "when": 1788842109066,
       "tag": "0005_custom_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788846322622,
+      "tag": "0006_shadow_hits",
+      "breakpoints": true
     }
   ]
 }

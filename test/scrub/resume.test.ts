@@ -15,6 +15,7 @@ const silentReporter: Reporter = {
   group: async () => {},
   summary: async () => {},
   report: async () => {},
+  shadow: async () => {},
 };
 
 function edit(): PlannedEdit {

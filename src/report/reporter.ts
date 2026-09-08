@@ -53,11 +53,21 @@ export interface CorrectionGroup {
   imageUrl?: string;
 }
 
+export interface ShadowReport {
+  rule: string;
+  kind: 'track' | 'album';
+  artist: string;
+  title: string;
+  wouldBe: string;
+}
+
 export interface Reporter {
   corrections(items: Correction[], totals: RunTotals): Promise<void>;
   group(group: CorrectionGroup, totals: RunTotals): Promise<void>;
   summary(headline: string, lines: string[], totals: RunTotals): Promise<void>;
   report(error: unknown, context: string): Promise<void>;
+  /** An observation, never a correction: the rule that produced it is disabled. */
+  shadow(hit: ShadowReport, remaining: number): Promise<void>;
 }
 
 const MARK: Record<Outcome, string> = {
@@ -312,6 +322,39 @@ export class ConsoleAndDiscordReporter implements Reporter {
         { name: 'Unverified', value: String(totals.unverified), inline: true },
         { name: 'Failed', value: String(totals.failed), inline: true },
       ],
+    });
+  }
+
+  /**
+   * Deliberately not routed through `corrections`: a shadow hit is not a `Correction`, has no ledger
+   * row and never happened, so putting it on that path would log an observation as an edit.
+   */
+  async shadow(hit: ShadowReport, remaining: number): Promise<void> {
+    this.log(
+      `~ would correct [${hit.rule}] ${hit.artist} — ${hit.kind} "${hit.title}" -> "${hit.wouldBe}"`,
+    );
+    const links = this.links;
+    const url = hit.kind === 'album' ? links?.album(hit.artist, hit.title) : links?.track(hit.artist, hit.title);
+    await this.discord.send({
+      title: `Would correct — ${hit.rule}`,
+      color: COLOR.shadow,
+      description: `**${escapeMd(hit.artist)}**${linkSuffix(links?.artist(hit.artist))}`,
+      fields: [
+        {
+          name: `${hit.kind} name`,
+          value: `${escapeMd(hit.title)}${linkSuffix(url)}\n**${escapeMd(hit.wouldBe)}**`,
+        },
+        {
+          name: 'rule',
+          value: `\`${hit.rule}\` is off — set RULES_EXPERIMENTAL_ENABLED to turn it on`,
+        },
+      ],
+      footer: {
+        text:
+          remaining > 0
+            ? `nothing was changed · ${remaining} more recorded, see /scrub shadow`
+            : 'nothing was changed — this rule is disabled',
+      },
     });
   }
 

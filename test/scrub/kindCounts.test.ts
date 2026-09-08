@@ -16,6 +16,7 @@ function spy() {
     group: async () => {},
     summary: async () => {},
     report: async () => {},
+    shadow: async () => {},
   };
   return { items, totals, reporter };
 }

@@ -14,6 +14,7 @@ const silent: Reporter = {
   group: async () => {},
   summary: async () => {},
   report: async () => {},
+  shadow: async () => {},
 };
 
 function db() {
@@ -391,6 +392,7 @@ describe('reported corrections', () => {
         group: async () => {},
         summary: async () => {},
         report: async () => {},
+        shadow: async () => {},
       },
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );
