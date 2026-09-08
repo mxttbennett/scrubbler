@@ -213,6 +213,45 @@ describe('Approvals.approve', () => {
     expect(h.state.applied).toHaveLength(0);
   });
 
+  it('skips a member whose entity changed since the proposal, rather than a silent no-op write', async () => {
+    const d = db();
+    const state = { applied: [] as string[] };
+    const executor = new Executor(
+      d,
+      { apply: async (e: PlannedEdit) => {
+          state.applied.push(e.original.track_name);
+          return 'verified';
+        } } as never,
+      {} as never,
+      silent,
+      { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
+    );
+    const t = fakeTransport();
+    const approvals = new Approvals({
+      db: d,
+      executor,
+      proposals: t.transport,
+      freshToken: async () => 'fresh-token',
+      stillThere: async (item) =>
+        item.kind === 'track' && item.edit.original.track_name !== 'Left of the Dial',
+      ttlHours: 168,
+      log: () => {},
+    });
+
+    await approvals.propose(
+      toGroup('The Replacements', ['Bastards of Young', 'Left of the Dial'].map(trackEdit)),
+    );
+    const id = d.select().from(schema.approvals).all()[0]!.id;
+    const result = await approvals.approve(id, OWNER);
+
+    expect(state.applied).toEqual(['Bastards of Young']);
+    expect(result.detail).toContain('1 changed since the proposal');
+    const rows = d.select().from(schema.appliedEdits).all();
+    const skipped = rows.find((r) => r.trackNameOriginal === 'Left of the Dial')!;
+    expect(skipped.status).toBe('skipped');
+    expect(skipped.lastError).toBe('changed before approval');
+  });
+
   it('reports a decision on an id that no longer exists', async () => {
     const h = harness();
     expect((await h.approvals.approve(9999, OWNER)).outcome).toBe('gone');

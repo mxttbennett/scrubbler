@@ -77,6 +77,10 @@ async function main() {
     }),
     proposals,
     freshToken: () => session.freshCsrfToken(`/user/${config.username}/library`),
+    stillThere: async (item) => {
+      const { gone } = await pages.fetchOutcome(item.edit.refererPath);
+      return !gone;
+    },
     albumArt,
     ttlHours: config.approvalTtlHours,
   });

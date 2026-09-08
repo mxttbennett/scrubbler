@@ -24,6 +24,11 @@ export interface ApprovalDeps {
   /** Fresh per decision: the token stored at proposal time may be hours old. */
   freshToken: () => Promise<string | undefined>;
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
+  /**
+   * Answers whether the entity is still in the library under its original title. A proposal can
+   * sit for a week, and firing a write whose *_original tuple no longer matches silently no-ops.
+   */
+  stillThere?: (item: ResumableEdit) => Promise<boolean>;
   ttlHours: number;
   log?: (msg: string) => void;
 }
@@ -162,7 +167,16 @@ export class Approvals {
     }
 
     let applied = 0;
+    let stale = 0;
     for (const item of this.editsFor(approvalId, token)) {
+      if (this.deps.stillThere !== undefined && !(await this.deps.stillThere(item))) {
+        db.update(schema.appliedEdits)
+          .set({ status: 'skipped', lastError: 'changed before approval' })
+          .where(eq(schema.appliedEdits.id, item.id))
+          .run();
+        stale++;
+        continue;
+      }
       db.update(schema.appliedEdits)
         .set({ status: 'planned' })
         .where(eq(schema.appliedEdits.id, item.id))
@@ -172,7 +186,13 @@ export class Approvals {
       applied++;
     }
     await this.retire(approvalId, 'approved');
-    return { outcome: 'approved', detail: `${applied} edit(s) applied` };
+    return {
+      outcome: 'approved',
+      detail:
+        stale === 0
+          ? `${applied} edit(s) applied`
+          : `${applied} applied, ${stale} changed since the proposal and were skipped`,
+    };
   }
 
   async ignore(approvalId: number, userId: string): Promise<DecisionResult> {
