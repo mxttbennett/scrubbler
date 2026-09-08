@@ -6,9 +6,11 @@ import type { Editor } from '../lastfm/editor.js';
 import { readExistingRules } from '../lastfm/rules.js';
 import type { Session } from '../lastfm/session.js';
 import type { Reporter } from '../report/reporter.js';
+import { eq } from 'drizzle-orm';
 import { Executor } from './executor.js';
 import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
+import type { Candidate } from './types.js';
 
 export interface WorkerHooks {
   sleep?: (ms: number) => Promise<void>;
@@ -77,9 +79,26 @@ export class ScrubWorker {
       await executor.run(carried, rules.keys);
     }
 
-    const candidates = await this.planner.sweep((seen, hits) =>
-      console.log(`swept ${seen} entities, ${hits} candidates`),
-    );
+    const state = this.db.select().from(schema.sweepState).where(eq(schema.sweepState.id, 1)).get();
+    const cursor = state?.lastScrobbleUts ?? null;
+    const lastFull = state?.lastFullSweepAt?.getTime() ?? 0;
+    const fullDue = cursor === null || Date.now() - lastFull >= this.config.fullSweepIntervalMs;
+
+    let candidates: Candidate[];
+    let newestUts: number | undefined;
+    if (fullDue) {
+      console.log(cursor === null ? 'full sweep (no cursor yet)' : 'full sweep (interval elapsed)');
+      candidates = await this.planner.sweep((seen, hits) =>
+        console.log(`swept ${seen} entities, ${hits} candidates`),
+      );
+    } else {
+      console.log(`incremental sweep from uts ${cursor}`);
+      const r = await this.planner.sweepIncremental(cursor, (seen, hits) =>
+        console.log(`examined ${seen} new scrobbles, ${hits} candidates`),
+      );
+      candidates = r.candidates;
+      newestUts = r.newestUts;
+    }
     console.log(`sweep complete: ${candidates.length} candidates`);
 
     let albumApplied = 0;
@@ -123,15 +142,26 @@ export class ScrubWorker {
       },
     });
 
+    for (const skip of skips) this.planner.recordDead(skip.candidate, skip.reason);
     executor.recordSkips(skips);
     const summary = executor.streamedSummary;
 
+    // The cursor advances only after a completed cycle, so an interrupted one re-examines.
+    const finished = !this.stopped;
+    const advanced =
+      finished && newestUts !== undefined ? { lastScrobbleUts: newestUts } : {};
+    const fullStamp = finished && fullDue ? { lastFullSweepAt: new Date() } : {};
     this.db
       .insert(schema.sweepState)
-      .values({ id: 1, lastFullSweepAt: new Date(), lastSweepEditCount: summary.applied })
+      .values({
+        id: 1,
+        lastFullSweepAt: new Date(),
+        lastSweepEditCount: summary.applied,
+        ...(newestUts !== undefined ? { lastScrobbleUts: newestUts } : {}),
+      })
       .onConflictDoUpdate({
         target: schema.sweepState.id,
-        set: { lastFullSweepAt: new Date(), lastSweepEditCount: summary.applied },
+        set: { lastSweepEditCount: summary.applied, ...advanced, ...fullStamp },
       })
       .run();
 

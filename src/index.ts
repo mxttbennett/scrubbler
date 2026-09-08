@@ -1,5 +1,5 @@
 import { loadConfig } from './core/config.js';
-import { createDb, runMigrations } from './db/index.js';
+import { createDb, runMigrations, schema } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
 import { AlbumEditor } from './lastfm/albumEditor.js';
 import { Editor } from './lastfm/editor.js';
@@ -30,7 +30,13 @@ async function main() {
     jitterMs: config.pageDelayJitterMs,
   });
   const api = new LastfmApi(config.apiKey);
-  const planner = new Planner(api, config.username, config.enabledGroups);
+  const planner = new Planner(
+    api,
+    config.username,
+    config.enabledGroups,
+    db,
+    config.deadCandidateAttempts,
+  );
   const resolver = new Resolver(pages, config.username, config.enabledGroups);
   const editor = new Editor(session, pages, {
     verify: config.verifyEdits,
@@ -60,6 +66,19 @@ async function main() {
       ` | groups ${[...config.enabledGroups].sort().join(',')}` +
       ` | discord ${discord.enabled ? 'on' : 'off'}`,
   );
+
+  // Reset flags: the slash-command equivalents arrive with the gateway client.
+  if (process.argv.includes('--resweep')) {
+    db.update(schema.sweepState).set({ lastScrobbleUts: null, lastFullSweepAt: null }).run();
+    console.log('cursor cleared — the next cycle will sweep the whole library');
+    return;
+  }
+  if (process.argv.includes('--retry-dead')) {
+    const before = db.select().from(schema.deadCandidates).all().length;
+    db.delete(schema.deadCandidates).run();
+    console.log(`cleared ${before} dead candidate(s) — they will be tried again`);
+    return;
+  }
 
   if (process.argv.includes('--once')) {
     await worker.runOnce();

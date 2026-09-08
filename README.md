@@ -23,12 +23,43 @@ So the service uses each transport for what it is good at:
 | **Resolve** — build the edit | Scrape the library page (`+noredirect`, paced) | The API never returns `albumartist`, which the edit form requires to match exactly. |
 | **Write** | `POST /user/<you>/library/edit-track` | The only way to edit a scrobble. |
 
+### Discovery
+
+Most cycles are **incremental**: they poll `user.getRecentTracks` from a stored cursor, which is
+seconds. That works because every write sets `create_automatic_edit_rule`, so Last.fm corrects future
+scrobbles of a known pattern server-side — a genuinely new dirty entity can only arrive with a new
+scrobble. A **full sweep** still runs every `FULL_SWEEP_INTERVAL_MS` (weekly) and on demand, as the
+completeness guarantee.
+
+The cursor advances only after a cycle completes, so an interruption re-examines rather than skips.
+
+Candidates that resolve to nothing are remembered after `DEAD_CANDIDATE_ATTEMPTS` passes. This is the
+larger of the two savings: a full sweep costs ~250 cheap API calls, but a permanently-empty candidate
+costs a *paced 15-20s page fetch every cycle forever*.
+
+```sh
+npm start -- --resweep      # clear the cursor; next cycle walks the whole library
+npm start -- --retry-dead   # forget empty candidates so they are tried again
+```
+
 Corrections are written **as each tuple resolves**, not after the whole library has been walked.
 `Resolver.fold` derives the complete change for a tuple from one row — both track and album title
 — so a tuple reached via an album page yields the same edit as one reached via a track page, and
 writing immediately cannot leave a partial edit to collide with later. That matters because
 resolving a dirty album means fetching its page *plus one page per track on it*, so a full pass
 takes hours; deferring writes until the end would mean hours of silence.
+
+Album renames take a **different, cheaper endpoint**. Last.fm's edit URL carries an
+`?edited-variation=` parameter with two values: `library-track-scrobble` posts to `/library/edit-track`
+and needs a timestamp plus `edit_all`, while `library-album-scrobble` posts to `/library/edit-album`
+and takes only the album name and album artist pairs — no timestamp, no track, no `edit_all`, because
+it is inherently album-wide. So renaming a 14-track album is **one** request, and album candidates
+never need recursing into their track pages. `edit-track` is only used when a track title itself
+carries a marker.
+
+Albums are always swept before tracks, and that ordering is load-bearing: the album rename lands
+first, so a track page read afterwards already shows the clean album name and a track edit's
+`album_name_original` cannot go stale.
 
 Each write sets `edit_all` (apply to all past scrobbles of that exact tuple) and
 `create_automatic_edit_rule` (apply to all future ones). Because Last.fm then corrects new scrobbles
