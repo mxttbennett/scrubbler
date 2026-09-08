@@ -43,7 +43,7 @@ for (const r of rows) for (const g of r.groups) byGroup.set(g, (byGroup.get(g) ?
 writeFileSync('/tmp/sweep-report.json', JSON.stringify({ rows, albumCount, trackCount: rows.length - albumCount }, null, 1));
 
 const lines: string[] = [];
-lines.push(`# scrobble-scrubber planned changes`);
+lines.push(`# scrubbler planned changes`);
 lines.push(`# user ${cfg.username} | groups ${[...cfg.enabledGroups].sort().join(',')}`);
 lines.push(`# ${albumCount} albums + ${rows.length - albumCount} tracks = ${rows.length} entities`);
 lines.push(`# by group: ${[...byGroup].sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g}=${n}`).join(' ')}`);

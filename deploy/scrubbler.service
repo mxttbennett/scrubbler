@@ -1,13 +1,13 @@
 [Unit]
-Description=scrobble-scrubber — Last.fm metadata cleaner
+Description=scrubbler — Last.fm metadata cleaner
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/opt/scrobble-scrubber
-EnvironmentFile=/opt/scrobble-scrubber/.env
+WorkingDirectory=/opt/scrubbler
+EnvironmentFile=/opt/scrubbler/.env
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=15

@@ -19,7 +19,7 @@ describe('loadConfig', () => {
 
   it('does not send a browser-impersonating User-Agent, which Last.fm answers with 406', () => {
     expect(loadConfig({ ...BASE }).userAgent).not.toMatch(/^Mozilla\/5\.0/);
-    expect(loadConfig({ ...BASE }).userAgent).toContain('scrobble-scrubber');
+    expect(loadConfig({ ...BASE }).userAgent).toContain('scrubbler');
   });
 
   it('turns on an experimental group when named', () => {

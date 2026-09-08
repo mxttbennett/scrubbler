@@ -40,7 +40,7 @@ async function main() {
   const worker = new ScrubWorker(config, db, session, planner, resolver, editor, reporter);
 
   console.log(
-    `scrobble-scrubber starting | user ${config.username} | dryRun ${String(config.dryRun)}` +
+    `scrubbler starting | user ${config.username} | dryRun ${String(config.dryRun)}` +
       ` | groups ${[...config.enabledGroups].sort().join(',')}` +
       ` | discord ${discord.enabled ? 'on' : 'off'}`,
   );

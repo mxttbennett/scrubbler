@@ -1,4 +1,4 @@
-# scrobble-scrubber
+# scrubbler
 
 A headless service that strips edition and remaster cruft from a Last.fm library and saves the
 correction as an automatic edit, so Last.fm fixes future scrobbles server-side.
@@ -110,7 +110,7 @@ steps, the pre-deploy snapshot, and what rollback can and cannot undo.
 
 ## Reporting
 
-Everything goes to journald (`journalctl -u scrobble-scrubber -f`). Set `DISCORD_BOT_TOKEN` and
+Everything goes to journald (`journalctl -u scrubbler -f`). Set `DISCORD_BOT_TOKEN` and
 `DISCORD_CHANNEL_ID` and it also posts:
 
 - a **digest embed every `DIGEST_EVERY` corrections** while a sweep runs, listing that batch with
@@ -134,14 +134,14 @@ the diff before setting `DRY_RUN=false`.
 ## Inspecting what it did
 
 ```sh
-sqlite3 .data/scrobble-scrubber.sqlite \
+sqlite3 .data/scrubbler.sqlite \
   "select status, count(*) from applied_edits group by status;"
 
-sqlite3 .data/scrobble-scrubber.sqlite \
+sqlite3 .data/scrubbler.sqlite \
   "select track_name_original, track_name, album_name_original, album_name, groups
    from applied_edits where status='verified' limit 20;"
 
-sqlite3 .data/scrobble-scrubber.sqlite "select reason, count(*) from skipped group by reason;"
+sqlite3 .data/scrubbler.sqlite "select reason, count(*) from skipped group by reason;"
 ```
 
 ## Credits

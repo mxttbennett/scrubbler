@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# One-time provisioning for the scrobble-scrubber host (Ubuntu 22.04/24.04, x64 or ARM).
+# One-time provisioning for the scrubbler host (Ubuntu 22.04/24.04, x64 or ARM).
 # Run as the deploy user with sudo: bash provision.sh
 set -euo pipefail
 
-APP_DIR=/opt/scrobble-scrubber
+APP_DIR=/opt/scrubbler
 DEPLOY_USER="${SUDO_USER:-ubuntu}"
 
 echo "== installing Node 22 =="
@@ -33,17 +33,17 @@ sudo mkdir -p "$APP_DIR/.data/backups"
 sudo chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
 
 echo "== systemd unit =="
-sudo cp "$(dirname "$0")/scrobble-scrubber.service" /etc/systemd/system/scrobble-scrubber.service
+sudo cp "$(dirname "$0")/scrubbler.service" /etc/systemd/system/scrubbler.service
 sudo systemctl daemon-reload
-sudo systemctl enable scrobble-scrubber
+sudo systemctl enable scrubbler
 
 cat <<'NEXT'
 == next steps ==
-1. Create /opt/scrobble-scrubber/.env (copy .env.example) with LASTFM_USERNAME,
+1. Create /opt/scrubbler/.env (copy .env.example) with LASTFM_USERNAME,
    LASTFM_PASSWORD, LASTFM_API_KEY and optionally DISCORD_WEBHOOK_URL. chmod 600.
 2. LEAVE DRY_RUN=true. Start the service, read one sweep's report, and only then set
    DRY_RUN=false and restart. The first real run is the irreversible one.
 3. Allow the deploy user to restart without a password (visudo):
-     ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl stop scrobble-scrubber, /usr/bin/systemctl start scrobble-scrubber, /usr/bin/systemctl restart scrobble-scrubber
-4. journalctl -u scrobble-scrubber -f
+     ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl stop scrubbler, /usr/bin/systemctl start scrubbler, /usr/bin/systemctl restart scrubbler
+4. journalctl -u scrubbler -f
 NEXT

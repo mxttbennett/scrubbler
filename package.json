@@ -1,7 +1,7 @@
 {
-  "name": "scrobble-scrubber",
+  "name": "scrubbler",
   "version": "0.1.0",
-  "description": "scrobble-scrubber — headless Last.fm metadata cleaner",
+  "description": "scrubbler — headless Last.fm metadata cleaner",
   "type": "module",
   "main": "dist/index.js",
   "engines": { "node": ">=22" },

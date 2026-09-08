@@ -1,4 +1,4 @@
-# scrobble-scrubber
+# scrubbler
 
 Headless Last.fm metadata cleaner. TypeScript (strict, ESM), Node 22, better-sqlite3 + Drizzle,
 vitest. Modelled on the sibling `feed1` service; same conventions apply unless noted here.

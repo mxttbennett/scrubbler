@@ -10,13 +10,13 @@ import {
 
 // Last.fm answers any Mozilla/5.0-prefixed User-Agent with 406, so identify honestly.
 const DEFAULT_USER_AGENT =
-  'scrobble-scrubber/0.1.0 (+https://github.com/mxttbennett/scrobble-scrubber)';
+  'scrubbler/0.1.0 (+https://github.com/mxttbennett/scrubbler)';
 
 const envSchema = z.object({
   LASTFM_USERNAME: z.string().min(1),
   LASTFM_PASSWORD: z.string().min(1),
   LASTFM_API_KEY: z.string().min(1),
-  DB_PATH: z.string().default('.data/scrobble-scrubber.sqlite'),
+  DB_PATH: z.string().default('.data/scrubbler.sqlite'),
   DISCORD_BOT_TOKEN: z.string().optional(),
   DISCORD_CHANNEL_ID: z.string().optional(),
   DIGEST_EVERY: z.string().default('25'),
