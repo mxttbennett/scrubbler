@@ -44,7 +44,7 @@ function trackEdit(track: string): PlannedEdit {
   };
 }
 
-function albumEdit(trackNames?: string[]): PlannedAlbumEdit {
+function albumEdit(): PlannedAlbumEdit {
   return {
     artist: 'Nirvana',
     from: 'In Utero (Deluxe Edition)',
@@ -53,13 +53,32 @@ function albumEdit(trackNames?: string[]): PlannedAlbumEdit {
     action: '/library/edit-album',
     refererPath: '/x',
     groups: ['edition'],
-    ...(trackNames === undefined ? {} : { trackNames }),
   };
+}
+
+/** The album page renders its track list client-side, so this comes from album.getinfo. */
+function detailsOf(trackNames: string[], scrobbles?: number) {
+  return async () => ({
+    imageUrl: undefined,
+    trackNames,
+    ...(scrobbles === undefined ? { scrobbles: undefined } : { scrobbles }),
+  });
 }
 
 const OPTS = { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 };
 
-function executor(reporter: Reporter, opts: { failAlbum?: boolean; failTrack?: boolean } = {}) {
+function executor(
+  reporter: Reporter,
+  opts: {
+    failAlbum?: boolean;
+    failTrack?: boolean;
+    albumDetails?: (artist: string, album: string) => Promise<{
+      imageUrl: string | undefined;
+      trackNames: string[];
+      scrobbles: number | undefined;
+    }>;
+  } = {},
+) {
   return new Executor(
     db(),
     {
@@ -75,7 +94,7 @@ function executor(reporter: Reporter, opts: { failAlbum?: boolean; failTrack?: b
       },
     } as never,
     reporter,
-    OPTS,
+    { ...OPTS, ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }) },
   );
 }
 
@@ -84,7 +103,7 @@ describe('per-run counts by kind', () => {
     const s = spy();
     const e = executor(s.reporter);
 
-    await e.applyOneAlbum(albumEdit(['Serve the Servants', 'Scentless Apprentice']));
+    await e.applyOneAlbum(albumEdit());
 
     expect(e.streamedSummary.byKind.album.applied).toBe(1);
     expect(e.streamedSummary.byKind.track.applied).toBe(0);
@@ -93,18 +112,19 @@ describe('per-run counts by kind', () => {
 
   it('records how many tracks the album rename covered', async () => {
     const s = spy();
-    const e = executor(s.reporter);
+    const e = executor(s.reporter, { albumDetails: detailsOf(['a', 'b', 'c', 'd'], 52) });
 
-    await e.applyOneAlbum(albumEdit(['a', 'b', 'c', 'd']));
+    await e.applyOneAlbum(albumEdit());
 
     expect(e.streamedSummary.byKind.album.tracksCovered).toBe(4);
+    expect(e.streamedSummary.byKind.album.scrobblesCovered).toBe(52);
   });
 
   it('counts track edits and album renames in the same run separately', async () => {
     const s = spy();
     const e = executor(s.reporter);
 
-    await e.applyOneAlbum(albumEdit(['a', 'b']));
+    await e.applyOneAlbum(albumEdit());
     await e.applyOne(trackEdit('Disorder'), new Set());
     await e.applyOne(trackEdit('Day of the Lords'), new Set());
 
@@ -132,7 +152,7 @@ describe('per-run counts by kind', () => {
     const s = spy();
     const e = executor(s.reporter);
 
-    await e.applyOneAlbum(albumEdit(['a']));
+    await e.applyOneAlbum(albumEdit());
     await e.applyOne(trackEdit('Disorder'), new Set());
 
     const last = s.totals.at(-1)!;
@@ -144,11 +164,14 @@ describe('per-run counts by kind', () => {
 describe('album corrections name their tracks again', () => {
   it('reports the track list the one-request rename covered', async () => {
     const s = spy();
-    const e = executor(s.reporter);
+    const e = executor(s.reporter, {
+      albumDetails: detailsOf(['Serve the Servants', 'Heart-Shaped Box', 'Rape Me'], 61),
+    });
 
-    await e.applyOneAlbum(albumEdit(['Serve the Servants', 'Heart-Shaped Box', 'Rape Me']));
+    await e.applyOneAlbum(albumEdit());
 
     expect(s.items).toHaveLength(1);
+    expect(s.items[0]!.scrobbles).toBe(61);
     expect(s.items[0]!.trackNames).toEqual([
       'Serve the Servants',
       'Heart-Shaped Box',
@@ -162,6 +185,67 @@ describe('album corrections name their tracks again', () => {
 
     await e.applyOneAlbum(albumEdit());
 
+    expect(s.items[0]!.trackNames).toBeUndefined();
+    expect(s.items[0]!.scrobbles).toBeUndefined();
+  });
+});
+
+describe('the scrobble count is read before the write', () => {
+  it('asks for the ORIGINAL title, not the renamed one', async () => {
+    const s = spy();
+    const asked: string[] = [];
+    const e = executor(s.reporter, {
+      albumDetails: async (_artist, album) => {
+        asked.push(album);
+        return { imageUrl: undefined, trackNames: ['a', 'b'], scrobbles: 12 };
+      },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    // Once the album is renamed the old title has no scrobbles left to count.
+    expect(asked).toEqual(['In Utero (Deluxe Edition)']);
+  });
+
+  it('reads it before the POST, not after', async () => {
+    const order: string[] = [];
+    const s = spy();
+    const e = new Executor(
+      db(),
+      {} as never,
+      {
+        apply: async () => {
+          order.push('post');
+          return 'verified';
+        },
+      } as never,
+      s.reporter,
+      {
+        ...OPTS,
+        albumDetails: async () => {
+          order.push('lookup');
+          return { imageUrl: undefined, trackNames: ['a'], scrobbles: 3 };
+        },
+      },
+    );
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(order).toEqual(['lookup', 'post']);
+  });
+
+  it('still corrects when the lookup fails, since the count is only reporting', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async () => {
+        throw new Error('api down');
+      },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(e.streamedSummary.byKind.album.applied).toBe(1);
+    expect(s.items[0]!.scrobbles).toBeUndefined();
     expect(s.items[0]!.trackNames).toBeUndefined();
   });
 });
