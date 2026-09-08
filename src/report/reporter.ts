@@ -1,4 +1,5 @@
 import { COLOR, Discord, type DiscordEmbed, type DiscordEmbedField, fenceLines } from './discord.js';
+import { albumUrl, artistUrl, linkSuffix, trackUrl } from './links.js';
 
 export interface RunTotals {
   applied: number;
@@ -101,11 +102,17 @@ export function describeCorrection(c: Correction): string {
 const FIELD_VALUE_LIMIT = 1024;
 
 /** Fits as many whole track names as the embed field allows, then says how many are left. */
-export function trackList(items: Correction[]): string {
+export function trackList(
+  items: Correction[],
+  links?: Links,
+  artist?: string,
+  _album?: string,
+): string {
   const lines: string[] = [];
   let size = 0;
   for (const [i, item] of items.entries()) {
-    const line = `• ${escapeMd(item.track)}`;
+    const who = artist ?? item.artist;
+    const line = `• ${escapeMd(item.track)}${linkSuffix(links?.track(who, item.track))}`;
     const more = `\n… ${items.length - i} more`;
     if (size + line.length + 1 + more.length > FIELD_VALUE_LIMIT) {
       lines.push(`… ${items.length - i} more`);
@@ -118,26 +125,59 @@ export function trackList(items: Correction[]): string {
 }
 
 /**
+ * Links point at the user's own library pages rather than the global artist pages: those are the
+ * pages that show what the rename did. Undefined when no username is configured, in which case
+ * every label renders as plain text.
+ */
+export interface Links {
+  artist: (artist: string) => string;
+  album: (artist: string, album: string) => string;
+  track: (artist: string, track: string) => string;
+}
+
+export function libraryLinks(username: string): Links {
+  return {
+    artist: (artist) => artistUrl(username, artist),
+    album: (artist, album) => albumUrl(username, artist, album),
+    track: (artist, track) => trackUrl(username, artist, track),
+  };
+}
+
+/** The post-edit value is what gets linked: the old title's page is empty once the rename lands. */
+function newValue(shared: CorrectionGroup['shared'], fallback: string): string {
+  return shared?.to ?? fallback;
+}
+
+/**
  * Shared with proposals so an approval card and the report it becomes look the same — the only
  * difference is the buttons and the footer.
  */
-export function groupEmbed(g: CorrectionGroup, footer: string): DiscordEmbed {
+export function groupEmbed(g: CorrectionGroup, footer: string, links?: Links): DiscordEmbed {
   const n = g.items.length;
   const shared = g.shared;
+  const album = newValue(shared?.field === 'album_name' ? shared : undefined, g.items[0]?.album ?? '');
   return {
     title: embedTitle(g.outcome, g.kind, n),
     color: OUTCOME_COLOR[g.outcome],
-    description: `**${escapeMd(g.artist)}**`,
+    description: `**${escapeMd(g.artist)}**${linkSuffix(links?.artist(g.artist))}`,
     fields: [
       ...(shared === undefined
         ? []
         : [
             {
               name: shared.field.replace(/_/g, ' '),
-              value: `~~${escapeMd(shared.from)}~~\n**${escapeMd(shared.to)}**`,
+              value:
+                `~~${escapeMd(shared.from)}~~\n**${escapeMd(shared.to)}**` +
+                linkSuffix(
+                  shared.field === 'album_name'
+                    ? links?.album(g.artist, shared.to)
+                    : links?.track(g.artist, shared.to),
+                ),
             },
           ]),
-      ...(n > 1 ? [{ name: `tracks (${n})`, value: trackList(g.items) }] : []),
+      ...(n > 1
+        ? [{ name: `tracks (${n})`, value: trackList(g.items, links, g.artist, album) }]
+        : []),
       { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
     ],
     ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
@@ -154,6 +194,8 @@ export class ConsoleAndDiscordReporter implements Reporter {
     private readonly discord: Discord,
     private readonly log: (msg: string) => void = (m) => console.log(m),
     private readonly logError: (msg: string) => void = (m) => console.error(m),
+    /** Absent when no username is configured, in which case every card renders without links. */
+    private readonly links?: Links,
   ) {}
 
   async corrections(items: Correction[], totals: RunTotals): Promise<void> {
@@ -182,26 +224,54 @@ export class ConsoleAndDiscordReporter implements Reporter {
       await this.corrections(g.items, totals);
       return;
     }
-    await this.discord.send(groupEmbed(g, progressText(totals)));
+    await this.discord.send(groupEmbed(g, progressText(totals), this.links));
   }
 
   /** One correction gets real fields rather than a one-line code fence. */
   private single(c: Correction, totals: RunTotals) {
+    const links = this.links;
+    // The post-edit value is what gets linked: the old title's page is empty once the rename lands.
+    const urlFor = (field: string, to: string): string | undefined =>
+      field === 'album_name'
+        ? links?.album(c.artist, to)
+        : field === 'track_name'
+          ? links?.track(c.artist, to)
+          : undefined;
+
     const fields: DiscordEmbedField[] = c.changes.map((ch) => ({
       name: ch.field.replace(/_/g, ' '),
-      value: `~~${escapeMd(ch.from)}~~\n**${escapeMd(ch.to)}**`,
+      value: `~~${escapeMd(ch.from)}~~\n**${escapeMd(ch.to)}**${linkSuffix(urlFor(ch.field, ch.to))}`,
     }));
     if (c.error !== undefined) fields.push({ name: 'error', value: escapeMd(c.error) });
     // Named for track corrections: an album-only change otherwise renders identically per track.
     if (c.kind === 'track') {
-      fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
-      fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
+      const nextTrack = c.changes.find((ch) => ch.field === 'track_name')?.to ?? c.track;
+      const nextAlbum = c.changes.find((ch) => ch.field === 'album_name')?.to ?? c.album;
+      fields.push({
+        name: 'track',
+        value: `${escapeMd(c.track)}${linkSuffix(links?.track(c.artist, nextTrack))}`,
+        inline: true,
+      });
+      fields.push({
+        name: 'on album',
+        value:
+          c.album === ''
+            ? '—'
+            : `${escapeMd(c.album)}${linkSuffix(links?.album(c.artist, nextAlbum))}`,
+        inline: true,
+      });
     }
     const covered = c.scrobbledTracks ?? [];
     if (covered.length > 0) {
+      const albumNow = c.changes.find((ch) => ch.field === 'album_name')?.to ?? c.album;
       fields.push({
         name: `scrobbled tracks (${covered.length})`,
-        value: trackList(covered.map((track) => ({ ...c, track }))),
+        value: trackList(
+          covered.map((track) => ({ ...c, track })),
+          links,
+          c.artist,
+          albumNow,
+        ),
       });
     }
     if (c.scrobbles !== undefined) {
@@ -215,7 +285,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
     return {
       title: embedTitle(c.outcome, c.kind, Math.max(covered.length, 1)),
       color: OUTCOME_COLOR[c.outcome],
-      description: `**${escapeMd(c.artist)}**`,
+      description: `**${escapeMd(c.artist)}**${linkSuffix(links?.artist(c.artist))}`,
       fields,
       ...(c.imageUrl === undefined ? {} : { thumbnail: { url: c.imageUrl } }),
       footer: { text: progressText(totals) },

@@ -11,7 +11,7 @@ import {
   approveId,
   ignoreId,
 } from '../report/proposals.js';
-import { type CorrectionGroup, groupEmbed } from '../report/reporter.js';
+import { type CorrectionGroup, type Links, groupEmbed } from '../report/reporter.js';
 import type { Executor, ResumableEdit } from './executor.js';
 import { type EditGroup, type PlannedEdit, changedFields, tupleKey } from './types.js';
 
@@ -24,6 +24,8 @@ export interface ApprovalDeps {
   /** Fresh per decision: the token stored at proposal time may be hours old. */
   freshToken: () => Promise<string | undefined>;
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
+  /** Same library links the reports use, so a proposal and its correction read alike. */
+  links?: Links;
   /**
    * Answers whether the entity is still in the library under its original title. A proposal can
    * sit for a week, and firing a write whose *_original tuple no longer matches silently no-ops.
@@ -455,6 +457,7 @@ export class Approvals {
         ...(art === undefined ? {} : { imageUrl: art }),
       },
       `awaiting approval · #${approvalId}`,
+      this.deps.links,
     );
     return { ...embed, title: embed.title.replace(/^Would correct/, 'Approve'), color: COLOR.warn };
   }
