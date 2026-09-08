@@ -5,3 +5,4 @@ dist/
 *.log
 coverage/
 .claude/plans/
+.DS_Store

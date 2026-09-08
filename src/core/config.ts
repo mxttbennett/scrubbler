@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { readPackageVersion } from './version.js';
 import {
   ALL_GROUPS,
   DEFAULT_ENABLED,
@@ -12,8 +13,7 @@ import {
 } from '../rules/markers.js';
 
 // Last.fm answers any Mozilla/5.0-prefixed User-Agent with 406, so identify honestly.
-const DEFAULT_USER_AGENT =
-  'scrubbler/0.1.0 (+https://github.com/mxttbennett/scrubbler)';
+const DEFAULT_USER_AGENT = `scrubbler/${readPackageVersion()} (+https://github.com/mxttbennett/scrubbler)`;
 
 const envSchema = z.object({
   LASTFM_USERNAME: z.string().min(1),

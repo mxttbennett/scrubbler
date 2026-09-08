@@ -7,7 +7,8 @@
    "distinct_albums": 8831,
    "distinct_tracks": 40257
   },
-  "note": "Only entities whose title has a trailing delimiter segment are kept. Real library data; the golden corpus for rule-engine precision tests."
+  "note": "Only entities whose title has a trailing delimiter segment are kept. Real library data; the golden corpus for rule-engine precision tests.",
+  "credit": "Last.fm Data, powered by AudioScrobbler (https://www.last.fm). Property of Last.fm, retained non-commercially under the API Terms of Service and well inside the 100 MB Reasonable Usage Cap."
  },
  "albums": [
   {

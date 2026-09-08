@@ -7,6 +7,17 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.1.3] - 2026-09-08
+
+- The README now states the Last.fm terms position up front: the API has no method for editing a
+  scrobble, so the service drives the same authenticated web forms a browser uses, which is contrary
+  to clause 2.6 of the API terms. Nothing about how it runs has changed — this says out loud what it
+  was already doing.
+- Last.fm is credited as the source of library data in the README and in the test corpus, which is
+  what the API terms ask for wherever that data is distributed.
+- The User-Agent announced `scrubbler/0.1.0` regardless of the version actually running. It now
+  reads the package version, so Last.fm's logs name the build.
+
 ## [1.1.2] - 2026-09-08
 
 - Releases are now created as **pre-releases** and promoted when they are deployed, so GitHub's
