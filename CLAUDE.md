@@ -132,6 +132,9 @@ already has them.
 - Grouping happens at the **candidate boundary**, which is the only place a candidate's tuples are
   produced together. `Resolver.onGroup` therefore suppresses `onEdit`/`onAlbumEdit`; registering
   both would write before proposing.
+- **Anything a resume needs must be a ledger column.** `timestamp`, `action`, `referer_path` and
+  `track_names` are all there for that reason: a restart mid-resolution rebuilds the edit from the
+  row alone, and the album page those track names came from is gone once the rename lands.
 - Album edits go through the ledger like track edits — `kind='album'` with `''` in every track
   field, which is also why `resumable` must stay kind-aware.
 - `APPROVAL_MODE` is read once at startup. `sweep_state.paused` is the live flag; do not add a
