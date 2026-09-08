@@ -163,7 +163,6 @@ export class ScrubWorker {
     this.setState({ phase: 'resolving', candidatesDone: 0, candidatesTotal: candidates.length });
 
     const approvals = this.config.approvalMode ? this.approvals : undefined;
-    let albumApplied = 0;
     let proposed = 0;
     const { skips } = await this.resolver.resolve(candidates, {
       shouldStop: () => this.stopped || this.isPaused(),
@@ -173,9 +172,7 @@ export class ScrubWorker {
           if (result === 'proposed') proposed++;
           return;
         }
-        const before = executor.streamedSummary.applied;
         await executor.applyGroup(group, rules.keys);
-        if (group.kind === 'album' && executor.streamedSummary.applied > before) albumApplied++;
       },
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
@@ -183,8 +180,9 @@ export class ScrubWorker {
         console.log(
           `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
             (approvals === undefined
-              ? `${albumApplied} albums · ${edits} tuples · ${s.applied} applied · ` +
-                `${s.verified} verified · ${s.unverified} unverified · ${s.failed} failed`
+              ? `${s.byKind.album.applied} albums · ${s.byKind.track.applied} tracks · ` +
+                `${edits} tuples · ${s.verified} verified · ${s.unverified} unverified · ` +
+                `${s.failed} failed`
               : `${proposed} proposed · ${edits} tuples`),
         );
       },
@@ -217,7 +215,13 @@ export class ScrubWorker {
       this.config.dryRun ? 'Dry run complete — nothing written' : 'Sweep complete',
       [
         `candidates      ${candidates.length}`,
-        `album renames   ${albumApplied}`,
+        `albums          ${summary.byKind.album.applied} renamed` +
+          (summary.byKind.album.tracksCovered > 0
+            ? `, covering ${summary.byKind.album.tracksCovered} tracks`
+            : '') +
+          (summary.byKind.album.failed > 0 ? ` (${summary.byKind.album.failed} failed)` : ''),
+        `tracks          ${summary.byKind.track.applied} edited` +
+          (summary.byKind.track.failed > 0 ? ` (${summary.byKind.track.failed} failed)` : ''),
         `distinct tuples ${summary.planned}`,
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,
@@ -230,6 +234,9 @@ export class ScrubWorker {
         verified: summary.verified,
         unverified: summary.unverified,
         failed: summary.failed,
+        dryRun: this.config.dryRun,
+        albums: summary.byKind.album.applied,
+        tracks: summary.byKind.track.applied,
       },
     );
   }
