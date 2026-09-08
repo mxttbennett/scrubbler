@@ -46,6 +46,10 @@ describe('cleanTitle — precision (must never touch)', () => {
     'Voodoo Ray (Ambient Dub)',
     'Cowgirl (75 MPH Mix)',
     'So What (January 1963)',
+    'She Said She Said - 2022 Mix',
+    'Yellow Submarine - 2022 Mix',
+    'Tomorrow Never Knows - Mono Mix Remaster',
+    'Tomorrow Never Knows - take 1',
   ];
 
   it.each(mustSurviveTracks)('leaves track %s alone', (title) => {
