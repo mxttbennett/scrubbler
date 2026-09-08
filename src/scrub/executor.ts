@@ -23,7 +23,7 @@ export interface ExecutionSummary {
   unverified: number;
   failed: number;
   skippedByLedger: number;
-  skippedByRule: number;
+  alsoHasRule: number;
   capped: boolean;
   samples: string[];
 }
@@ -78,7 +78,7 @@ export class Executor {
       unverified: 0,
       failed: 0,
       skippedByLedger: 0,
-      skippedByRule: 0,
+      alsoHasRule: 0,
       capped: false,
       samples: [],
     };
@@ -87,10 +87,9 @@ export class Executor {
     for (const edit of edits) {
       if (changedFields(edit).length === 0) continue;
 
-      if (existingRuleKeys.has(tupleKey(edit.original))) {
-        summary.skippedByRule++;
-        continue;
-      }
+      // A rule existing does NOT mean the work is done: a rule created without "apply to all past
+      // scrobbles" fixes only future ones, so a still-dirty title proves the past ones need editing.
+      if (existingRuleKeys.has(tupleKey(edit.original))) summary.alsoHasRule++;
 
       const existing = this.ledgerRow(edit.original);
       if (existing && (existing.status === 'verified' || existing.status === 'applied')) {

@@ -80,10 +80,14 @@ sharing the tuple:
 - **`DRY_RUN=true` by default** — plans and logs everything, writes nothing.
 - **Idempotency ledger** (`applied_edits`), keyed on the original 4-tuple, with attempt-based
   backoff so a permanently rejected edit is not retried forever.
-- **Reconciliation** against your existing automatic-edit rules, as a best-effort optimisation. The
-  ledger, not the rule list, is authoritative.
+- **The ledger is the only dedupe.** Existing automatic-edit rules are read and reported but never
+  used to skip work: a rule created without "apply to all past scrobbles" fixes only future ones, so
+  a title that is *still* dirty proves the past scrobbles need editing regardless of the rule.
 - **`MAX_EDITS_PER_RUN`** caps the blast radius of a bad ruleset.
 - **Serial writes** with `WRITE_DELAY_MS` spacing. Parallel writes produce inconsistent results.
+- **Paced reads** — `PAGE_DELAY_MS` defaults to 15s. Last.fm throttles the web pages with an HTTP
+  `200` error page, and 1.5s still tripped it. A first pass therefore takes hours, which is the
+  right trade for a service that runs continuously.
 - **Verification** — Last.fm returns `200` for an accepted-but-no-op edit, so each write is
   confirmed by re-reading the row after a delay.
 

@@ -81,7 +81,7 @@ export class ScrubWorker {
       `candidates ${candidates.length} | tuples ${summary.planned} | applied ${summary.applied}` +
         ` | verified ${summary.verified} | unverified ${summary.unverified}` +
         ` | failed ${summary.failed} | already done ${summary.skippedByLedger}` +
-        ` | existing rule ${summary.skippedByRule}` +
+        ` | also had a rule ${summary.alsoHasRule}` +
         (summary.capped ? ' | CAPPED' : ''),
       ...summary.samples.map((s) => `  ${s}`),
     ]);

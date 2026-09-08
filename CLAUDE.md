@@ -39,7 +39,11 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 - **Pace library page reads, and detect the throttle by content.** Last.fm soft-throttles the web
   pages with an HTTP `200` page reading "You're requesting too many pages" — no `429`, no
   `Retry-After`. `LibraryPages` owns a 1.5s rate limiter and `isThrottled()`; never bypass either.
-  The JSON API and the web pages are separate rate-limit domains, and the web one is far tighter.
+  The JSON API and the web pages are separate rate-limit domains, and the web one is far tighter:
+  4 req/s is fine for the API, 1.5s spacing still got throttled on the pages, so the default is 15s.
+- **Never skip an edit because an automatic-edit rule exists.** A rule created without "apply to all
+  past scrobbles" corrects only future ones, so a still-dirty title is evidence the edit is *needed*.
+  Rules are read for reporting only; `applied_edits` is the sole dedupe.
 - **Writes are serial, and success is not implied by `200`.** Parallel writes produce inconsistent
   results, and Last.fm returns `200` for an accepted-but-no-op edit — hence `VERIFY_EDITS`, and the
   delay before verifying, because it serves stale rows briefly after a write.

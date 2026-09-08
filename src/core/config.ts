@@ -24,7 +24,7 @@ const envSchema = z.object({
   SWEEP_INTERVAL_MS: z.string().default('21600000'),
   MAX_EDITS_PER_RUN: z.string().default('250'),
   WRITE_DELAY_MS: z.string().default('3000'),
-  PAGE_DELAY_MS: z.string().default('1500'),
+  PAGE_DELAY_MS: z.string().default('15000'),
   VERIFY_EDITS: z.string().default('true'),
   VERIFY_DELAY_MS: z.string().default('2000'),
   VERIFY_ATTEMPTS: z.string().default('3'),

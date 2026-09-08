@@ -127,7 +127,7 @@ export class LibraryPages {
   ) {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.log = opts.log ?? ((m) => console.log(m));
-    this.limiter = new RateLimiter(opts.minIntervalMs ?? 1500, { sleep: this.sleep });
+    this.limiter = new RateLimiter(opts.minIntervalMs ?? 15_000, { sleep: this.sleep });
   }
 
   private throttledUntil = 0;
