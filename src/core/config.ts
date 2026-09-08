@@ -24,7 +24,7 @@ const envSchema = z.object({
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
   RULES_EXPERIMENTAL_ENABLED: z.string().default(''),
   SWEEP_INTERVAL_MS: z.string().default('21600000'),
-  MAX_EDITS_PER_RUN: z.string().default('250'),
+  MAX_EDITS_PER_RUN: z.string().default('2000'),
   WRITE_DELAY_MS: z.string().default('3000'),
   PAGE_DELAY_MS: z.string().default('15000'),
   PAGE_DELAY_JITTER_MS: z.string().default('5000'),

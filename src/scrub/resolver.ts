@@ -27,7 +27,10 @@ export class Resolver {
    * Two POSTs against one tuple cannot both land — the first rewrites the tuple the second selects
    * on — so track and album cleanups for the same tuple must share a request.
    */
-  async resolve(candidates: Candidate[]): Promise<ResolveResult> {
+  async resolve(
+    candidates: Candidate[],
+    onEdit?: (edit: PlannedEdit) => void,
+  ): Promise<ResolveResult> {
     const byTuple = new Map<string, PlannedEdit>();
     const skips: SkipRecord[] = [];
     const seenPaths = new Set<string>();
@@ -48,7 +51,8 @@ export class Resolver {
       }
 
       for (const { row, action, refererPath } of rows) {
-        this.fold(byTuple, row, action, refererPath);
+        const added = this.fold(byTuple, row, action, refererPath);
+        if (added) onEdit?.(added);
       }
     }
 
@@ -60,19 +64,19 @@ export class Resolver {
     row: ScrobbleRow,
     action: string,
     refererPath: string,
-  ): void {
+  ): PlannedEdit | undefined {
     const original = rowTuple(row);
     const key = tupleKey(original);
-    if (byTuple.has(key)) return;
+    if (byTuple.has(key)) return undefined;
 
     // Always re-derive from the authoritative page value; the API's copy can be stale.
     const track = cleanTitle(row.track_name, 'track', this.enabled);
     const album =
       row.album_name === '' ? null : cleanTitle(row.album_name, 'album', this.enabled);
-    if (!track && !album) return;
+    if (!track && !album) return undefined;
 
     const groups = [...new Set([...(track?.groups ?? []), ...(album?.groups ?? [])])].sort();
-    byTuple.set(key, {
+    const edit: PlannedEdit = {
       original,
       next: {
         ...original,
@@ -84,7 +88,9 @@ export class Resolver {
       action,
       refererPath,
       groups,
-    });
+    };
+    byTuple.set(key, edit);
+    return edit;
   }
 
   private async collectRows(

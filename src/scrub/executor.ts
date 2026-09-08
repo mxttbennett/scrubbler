@@ -41,6 +41,50 @@ export class Executor {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
+  /** Persists a resolved tuple before any write, so an interrupted resolution can be resumed. */
+  checkpoint(edit: PlannedEdit): void {
+    const existing = this.ledgerRow(edit.original);
+    if (existing && existing.status !== 'planned') return;
+    this.upsert(edit, 'planned', existing?.attempts ?? 0, null);
+  }
+
+  /**
+   * Rebuilds edits left as `planned` by an interrupted run. The CSRF token comes from the session
+   * cookie rather than the page, so one fresh token serves every resumed write.
+   */
+  resumable(csrfToken: string): PlannedEdit[] {
+    const rows = this.db
+      .select()
+      .from(schema.appliedEdits)
+      .where(eq(schema.appliedEdits.status, 'planned'))
+      .all();
+
+    const out: PlannedEdit[] = [];
+    for (const r of rows) {
+      if (r.timestamp === null || r.action === null) continue;
+      out.push({
+        original: {
+          track_name: r.trackNameOriginal,
+          artist_name: r.artistNameOriginal,
+          album_name: r.albumNameOriginal,
+          album_artist_name: r.albumArtistNameOriginal,
+        },
+        next: {
+          track_name: r.trackName,
+          artist_name: r.artistName,
+          album_name: r.albumName,
+          album_artist_name: r.albumArtistName,
+        },
+        timestamp: r.timestamp,
+        csrfToken,
+        action: r.action,
+        refererPath: r.action.split('?')[0] ?? r.action,
+        groups: r.groups === '' ? [] : (r.groups.split(',') as PlannedEdit['groups']),
+      });
+    }
+    return out;
+  }
+
   recordSkips(skips: SkipRecord[]): void {
     for (const skip of skips) {
       this.db
@@ -178,6 +222,8 @@ export class Executor {
       albumName: edit.next.album_name,
       albumArtistName: edit.next.album_artist_name,
       groups: edit.groups.join(','),
+      timestamp: edit.timestamp,
+      action: edit.action,
       status: status as 'applied' | 'verified' | 'unverified' | 'failed' | 'skipped' | 'planned',
       attempts,
       lastError,

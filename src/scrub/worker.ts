@@ -50,14 +50,6 @@ export class ScrubWorker {
       `existing automatic-edit rules: ${rules.albumCount} album, ${rules.trackCount} track${rules.partial ? ' (partial read)' : ''}`,
     );
 
-    const candidates = await this.planner.sweep((seen, hits) =>
-      console.log(`swept ${seen} entities, ${hits} candidates`),
-    );
-    console.log(`sweep complete: ${candidates.length} candidates`);
-
-    const { edits, skips } = await this.resolver.resolve(candidates);
-    console.log(`resolved to ${edits.length} distinct tuples, ${skips.length} skipped`);
-
     const executor = new Executor(this.db, this.editor, this.reporter, {
       dryRun: this.config.dryRun,
       maxEditsPerRun: this.config.maxEditsPerRun,
@@ -65,6 +57,25 @@ export class ScrubWorker {
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
     });
+
+    // Apply anything a previous run resolved but never wrote, before spending hours re-scraping.
+    const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
+    const carried = token === undefined ? [] : executor.resumable(token);
+    if (carried.length > 0) {
+      console.log(`resuming ${carried.length} tuple(s) planned by an earlier run`);
+      await executor.run(carried, rules.keys);
+    }
+
+    const candidates = await this.planner.sweep((seen, hits) =>
+      console.log(`swept ${seen} entities, ${hits} candidates`),
+    );
+    console.log(`sweep complete: ${candidates.length} candidates`);
+
+    const { edits, skips } = await this.resolver.resolve(candidates, (edit) =>
+      executor.checkpoint(edit),
+    );
+    console.log(`resolved to ${edits.length} distinct tuples, ${skips.length} skipped`);
+
     executor.recordSkips(skips);
     const summary = await executor.run(edits, rules.keys);
 

@@ -130,6 +130,16 @@ export class Session {
     );
   }
 
+  /** Any authenticated page's token works for any POST, since it is derived from the cookie. */
+  async freshCsrfToken(path: string): Promise<string | undefined> {
+    const res = await this.request(path);
+    if (res.status !== 200) {
+      await res.body?.cancel();
+      return undefined;
+    }
+    return extractCsrfToken(await res.text());
+  }
+
   cookie(name: string): string | undefined {
     return this.jar.get(name);
   }

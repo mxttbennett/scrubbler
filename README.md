@@ -87,6 +87,10 @@ sharing the tuple:
   used to skip work: a rule created without "apply to all past scrobbles" fixes only future ones, so
   a title that is *still* dirty proves the past scrobbles need editing regardless of the rule.
 - **`MAX_EDITS_PER_RUN`** caps the blast radius of a bad ruleset.
+- **Resolution is checkpointed.** Each resolved tuple is written to the ledger as `planned` before
+  any write, and the next run applies those first. An interruption part-way through a multi-hour
+  resolution costs one page fetch to resume, not the whole pass — the CSRF token comes from the
+  session cookie, so one fresh token serves every carried-over write.
 - **Serial writes** with `WRITE_DELAY_MS` spacing. Parallel writes produce inconsistent results.
 - **Paced reads** — `PAGE_DELAY_MS` defaults to 15s. Last.fm throttles the web pages with an HTTP
   `200` error page, and 1.5s still tripped it. A first pass therefore takes hours, which is the

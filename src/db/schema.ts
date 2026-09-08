@@ -20,6 +20,9 @@ export const appliedEdits = sqliteTable(
     albumName: text('album_name').notNull(),
     albumArtistName: text('album_artist_name').notNull(),
     groups: text('groups').notNull(),
+    /** Kept so an interrupted resolution can be resumed without re-scraping every library page. */
+    timestamp: text('timestamp'),
+    action: text('action'),
     status: text('status', {
       enum: ['applied', 'verified', 'unverified', 'failed', 'skipped', 'planned'],
     }).notNull(),
