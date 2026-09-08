@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           sleep 8
           systemctl is-active scrubbler
-          # Restart=always means a crash-looping build still reports active; the startup line is
-          # what proves this build actually booted and read its config.
-          journalctl -u scrubbler --since '-2 min' --no-pager | grep -F 'scrubbler starting' | tail -1
+          # Restart=always means a crash-looping build still reports active; only the startup line
+          # proves this build booted. It names the version, so this is also the deploy's receipt.
+          journalctl -u scrubbler --since '-2 min' --no-pager | grep -F 'starting | user' | tail -1
           EOF

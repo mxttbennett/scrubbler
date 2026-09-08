@@ -148,8 +148,10 @@ npm test
 
 `--once` runs a single sweep and exits; without it the service loops every `SWEEP_INTERVAL_MS`.
 
-Deployment is manual for now — see [deploy/README.md](deploy/README.md) for the rsync + systemd
-steps, the pre-deploy snapshot, and what rollback can and cannot undo.
+Deploys run from a manual-trigger GitHub Actions workflow — see
+[deploy/README.md](deploy/README.md) for that, the pre-deploy snapshot, and what rollback can and
+cannot undo. Releases are tagged automatically on merge; [VERSIONING.md](VERSIONING.md) says which
+number to bump and how to tell what is running.
 
 ## Reporting
 
