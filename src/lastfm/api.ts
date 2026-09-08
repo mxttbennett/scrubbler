@@ -1,6 +1,6 @@
 import { LastfmError } from './errors.js';
 import { RateLimiter } from './rateLimiter.js';
-import { type TopAlbums, type TopTracks, toInt } from './types.js';
+import { type RecentTracks, type TopAlbums, type TopTracks, toInt } from './types.js';
 
 export interface LastfmApiOptions {
   baseUrl?: string;
@@ -83,6 +83,42 @@ export class LastfmApi {
       limit: String(limit),
       page: String(page),
     });
+  }
+
+  getRecentTracks(user: string, fromUts: number, page = 1, limit = PAGE_SIZE): Promise<RecentTracks> {
+    return this.request('user.getrecenttracks', {
+      user,
+      from: String(fromUts),
+      limit: String(limit),
+      page: String(page),
+    });
+  }
+
+  /**
+   * Yields scrobbles newer than `fromUts`. `album.#text` is the album title but there is no
+   * albumartist field at all, so a caller must resolve the album artist from the library page.
+   */
+  async *iterateRecentTracks(
+    user: string,
+    fromUts: number,
+  ): AsyncGenerator<{ track: string; artist: string; album: string; uts: number }> {
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const data = await this.getRecentTracks(user, fromUts, page);
+      totalPages = toInt(data.recenttracks['@attr'].totalPages);
+      for (const t of data.recenttracks.track) {
+        // A now-playing row has no date and is not yet a scrobble.
+        if (t.date === undefined) continue;
+        yield {
+          track: t.name,
+          artist: t.artist['#text'],
+          album: t.album['#text'],
+          uts: toInt(t.date.uts),
+        };
+      }
+      page++;
+    } while (page <= totalPages);
   }
 
   async *iterateTopAlbums(user: string): AsyncGenerator<{ name: string; artist: string }> {

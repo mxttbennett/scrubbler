@@ -24,6 +24,8 @@ const envSchema = z.object({
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
   RULES_EXPERIMENTAL_ENABLED: z.string().default(''),
   SWEEP_INTERVAL_MS: z.string().default('21600000'),
+  FULL_SWEEP_INTERVAL_MS: z.string().default('604800000'),
+  DEAD_CANDIDATE_ATTEMPTS: z.string().default('3'),
   MAX_EDITS_PER_RUN: z.string().default('2000'),
   WRITE_DELAY_MS: z.string().default('3000'),
   PAGE_DELAY_MS: z.string().default('15000'),
@@ -31,6 +33,7 @@ const envSchema = z.object({
   VERIFY_EDITS: z.string().default('true'),
   VERIFY_DELAY_MS: z.string().default('2000'),
   VERIFY_ATTEMPTS: z.string().default('3'),
+  SHUTDOWN_GRACE_MS: z.string().default('60000'),
   USER_AGENT: z.string().default(DEFAULT_USER_AGENT),
 });
 
@@ -45,6 +48,8 @@ export interface Config {
   dryRun: boolean;
   enabledGroups: Set<GroupName>;
   sweepIntervalMs: number;
+  fullSweepIntervalMs: number;
+  deadCandidateAttempts: number;
   maxEditsPerRun: number;
   writeDelayMs: number;
   pageDelayMs: number;
@@ -52,6 +57,7 @@ export interface Config {
   verifyEdits: boolean;
   verifyDelayMs: number;
   verifyAttempts: number;
+  shutdownGraceMs: number;
   userAgent: string;
 }
 
@@ -113,6 +119,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
     enabledGroups,
     sweepIntervalMs: parsePositiveInt(e.SWEEP_INTERVAL_MS, 'SWEEP_INTERVAL_MS'),
+    fullSweepIntervalMs: parsePositiveInt(e.FULL_SWEEP_INTERVAL_MS, 'FULL_SWEEP_INTERVAL_MS'),
+    deadCandidateAttempts: parsePositiveInt(e.DEAD_CANDIDATE_ATTEMPTS, 'DEAD_CANDIDATE_ATTEMPTS'),
     maxEditsPerRun: parsePositiveInt(e.MAX_EDITS_PER_RUN, 'MAX_EDITS_PER_RUN'),
     writeDelayMs: parsePositiveInt(e.WRITE_DELAY_MS, 'WRITE_DELAY_MS'),
     pageDelayMs: parsePositiveInt(e.PAGE_DELAY_MS, 'PAGE_DELAY_MS'),
@@ -120,6 +128,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     verifyEdits: parseBool(e.VERIFY_EDITS, 'VERIFY_EDITS'),
     verifyDelayMs: parsePositiveInt(e.VERIFY_DELAY_MS, 'VERIFY_DELAY_MS'),
     verifyAttempts: parsePositiveInt(e.VERIFY_ATTEMPTS, 'VERIFY_ATTEMPTS'),
+    shutdownGraceMs: parsePositiveInt(e.SHUTDOWN_GRACE_MS, 'SHUTDOWN_GRACE_MS'),
     userAgent: e.USER_AGENT,
   };
 }

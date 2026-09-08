@@ -35,3 +35,14 @@ export function toInt(value: string | number | undefined): number {
   const n = typeof value === 'number' ? value : Number.parseInt(value, 10);
   return Number.isFinite(n) ? n : 0;
 }
+
+export interface RecentTrack {
+  name: string;
+  artist: { '#text': string; mbid?: string };
+  album: { '#text': string; mbid?: string };
+  date?: { uts: string; '#text': string };
+}
+
+export interface RecentTracks {
+  recenttracks: { track: RecentTrack[]; '@attr': PagedAttr };
+}

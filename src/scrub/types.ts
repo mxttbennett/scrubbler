@@ -51,3 +51,48 @@ export function changedFields(edit: PlannedEdit): (keyof Tuple)[] {
     (k) => edit.original[k] !== edit.next[k],
   );
 }
+
+export interface SharedChange {
+  field: keyof Tuple;
+  from: string;
+  to: string;
+}
+
+export interface EditGroup {
+  artist: string;
+  edits: PlannedEdit[];
+  /** Set only when every edit changes exactly one field, identically. */
+  shared: SharedChange | undefined;
+}
+
+/**
+ * Requires exactly one changed field per edit: fold() can clean track and album together, so a group
+ * sharing an album change while some rows also rename a track must not be presented as one clean
+ * suffix removal.
+ */
+export function detectShared(edits: PlannedEdit[]): SharedChange | undefined {
+  if (edits.length === 0) return undefined;
+  let candidate: SharedChange | undefined;
+  for (const edit of edits) {
+    const fields = changedFields(edit);
+    if (fields.length !== 1) return undefined;
+    const field = fields[0]!;
+    const change = { field, from: edit.original[field], to: edit.next[field] };
+    if (candidate === undefined) {
+      candidate = change;
+      continue;
+    }
+    if (
+      candidate.field !== change.field ||
+      candidate.from !== change.from ||
+      candidate.to !== change.to
+    ) {
+      return undefined;
+    }
+  }
+  return candidate;
+}
+
+export function toGroup(artist: string, edits: PlannedEdit[]): EditGroup {
+  return { artist, edits, shared: detectShared(edits) };
+}

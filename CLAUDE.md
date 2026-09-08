@@ -27,6 +27,22 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 - **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
   canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
   stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.
+- **An album rename uses `edit-album`, not N `edit-track` calls.** `?edited-variation=` has two
+  values; `library-album-scrobble` posts to `/library/edit-album` and needs only the album name and
+  album artist pairs — no timestamp, no track, no `edit_all`. Album candidates therefore never
+  recurse into track pages. `edit-track` is for when a *track title* carries a marker.
+- **Albums are swept before tracks and that order is load-bearing.** The album rename lands first, so
+  a track page read afterwards already shows the clean album name and the track edit's
+  `album_name_original` cannot go stale and silently no-op. `test/scrub/albumFirst.test.ts` fails if
+  the order changes.
+- **Discovery is incremental by default.** A cursor over `getRecentTracks` replaces re-sweeping 49k
+  entities, because `create_automatic_edit_rule` means new dirty entities can only arrive with new
+  scrobbles. A weekly full sweep is the completeness guarantee. The cursor advances only after a
+  completed cycle. Candidates that resolve to nothing are remembered — that repeated paced page
+  fetch, not the API calls, is the real cost.
+- **Shutdown drains.** `stop()` resolves once the in-flight edit *and its verification* have
+  finished; never go back to flipping a flag and exiting, or a deploy can change Last.fm without
+  recording it.
 - **One request per tuple, carrying every field that changes.** The `*_original` 4-tuple is the
   edit's WHERE clause, so two POSTs against one tuple cannot both land — the first rewrites what the
   second selects on. `Resolver.fold` therefore derives the *complete* change for a tuple (track and
