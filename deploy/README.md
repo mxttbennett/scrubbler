@@ -4,6 +4,12 @@ Deploy with the **`deploy` workflow** (Actions -> deploy -> Run workflow). It ru
 the pre-deploy snapshot, swaps the build in and confirms the service booted — the steps under
 *Every deploy* below, which remain the manual fallback.
 
+**Dispatch the tag you want, not the branch.** The run is titled after its ref, so
+`gh workflow run deploy --ref v1.1.0` reads `deploy v1.1.0` in the run list while dispatching `main`
+reads `deploy main` and deploys whatever `main` happens to be. Either way the run summary records the
+version that actually came up, read back from the box rather than from `package.json`. Deploying an
+*older* tag is a rollback — read *Rolling back* and *Rolling back past the approval gate* first.
+
 The trigger is `workflow_dispatch` only. The sibling `feed1` service deploys on every push to
 `main`, but a merge here widens what this service rewrites on a real Last.fm account and those edits
 are irreversible, so the button is the human beat before that happens.

@@ -52,7 +52,7 @@ past it rather than off `main`.
 - `/scrub status` in Discord — the first line.
 - The startup line in journald: `journalctl -u scrubbler | grep 'starting | user' | tail -1`.
 - On the box: `node -p "require('/opt/scrubbler/package.json').version"`.
-- The deploy workflow prints it in its final step.
+- The deploy workflow's run summary, which reads it back off the box after the restart.
 
 Because the release and the deploy are separate, **the newest tag is not necessarily what is
 running.** That is the trade for keeping deploys manual; the three checks above are the truth.
