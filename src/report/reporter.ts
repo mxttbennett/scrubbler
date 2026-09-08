@@ -19,7 +19,9 @@ export interface FieldChange {
 }
 
 export interface Correction {
+  /** Album corrections carry the ALBUM artist here; track corrections the track artist. */
   artist: string;
+  kind: 'track' | 'album';
   /** The tuple's identity, so a correction that only changed the album still names its track. */
   track: string;
   album: string;
@@ -33,6 +35,7 @@ export interface Correction {
 
 export interface CorrectionGroup {
   artist: string;
+  kind: 'track' | 'album';
   shared: { field: string; from: string; to: string } | undefined;
   items: Correction[];
   outcome: Outcome;
@@ -69,6 +72,15 @@ const OUTCOME_WORD: Record<Outcome, string> = {
   unverified: 'Corrected, unconfirmed',
   failed: 'Failed to correct',
 };
+
+/** "Corrected album (4 tracks)" or "Corrected 2 tracks" — the subject, not the artist. */
+export function embedTitle(outcome: Outcome, kind: 'track' | 'album', count: number): string {
+  const word = OUTCOME_WORD[outcome];
+  if (kind === 'album') {
+    return count > 1 ? `${word} album (${count} tracks)` : `${word} album`;
+  }
+  return `${word} ${count} track${count === 1 ? '' : 's'}`;
+}
 
 export function describeCorrection(c: Correction): string {
   const parts = c.changes.map((ch) => `${ch.field}: "${ch.from}" -> "${ch.to}"`);
@@ -130,8 +142,9 @@ export class ConsoleAndDiscordReporter implements Reporter {
     }
     const n = g.items.length;
     await this.discord.send({
-      title: `${OUTCOME_WORD[g.outcome]} · ${g.artist} — ${n} tracks`,
+      title: embedTitle(g.outcome, g.kind, n),
       color: OUTCOME_COLOR[g.outcome],
+      description: `**${escapeMd(g.artist)}**`,
       fields: [
         {
           name: g.shared.field.replace(/_/g, ' '),
@@ -152,13 +165,16 @@ export class ConsoleAndDiscordReporter implements Reporter {
       value: `~~${escapeMd(ch.from)}~~\n**${escapeMd(ch.to)}**`,
     }));
     if (c.error !== undefined) fields.push({ name: 'error', value: escapeMd(c.error) });
-    // Named unconditionally: an album-only correction otherwise renders identically for every track.
-    fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
-    fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
+    // Named for track corrections: an album-only change otherwise renders identically per track.
+    if (c.kind === 'track') {
+      fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
+      fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
+    }
     fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
     return {
-      title: `${OUTCOME_WORD[c.outcome]} · ${c.artist}`,
+      title: embedTitle(c.outcome, c.kind, 1),
       color: OUTCOME_COLOR[c.outcome],
+      description: `**${escapeMd(c.artist)}**`,
       fields,
       ...(c.imageUrl === undefined ? {} : { thumbnail: { url: c.imageUrl } }),
       footer: { text: progressText(totals) },

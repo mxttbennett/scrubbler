@@ -150,6 +150,7 @@ export class Executor {
         [
           {
             artist: edit.artist,
+            kind: 'album',
             track: '(whole album)',
             album: edit.from,
             changes: [{ field: 'album_name', from: edit.from, to: edit.to }],
@@ -281,6 +282,7 @@ export class Executor {
     const record = (edit: PlannedEdit, outcome: Outcome, error?: string, imageUrl?: string) => {
       pending.push({
         artist: edit.original.artist_name,
+        kind: 'track',
         track: edit.original.track_name,
         album: edit.original.album_name,
         changes: changedFields(edit).map((f) => ({

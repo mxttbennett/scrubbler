@@ -23,6 +23,7 @@ const TOTALS = { planned: 3, applied: 1, verified: 1, unverified: 0, failed: 0 }
 
 const ONE = {
   artist: 'Fleetwood Mac',
+  kind: 'track' as const,
   track: 'Silver Springs - 2004 Remaster',
   album: 'Rumours (Deluxe Edition)',
   changes: [
@@ -40,8 +41,9 @@ describe('one message per correction', () => {
 
     expect(sent).toHaveLength(1);
     const e = sent[0]!;
-    expect(e.title).toBe('Corrected · Fleetwood Mac');
-    expect(e.description).toBeUndefined();
+    expect(e.title).toBe('Corrected 1 track');
+    // the artist leads the description, not the title
+    expect(e.description).toBe('**Fleetwood Mac**');
     // track + on album are always present: an album-only correction otherwise renders identically
     // for every track on the album, which is the bug this fixes.
     expect(e.fields?.map((f) => f.name)).toEqual([
@@ -62,10 +64,11 @@ describe('one message per correction', () => {
     await reporter.corrections([{ ...ONE, outcome: 'failed', error: 'rejected' }], TOTALS);
 
     expect(sent.map((e) => e.title)).toEqual([
-      'Would correct · Fleetwood Mac',
-      'Corrected, unconfirmed · Fleetwood Mac',
-      'Failed to correct · Fleetwood Mac',
+      'Would correct 1 track',
+      'Corrected, unconfirmed 1 track',
+      'Failed to correct 1 track',
     ]);
+    expect(new Set(sent.map((e) => e.description))).toEqual(new Set(['**Fleetwood Mac**']));
     expect(new Set(sent.map((e) => e.color)).size).toBe(3);
     expect(sent[2]!.fields?.some((f) => f.name === 'error')).toBe(true);
   });
@@ -108,6 +111,7 @@ describe('describeCorrection', () => {
 describe('grouped corrections', () => {
   const albumOnly = (track: string) => ({
     artist: 'The Replacements',
+    kind: 'album' as const,
     track,
     album: 'Let It Be (Expanded)',
     changes: [{ field: 'album_name', from: 'Let It Be (Expanded)', to: 'Let It Be' }],
@@ -119,13 +123,14 @@ describe('grouped corrections', () => {
     const { sent, reporter } = spy();
     const items = ['Bastards of Young', 'Left of the Dial', 'Answering Machine'].map(albumOnly);
     await reporter.group(
-      { artist: 'The Replacements', shared: { field: 'album_name', from: 'Let It Be (Expanded)', to: 'Let It Be' }, items, outcome: 'verified' },
+      { artist: 'The Replacements', kind: 'album' as const, shared: { field: 'album_name', from: 'Let It Be (Expanded)', to: 'Let It Be' }, items, outcome: 'verified' },
       TOTALS,
     );
 
     expect(sent).toHaveLength(1);
     const e = sent[0]!;
-    expect(e.title).toBe('Corrected · The Replacements — 3 tracks');
+    expect(e.title).toBe('Corrected album (3 tracks)');
+    expect(e.description).toBe('**The Replacements**');
     expect(e.fields?.map((f) => f.name)).toEqual(['album name', 'tracks (3)', 'rule']);
     expect(e.fields?.[1]!.value).toContain('Bastards of Young');
     expect(e.fields?.[1]!.value).toContain('Answering Machine');
@@ -135,7 +140,7 @@ describe('grouped corrections', () => {
     const { sent, reporter } = spy();
     const items = Array.from({ length: 200 }, (_, i) => albumOnly(`A very long track title number ${i}`));
     await reporter.group(
-      { artist: 'X', shared: { field: 'album_name', from: 'a', to: 'b' }, items, outcome: 'verified' },
+      { artist: 'X', kind: 'album' as const, shared: { field: 'album_name', from: 'a', to: 'b' }, items, outcome: 'verified' },
       TOTALS,
     );
     const list = sent[0]!.fields![1]!.value;
@@ -146,7 +151,7 @@ describe('grouped corrections', () => {
   it('falls back to per-item reporting when the group shares no single change', async () => {
     const { sent, reporter } = spy();
     const items = [albumOnly('a'), { ...albumOnly('b'), changes: [{ field: 'track_name', from: 'b - Remastered', to: 'b' }] }];
-    await reporter.group({ artist: 'X', shared: undefined, items, outcome: 'verified' }, TOTALS);
+    await reporter.group({ artist: 'X', kind: 'album' as const, shared: undefined, items, outcome: 'verified' }, TOTALS);
 
     expect(sent).toHaveLength(1);
     expect(sent[0]!.title).toBe('2 corrections');
@@ -156,17 +161,18 @@ describe('grouped corrections', () => {
   it('renders a one-track group as the single-correction embed', async () => {
     const { sent, reporter } = spy();
     await reporter.group(
-      { artist: 'X', shared: { field: 'album_name', from: 'a', to: 'b' }, items: [albumOnly('solo')], outcome: 'verified' },
+      { artist: 'X', kind: 'album' as const, shared: { field: 'album_name', from: 'a', to: 'b' }, items: [albumOnly('solo')], outcome: 'verified' },
       TOTALS,
     );
-    expect(sent[0]!.title).toBe('Corrected · The Replacements');
-    expect(sent[0]!.fields?.some((f) => f.name === 'track')).toBe(true);
+    expect(sent[0]!.title).toBe('Corrected album');
+    expect(sent[0]!.description).toBe('**The Replacements**');
   });
 });
 
 describe('the footer never claims "nothing written" from zero counts', () => {
   const c = {
     artist: 'The Beatles',
+    kind: 'album' as const,
     track: '(whole album)',
     album: 'Please Please Me (Remastered)',
     changes: [{ field: 'album_name', from: 'Please Please Me (Remastered)', to: 'Please Please Me' }],
@@ -199,5 +205,48 @@ describe('the footer never claims "nothing written" from zero counts', () => {
     await reporter.corrections([c], { planned: 5, applied: 5, verified: 3, unverified: 1, failed: 1 });
     expect(sent[0]!.footer?.text).toContain('1 unverified');
     expect(sent[0]!.footer?.text).toContain('1 failed');
+  });
+});
+
+describe('embed titles name the subject and count, not the artist', () => {
+  const track = {
+    artist: 'The Smiths',
+    kind: 'track' as const,
+    track: 'Heaven Knows - 2011 Remaster',
+    album: 'Hatful of Hollow',
+    changes: [{ field: 'track_name', from: 'Heaven Knows - 2011 Remaster', to: 'Heaven Knows' }],
+    groups: ['remaster'],
+    outcome: 'verified' as const,
+  };
+
+  it('pluralises tracks', async () => {
+    const { sent, reporter } = spy();
+    await reporter.group(
+      { artist: 'The Smiths', kind: 'track', shared: undefined, items: [track], outcome: 'verified' },
+      TOTALS,
+    );
+    expect(sent[0]!.title).toBe('Corrected 1 track');
+  });
+
+  it('says "album" for an album rename and counts its tracks', async () => {
+    const { sent, reporter } = spy();
+    const items = ['a', 'b'].map((t) => ({ ...track, kind: 'album' as const, track: t }));
+    await reporter.group(
+      {
+        artist: 'The Smiths',
+        kind: 'album',
+        shared: { field: 'album_name', from: 'Hatful (Remastered)', to: 'Hatful' },
+        items,
+        outcome: 'verified',
+      },
+      TOTALS,
+    );
+    expect(sent[0]!.title).toBe('Corrected album (2 tracks)');
+  });
+
+  it('leads the description with the artist in every shape', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([track], TOTALS);
+    expect(sent[0]!.description!.startsWith('**The Smiths**')).toBe(true);
   });
 });

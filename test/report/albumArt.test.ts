@@ -80,6 +80,7 @@ function spy() {
 const TOTALS = { planned: 1, applied: 1, verified: 1, unverified: 0, failed: 0 };
 const base = {
   artist: 'The Replacements',
+  kind: 'album' as const,
   track: 'Left of the Dial',
   album: 'Tim (Remastered)',
   changes: [{ field: 'album_name', from: 'Tim (Remastered)', to: 'Tim' }],
@@ -105,6 +106,7 @@ describe('embeds show art for the new value', () => {
     await reporter.group(
       {
         artist: 'The Replacements',
+        kind: 'album' as const,
         shared: { field: 'album_name', from: 'Tim (Remastered)', to: 'Tim' },
         items: [base, { ...base, track: 'Bastards of Young' }],
         outcome: 'verified',

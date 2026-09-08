@@ -1,4 +1,5 @@
 import { loadConfig } from './core/config.js';
+import { AlreadyRunningError, acquireLock, lockPath } from './core/lock.js';
 import { createDb, runMigrations, schema } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
 import { AlbumEditor } from './lastfm/albumEditor.js';
@@ -13,6 +14,7 @@ import { ScrubWorker } from './scrub/worker.js';
 
 async function main() {
   const config = loadConfig();
+  const releaseLock = acquireLock(lockPath(config.dbPath));
   const db = createDb(config.dbPath);
   runMigrations(db);
 
@@ -74,17 +76,20 @@ async function main() {
   if (process.argv.includes('--resweep')) {
     db.update(schema.sweepState).set({ lastScrobbleUts: null, lastFullSweepAt: null }).run();
     console.log('cursor cleared — the next cycle will sweep the whole library');
+    releaseLock();
     return;
   }
   if (process.argv.includes('--retry-dead')) {
     const before = db.select().from(schema.deadCandidates).all().length;
     db.delete(schema.deadCandidates).run();
     console.log(`cleared ${before} dead candidate(s) — they will be tried again`);
+    releaseLock();
     return;
   }
 
   if (process.argv.includes('--once')) {
     await worker.runOnce();
+    releaseLock();
     return;
   }
 
@@ -101,6 +106,7 @@ async function main() {
     );
     const clean = await Promise.race([drained, timedOut]);
     console.log(clean ? 'drained cleanly' : 'drain timed out; exiting anyway');
+    releaseLock();
     process.exit(0);
   };
   process.on('SIGINT', () => void shutdown());
@@ -108,6 +114,10 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
+  if (error instanceof AlreadyRunningError) {
+    console.error(error.message);
+    process.exit(0); // not a failure; systemd must not restart-loop on it
+  }
   console.error('fatal startup error:', error);
   process.exit(1);
 });
