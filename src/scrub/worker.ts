@@ -17,6 +17,8 @@ export interface WorkerHooks {
 export class ScrubWorker {
   private running = false;
   private stopped = false;
+  private inFlight: Promise<void> | undefined;
+  private executor: Executor | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
 
   constructor(
@@ -40,9 +42,15 @@ export class ScrubWorker {
     void this.loop();
   }
 
-  stop(): void {
+  /**
+   * Requests a stop and resolves once the in-flight edit and its verification have finished, so a
+   * deploy cannot kill a write between the Last.fm POST and the ledger row that records it.
+   */
+  async stop(): Promise<void> {
     this.stopped = true;
     this.running = false;
+    this.executor?.requestStop();
+    await this.inFlight;
   }
 
   async runOnce(): Promise<void> {
@@ -59,6 +67,7 @@ export class ScrubWorker {
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
     });
+    this.executor = executor;
 
     // Apply anything a previous run resolved but never wrote, before spending hours re-scraping.
     const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
@@ -103,6 +112,7 @@ export class ScrubWorker {
         }
         await this.sleep(this.config.writeDelayMs);
       },
+      shouldStop: () => this.stopped,
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
         console.log(
@@ -149,7 +159,8 @@ export class ScrubWorker {
   private async loop(): Promise<void> {
     while (!this.stopped) {
       try {
-        await this.runOnce();
+        this.inFlight = this.runOnce();
+        await this.inFlight;
       } catch (error) {
         await this.reporter.report(error, 'sweep');
       }

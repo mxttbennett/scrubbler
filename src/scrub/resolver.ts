@@ -12,6 +12,8 @@ export interface SkipRecord {
 }
 
 export interface ResolveHooks {
+  /** Checked between candidates so a shutdown does not sit through a paced page fetch. */
+  shouldStop?: () => boolean;
   onEdit?: (edit: PlannedEdit) => Promise<void>;
   onAlbumEdit?: (edit: PlannedAlbumEdit) => Promise<void>;
   onProgress?: (done: number, total: number, edits: number, candidate: Candidate) => void;
@@ -36,7 +38,7 @@ export class Resolver {
    * on — so track and album cleanups for the same tuple must share a request.
    */
   async resolve(candidates: Candidate[], hooks: ResolveHooks = {}): Promise<ResolveResult> {
-    const { onEdit, onAlbumEdit, onProgress } = hooks;
+    const { onEdit, onAlbumEdit, onProgress, shouldStop } = hooks;
     const byTuple = new Map<string, PlannedEdit>();
     const albumEdits: PlannedAlbumEdit[] = [];
     const skips: SkipRecord[] = [];
@@ -44,6 +46,7 @@ export class Resolver {
 
     let done = 0;
     for (const candidate of candidates) {
+      if (shouldStop?.()) break;
       done++;
       const path =
         candidate.kind === 'track'

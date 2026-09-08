@@ -31,6 +31,7 @@ const envSchema = z.object({
   VERIFY_EDITS: z.string().default('true'),
   VERIFY_DELAY_MS: z.string().default('2000'),
   VERIFY_ATTEMPTS: z.string().default('3'),
+  SHUTDOWN_GRACE_MS: z.string().default('60000'),
   USER_AGENT: z.string().default(DEFAULT_USER_AGENT),
 });
 
@@ -52,6 +53,7 @@ export interface Config {
   verifyEdits: boolean;
   verifyDelayMs: number;
   verifyAttempts: number;
+  shutdownGraceMs: number;
   userAgent: string;
 }
 
@@ -120,6 +122,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     verifyEdits: parseBool(e.VERIFY_EDITS, 'VERIFY_EDITS'),
     verifyDelayMs: parsePositiveInt(e.VERIFY_DELAY_MS, 'VERIFY_DELAY_MS'),
     verifyAttempts: parsePositiveInt(e.VERIFY_ATTEMPTS, 'VERIFY_ATTEMPTS'),
+    shutdownGraceMs: parsePositiveInt(e.SHUTDOWN_GRACE_MS, 'SHUTDOWN_GRACE_MS'),
     userAgent: e.USER_AGENT,
   };
 }

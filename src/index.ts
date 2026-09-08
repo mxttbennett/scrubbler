@@ -68,12 +68,21 @@ async function main() {
 
   worker.start();
 
-  const shutdown = () => {
-    worker.stop();
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log('shutting down: finishing the in-flight edit');
+    const drained = worker.stop().then(() => true);
+    const timedOut = new Promise<boolean>((r) =>
+      setTimeout(() => r(false), config.shutdownGraceMs),
+    );
+    const clean = await Promise.race([drained, timedOut]);
+    console.log(clean ? 'drained cleanly' : 'drain timed out; exiting anyway');
     process.exit(0);
   };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', () => void shutdown());
+  process.on('SIGTERM', () => void shutdown());
 }
 
 main().catch((error: unknown) => {

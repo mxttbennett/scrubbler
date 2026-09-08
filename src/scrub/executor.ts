@@ -31,6 +31,16 @@ export interface ExecutionSummary {
 
 export class Executor {
   private readonly sleep: (ms: number) => Promise<void>;
+  private stopRequested = false;
+
+  /** Stops before the *next* write; the in-flight one always finishes and records its ledger row. */
+  requestStop(): void {
+    this.stopRequested = true;
+  }
+
+  get stopping(): boolean {
+    return this.stopRequested;
+  }
 
   constructor(
     private readonly db: Db,
@@ -191,6 +201,7 @@ export class Executor {
         summary.capped = true;
         break;
       }
+      if (this.stopRequested) break;
 
       try {
         const outcome = await this.editor.apply(edit);
