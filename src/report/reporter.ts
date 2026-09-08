@@ -39,6 +39,8 @@ export interface Correction {
    * without this the card cannot say how many or which — the count is not the item count.
    */
   trackNames?: string[];
+  /** The user's scrobbles under the ORIGINAL album title, read before the write. */
+  scrobbles?: number;
 }
 
 export interface CorrectionGroup {
@@ -198,8 +200,15 @@ export class ConsoleAndDiscordReporter implements Reporter {
     const covered = c.trackNames ?? [];
     if (covered.length > 1) {
       fields.push({
-        name: `tracks (${covered.length})`,
+        name: `tracks on this album (${covered.length})`,
         value: trackList(covered.map((track) => ({ ...c, track }))),
+      });
+    }
+    if (c.scrobbles !== undefined) {
+      fields.push({
+        name: 'scrobbles affected',
+        value: String(c.scrobbles),
+        inline: true,
       });
     }
     fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
