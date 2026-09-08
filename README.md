@@ -102,7 +102,7 @@ typo cannot silently disable a group.
 | `feat-album` | off | album | `(feat. X)` on an *album* title — store cruft |
 | `feat-track` | off | track | `(feat. X)` on a *track* title — **deletes a real credit** |
 | `ep-single` | off | album | `- EP`, `- Single` |
-| `live` | off | track, album | `(Live)` |
+| `live-track` | off | track | `- Live` — **merges with the studio take you also own** |
 | `version` | off | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
 | `mono-stereo` | off | track, album | `(Mono)`, `(Stereo)` |
 

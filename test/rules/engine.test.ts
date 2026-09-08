@@ -147,7 +147,7 @@ describe('cleanTitle — group toggles', () => {
   });
 
   it('strips them when their group is enabled', () => {
-    expect(cleanTitle('all apologies - live', 'track', new Set(['live']))?.clean).toBe(
+    expect(cleanTitle('all apologies - live', 'track', new Set(['live-track']))?.clean).toBe(
       'all apologies',
     );
     expect(cleanTitle('Midnight City - EP', 'album', new Set(['ep-single']))?.clean).toBe(
@@ -287,5 +287,39 @@ describe('cleanTitle — real library corpus', () => {
       .sort((x, y) => x[0].localeCompare(y[0]))
       .map(([from, to]) => `${from}  ->  ${to}`);
     expect(verdict).toMatchSnapshot();
+  });
+});
+
+describe('live is track-only, and off by default', () => {
+  const TRACK_ONLY = new Set<GroupName>(['live-track']);
+
+  it('does nothing at all unless explicitly enabled', () => {
+    expect(cleanTitle('all apologies - live', 'track', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Stop Making Sense (Live)', 'album', DEFAULT_ON)).toBeNull();
+  });
+
+  it('strips a bare Live from a track once enabled', () => {
+    expect(cleanTitle('all apologies - live', 'track', TRACK_ONLY)?.clean).toBe('all apologies');
+    expect(cleanTitle('White Light/White Heat - Live', 'track', TRACK_ONLY)?.clean).toBe(
+      'White Light/White Heat',
+    );
+  });
+
+  it('never touches an album title, even when enabled', () => {
+    expect(cleanTitle('Stop Making Sense (Live)', 'album', TRACK_ONLY)).toBeNull();
+    expect(cleanTitle('Yessongs (Live)', 'album', TRACK_ONLY)).toBeNull();
+  });
+
+  it('never touches a segment that merely starts with Live', () => {
+    for (const [title, field] of [
+      ['The King of Limbs: Live from the Basement', 'album'],
+      ['Live at Leeds', 'album'],
+      ['Live Through This', 'album'],
+      ['Song (Live in Tokyo)', 'track'],
+      ['Sister Ray - Live in Rotterdam 1984', 'track'],
+      ['Song - Live at the Apollo', 'track'],
+    ] as [string, 'album' | 'track'][]) {
+      expect(cleanTitle(title, field, TRACK_ONLY)).toBeNull();
+    }
   });
 });
