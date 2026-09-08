@@ -78,7 +78,10 @@ export class Editor {
     const staleKey = tupleKey(edit.original);
     for (let attempt = 1; attempt <= this.verifyAttempts; attempt++) {
       await this.sleep(this.verifyDelayMs);
-      const html = await this.pages.fetch(edit.refererPath);
+      const { html, gone } = await this.pages.fetchOutcome(edit.refererPath);
+      // A track rename makes its own page disappear, which is proof the edit landed — but only
+      // when the page is genuinely absent rather than Last.fm refusing to answer.
+      if (gone) return true;
       if (html === '') continue;
       const keys = extractScrobbleRows(html).map((row) => tupleKey(rowTuple(row)));
       if (keys.length > 0 && !keys.includes(staleKey)) return true;

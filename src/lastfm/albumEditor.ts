@@ -91,13 +91,14 @@ export class AlbumEditor {
     return (await this.confirm(edit)) ? 'verified' : 'unverified';
   }
 
-  /** The old album page 404s or empties once the rename lands, which is the confirmation. */
+  /** The old album page empties once the rename lands, which is the confirmation. */
   private async confirm(edit: PlannedAlbumEdit): Promise<boolean> {
     const stale = albumLibraryPath(this.username, edit.artist, edit.from);
     for (let attempt = 1; attempt <= this.verifyAttempts; attempt++) {
       await this.sleep(this.verifyDelayMs);
-      const html = await this.pages.fetch(stale);
-      if (html === '') return true;
+      // `gone` rather than an empty body: a throttle also returns nothing and proves nothing.
+      const { gone } = await this.pages.fetchOutcome(stale);
+      if (gone) return true;
     }
     return false;
   }
