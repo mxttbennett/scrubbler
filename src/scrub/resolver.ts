@@ -1,3 +1,4 @@
+import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.js';
 import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { GroupName } from '../rules/markers.js';
@@ -10,8 +11,15 @@ export interface SkipRecord {
   reason: string;
 }
 
+export interface ResolveHooks {
+  onEdit?: (edit: PlannedEdit) => Promise<void>;
+  onAlbumEdit?: (edit: PlannedAlbumEdit) => Promise<void>;
+  onProgress?: (done: number, total: number, edits: number, candidate: Candidate) => void;
+}
+
 export interface ResolveResult {
   edits: PlannedEdit[];
+  albumEdits: PlannedAlbumEdit[];
   skips: SkipRecord[];
 }
 
@@ -27,12 +35,10 @@ export class Resolver {
    * Two POSTs against one tuple cannot both land — the first rewrites the tuple the second selects
    * on — so track and album cleanups for the same tuple must share a request.
    */
-  async resolve(
-    candidates: Candidate[],
-    onEdit?: (edit: PlannedEdit) => Promise<void>,
-    onProgress?: (done: number, total: number, edits: number, candidate: Candidate) => void,
-  ): Promise<ResolveResult> {
+  async resolve(candidates: Candidate[], hooks: ResolveHooks = {}): Promise<ResolveResult> {
+    const { onEdit, onAlbumEdit, onProgress } = hooks;
     const byTuple = new Map<string, PlannedEdit>();
+    const albumEdits: PlannedAlbumEdit[] = [];
     const skips: SkipRecord[] = [];
     const seenPaths = new Set<string>();
 
@@ -50,6 +56,18 @@ export class Resolver {
       }
       seenPaths.add(path);
 
+      if (candidate.kind === 'album') {
+        const resolved = await this.resolveAlbum(candidate, path);
+        if (resolved.edit) {
+          albumEdits.push(resolved.edit);
+          if (onAlbumEdit) await onAlbumEdit(resolved.edit);
+        } else {
+          skips.push({ candidate, reason: resolved.reason });
+        }
+        onProgress?.(done, candidates.length, byTuple.size + albumEdits.length, candidate);
+        continue;
+      }
+
       const rows = await this.collectRows(path, MAX_RECURSION);
       if (rows.length === 0) {
         skips.push({ candidate, reason: 'no scrobble rows found on library page' });
@@ -66,7 +84,38 @@ export class Resolver {
       onProgress?.(done, candidates.length, byTuple.size, candidate);
     }
 
-    return { edits: [...byTuple.values()], skips };
+    return { edits: [...byTuple.values()], albumEdits, skips };
+  }
+
+  /**
+   * One request renames a whole album, so this never recurses into track pages. Tracks whose own
+   * titles carry a marker are found separately by the track sweep.
+   */
+  private async resolveAlbum(
+    candidate: Candidate,
+    path: string,
+  ): Promise<{ edit?: PlannedAlbumEdit; reason: string }> {
+    const html = await this.pages.fetch(path);
+    // An empty fetch means the album is gone — usually because a prior run already renamed it.
+    if (html === '') return { reason: 'album no longer in library under that title' };
+
+    const form = extractAlbumForm(html);
+    if (!form) return { reason: 'album page has no edit form (markup may have changed)' };
+
+    // Re-derive from the page's own value; the API's copy can be stale.
+    const cleaned = cleanTitle(form.album_name, 'album', this.enabled);
+    if (!cleaned) return { reason: 'album title is already clean on the library page' };
+
+    const edit: PlannedAlbumEdit = {
+      artist: form.album_artist_name,
+      from: form.album_name,
+      to: cleaned.clean,
+      csrfToken: form.csrfmiddlewaretoken,
+      action: form.action,
+      refererPath: path,
+      groups: cleaned.groups,
+    };
+    return { edit, reason: '' };
   }
 
   private fold(

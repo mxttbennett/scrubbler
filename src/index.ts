@@ -1,6 +1,7 @@
 import { loadConfig } from './core/config.js';
 import { createDb, runMigrations } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
+import { AlbumEditor } from './lastfm/albumEditor.js';
 import { Editor } from './lastfm/editor.js';
 import { LibraryPages } from './lastfm/pages.js';
 import { Session, sessionStatePath } from './lastfm/session.js';
@@ -37,7 +38,22 @@ async function main() {
     verifyAttempts: config.verifyAttempts,
   });
 
-  const worker = new ScrubWorker(config, db, session, planner, resolver, editor, reporter);
+  const albumEditor = new AlbumEditor(session, pages, config.username, {
+    verify: config.verifyEdits,
+    verifyDelayMs: config.verifyDelayMs,
+    verifyAttempts: config.verifyAttempts,
+  });
+
+  const worker = new ScrubWorker(
+    config,
+    db,
+    session,
+    planner,
+    resolver,
+    editor,
+    albumEditor,
+    reporter,
+  );
 
   console.log(
     `scrubbler starting | user ${config.username} | dryRun ${String(config.dryRun)}` +

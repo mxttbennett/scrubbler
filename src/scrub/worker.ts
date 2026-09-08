@@ -1,6 +1,7 @@
 import type { Config } from '../core/config.js';
 import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
+import type { AlbumEditor } from '../lastfm/albumEditor.js';
 import type { Editor } from '../lastfm/editor.js';
 import { readExistingRules } from '../lastfm/rules.js';
 import type { Session } from '../lastfm/session.js';
@@ -25,6 +26,7 @@ export class ScrubWorker {
     private readonly planner: Planner,
     private readonly resolver: Resolver,
     private readonly editor: Editor,
+    private readonly albumEditor: AlbumEditor,
     private readonly reporter: Reporter,
     hooks: WorkerHooks = {},
   ) {
@@ -71,21 +73,45 @@ export class ScrubWorker {
     );
     console.log(`sweep complete: ${candidates.length} candidates`);
 
-    const { skips } = await this.resolver.resolve(
-      candidates,
-      async (edit) => {
+    let albumApplied = 0;
+    let albumFailed = 0;
+    const { skips } = await this.resolver.resolve(candidates, {
+      onEdit: async (edit) => {
         executor.checkpoint(edit);
         await executor.applyOne(edit, rules.keys);
       },
-      (doneCount, total, edits, candidate) => {
+      onAlbumEdit: async (albumEdit) => {
+        try {
+          const outcome = await this.albumEditor.apply(albumEdit);
+          albumApplied++;
+          await this.reporter.corrections(
+            [
+              {
+                artist: albumEdit.artist,
+                track: '(whole album)',
+                album: albumEdit.from,
+                changes: [{ field: 'album_name', from: albumEdit.from, to: albumEdit.to }],
+                groups: albumEdit.groups,
+                outcome,
+              },
+            ],
+            executor.streamedSummary,
+          );
+        } catch (error) {
+          albumFailed++;
+          await this.reporter.report(error, `album edit ${albumEdit.artist} — ${albumEdit.from}`);
+        }
+        await this.sleep(this.config.writeDelayMs);
+      },
+      onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
         console.log(
           `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
-            `${edits} tuples · ${s.applied} applied · ${s.verified} verified · ` +
-            `${s.unverified} unverified · ${s.failed} failed`,
+            `${albumApplied} albums · ${edits} tuples · ${s.applied} applied · ` +
+            `${s.verified} verified · ${s.unverified} unverified · ${s.failed} failed`,
         );
       },
-    );
+    });
 
     executor.recordSkips(skips);
     const summary = executor.streamedSummary;
@@ -103,6 +129,7 @@ export class ScrubWorker {
       this.config.dryRun ? 'Dry run complete — nothing written' : 'Sweep complete',
       [
         `candidates      ${candidates.length}`,
+        `album renames  ${albumApplied}${albumFailed > 0 ? ` (${albumFailed} failed)` : ''}`,
         `distinct tuples ${summary.planned}`,
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,
