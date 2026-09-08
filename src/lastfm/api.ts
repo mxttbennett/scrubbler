@@ -3,6 +3,8 @@ import { RateLimiter } from './rateLimiter.js';
 import {
   type AlbumDetails,
   type AlbumInfo,
+  type ScrobbledTrack,
+  type TrackInfo,
   type RecentTracks,
   type TopAlbums,
   type TopTracks,
@@ -138,6 +140,37 @@ export class LastfmApi {
     }
     this.albumCache.set(key, details);
     return details;
+  }
+
+  /**
+   * Which of an album's tracks the user has actually played. album.getinfo returns the whole release
+   * track list with no per-track counts, so a card built from it names songs a rename never touched;
+   * track.getinfo with a username is the only source for the count. One request per track, capped,
+   * and only ever called for a rename that already landed.
+   *
+   * The count is the track's total across every album it appears on, not just this one — Last.fm
+   * exposes no album-scoped per-track figure.
+   */
+  async scrobbledTracks(
+    artist: string,
+    trackNames: readonly string[],
+    limit = 30,
+  ): Promise<ScrobbledTrack[]> {
+    const out: ScrobbledTrack[] = [];
+    for (const name of trackNames.slice(0, limit)) {
+      try {
+        const data = await this.request<TrackInfo>('track.getinfo', {
+          artist,
+          track: name,
+          ...(this.username === undefined ? {} : { username: this.username }),
+        });
+        const plays = Number(data.track?.userplaycount ?? 0);
+        if (Number.isFinite(plays) && plays > 0) out.push({ name, plays });
+      } catch {
+        // A single unknown track must not cost the whole list.
+      }
+    }
+    return out;
   }
 
   /** Art for the POST-edit album name — the point is to show what it will be. */

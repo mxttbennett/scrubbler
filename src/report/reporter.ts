@@ -35,10 +35,10 @@ export interface Correction {
   /** Art for the post-edit album, so the embed shows what it will be. */
   imageUrl?: string;
   /**
-   * Set on album corrections only. A whole-album rename is one request covering many tracks, so
-   * without this the card cannot say how many or which — the count is not the item count.
+   * Set on album corrections only: the tracks of this album the user has actually played, with
+   * counts. Deliberately not the release track list — a rename does not touch a song never scrobbled.
    */
-  trackNames?: string[];
+  scrobbledTracks?: { name: string; plays: number }[];
   /** The user's scrobbles under the ORIGINAL album title, read before the write. */
   scrobbles?: number;
 }
@@ -197,11 +197,11 @@ export class ConsoleAndDiscordReporter implements Reporter {
       fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
       fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
     }
-    const covered = c.trackNames ?? [];
-    if (covered.length > 1) {
+    const covered = c.scrobbledTracks ?? [];
+    if (covered.length > 0) {
       fields.push({
-        name: `tracks on this album (${covered.length})`,
-        value: trackList(covered.map((track) => ({ ...c, track }))),
+        name: `scrobbled tracks (${covered.length})`,
+        value: trackList(covered.map((t) => ({ ...c, track: `${t.name} (${t.plays})` }))),
       });
     }
     if (c.scrobbles !== undefined) {

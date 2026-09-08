@@ -77,6 +77,10 @@ function executor(
       trackNames: string[];
       scrobbles: number | undefined;
     }>;
+    scrobbledTracks?: (
+      artist: string,
+      trackNames: readonly string[],
+    ) => Promise<{ name: string; plays: number }[]>;
   } = {},
 ) {
   return new Executor(
@@ -94,7 +98,14 @@ function executor(
       },
     } as never,
     reporter,
-    { ...OPTS, ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }) },
+    {
+      ...OPTS,
+      ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }),
+      // Default: every release track counts as played, so tests about counts stay about counts.
+      scrobbledTracks:
+        opts.scrobbledTracks ??
+        (async (_artist, names) => names.map((name) => ({ name, plays: 1 }))),
+    },
   );
 }
 
@@ -172,7 +183,7 @@ describe('album corrections name their tracks again', () => {
 
     expect(s.items).toHaveLength(1);
     expect(s.items[0]!.scrobbles).toBe(61);
-    expect(s.items[0]!.trackNames).toEqual([
+    expect(s.items[0]!.scrobbledTracks?.map((t) => t.name)).toEqual([
       'Serve the Servants',
       'Heart-Shaped Box',
       'Rape Me',
@@ -185,7 +196,7 @@ describe('album corrections name their tracks again', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(s.items[0]!.trackNames).toBeUndefined();
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
     expect(s.items[0]!.scrobbles).toBeUndefined();
   });
 });
@@ -247,7 +258,7 @@ describe('the two album lookups', () => {
 
     expect(e.streamedSummary.byKind.album.applied).toBe(1);
     expect(s.items[0]!.scrobbles).toBeUndefined();
-    expect(s.items[0]!.trackNames).toBeUndefined();
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
   });
 });
 
@@ -264,7 +275,10 @@ describe('the two album lookups', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(s.items[0]!.trackNames).toEqual(['Serve the Servants', 'Scentless Apprentice']);
+    expect(s.items[0]!.scrobbledTracks?.map((t) => t.name)).toEqual([
+      'Serve the Servants',
+      'Scentless Apprentice',
+    ]);
     // …but the count still comes from the original, where the scrobbles actually were.
     expect(s.items[0]!.scrobbles).toBe(37);
     expect(e.streamedSummary.byKind.album.tracksCovered).toBe(2);
@@ -282,5 +296,81 @@ describe('the two album lookups', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(s.items[0]!.trackNames).toEqual(['a', 'b', 'c']);
+    expect(s.items[0]!.scrobbledTracks?.map((t) => t.name)).toEqual(['a', 'b', 'c']);
   });
+
+describe('the card names only tracks that were actually scrobbled', () => {
+  it('drops release tracks with no plays, and counts the rest', async () => {
+    const s = spy();
+    const asked: readonly string[][] = [];
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({
+        imageUrl: undefined,
+        trackNames: [
+          'Help on the Way / Slipknot!',
+          "Franklin's Tower",
+          "King Solomon's Marbles",
+          'Crazy Fingers',
+        ],
+        scrobbles: 1,
+      }),
+      // Exactly what track.getinfo reports for this album: one played track out of four.
+      scrobbledTracks: async (_artist, names) => {
+        (asked as string[][]).push([...names]);
+        return names.includes("Franklin's Tower") ? [{ name: "Franklin's Tower", plays: 2 }] : [];
+      },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(s.items[0]!.scrobbledTracks).toEqual([{ name: "Franklin's Tower", plays: 2 }]);
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(1);
+    // The whole release list is what gets narrowed, so all four were offered up.
+    expect(asked[0]).toHaveLength(4);
+  });
+
+  it('omits the field entirely when none of the release tracks were played', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({ imageUrl: undefined, trackNames: ['a', 'b'], scrobbles: 0 }),
+      scrobbledTracks: async () => [],
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(0);
+  });
+
+  it('never asks when the release list is empty, so an unknown album costs nothing', async () => {
+    const s = spy();
+    let calls = 0;
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({ imageUrl: undefined, trackNames: [], scrobbles: 4 }),
+      scrobbledTracks: async () => {
+        calls++;
+        return [];
+      },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(calls).toBe(0);
+    expect(s.items[0]!.scrobbles).toBe(4);
+  });
+
+  it('still corrects when the narrowing call fails', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async () => ({ imageUrl: undefined, trackNames: ['a'], scrobbles: 3 }),
+      scrobbledTracks: async () => {
+        throw new Error('api down');
+      },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(e.streamedSummary.byKind.album.applied).toBe(1);
+    expect(s.items[0]!.scrobbledTracks).toBeUndefined();
+  });
+});

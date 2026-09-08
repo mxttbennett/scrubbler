@@ -3,7 +3,7 @@ import type { Db } from '../db/index.js';
 import type { WriteLock } from '../core/writeLock.js';
 import { schema } from '../db/index.js';
 import type { AlbumEditor, PlannedAlbumEdit } from '../lastfm/albumEditor.js';
-import type { AlbumDetails as AlbumSummary } from '../lastfm/types.js';
+import type { AlbumDetails as AlbumSummary, ScrobbledTrack } from '../lastfm/types.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
@@ -27,6 +27,11 @@ export interface ExecutorOptions {
    * BEFORE the write: afterwards the old name has no scrobbles left to count.
    */
   albumDetails?: (artist: string, album: string) => Promise<AlbumSummary>;
+  /**
+   * Narrows a release track list to the ones actually played. Costs one request per track, so it is
+   * called only for a rename that landed, never during discovery.
+   */
+  scrobbledTracks?: (artist: string, trackNames: readonly string[]) => Promise<ScrobbledTrack[]>;
   /**
    * Shared across every executor in the process. Omitted only in tests that write nothing
    * concurrently; production must pass one or the worker, an approval and a command can interleave.
@@ -210,10 +215,18 @@ export class Executor {
       const after = await this.opts
         .albumDetails?.(edit.artist, edit.to)
         .catch(() => undefined);
-      const trackNames = after?.trackNames.length ? after.trackNames : before?.trackNames;
+      const releaseTracks = after?.trackNames.length ? after.trackNames : before?.trackNames;
       const imageUrl = after?.imageUrl ?? (await this.opts.albumArt?.(edit.artist, edit.to));
 
-      summary.byKind.album.tracksCovered += trackNames?.length ?? 0;
+      // The release list names songs a rename never touched, so narrow it to what was played.
+      const scrobbledTracks =
+        releaseTracks === undefined || releaseTracks.length === 0
+          ? []
+          : ((await this.opts
+              .scrobbledTracks?.(edit.artist, releaseTracks)
+              .catch(() => [])) ?? []);
+
+      summary.byKind.album.tracksCovered += scrobbledTracks.length;
       summary.byKind.album.scrobblesCovered += before?.scrobbles ?? 0;
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
@@ -234,7 +247,7 @@ export class Executor {
             groups: edit.groups,
             outcome: outcome === 'applied' ? 'applied' : outcome,
             ...(imageUrl === undefined ? {} : { imageUrl }),
-            ...(trackNames === undefined || trackNames.length === 0 ? {} : { trackNames }),
+            ...(scrobbledTracks.length === 0 ? {} : { scrobbledTracks }),
             ...(before?.scrobbles === undefined ? {} : { scrobbles: before.scrobbles }),
           },
         ],
