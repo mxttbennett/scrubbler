@@ -10,9 +10,13 @@ import {
   type ProposalTransport,
   approveId,
   ignoreId,
+  stripId,
 } from '../report/proposals.js';
 import { type CorrectionGroup, type Links, groupEmbed } from '../report/reporter.js';
 import type { Executor, ResumableEdit } from './executor.js';
+import { type NormalizeAction, cleanTitle } from '../rules/engine.js';
+import type { CustomRuleLookup } from '../rules/customRules.js';
+import { DASH_NORMALIZED, type GroupName, isGroupName } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, changedFields, tupleKey } from './types.js';
 
 export interface ApprovalDeps {
@@ -32,13 +36,16 @@ export interface ApprovalDeps {
    */
   stillThere?: (item: ResumableEdit) => Promise<boolean>;
   ttlHours: number;
+  /** Needed to re-derive an edit when a decision asks for a different answer than the one proposed. */
+  enabledGroups: ReadonlySet<GroupName>;
+  overrides?: CustomRuleLookup;
   log?: (msg: string) => void;
 }
 
 export type Decision = 'approved' | 'ignored';
 
 export interface DecisionResult {
-  outcome: Decision | 'gone' | 'already-decided' | 'stale';
+  outcome: Decision | 'gone' | 'already-decided' | 'stale' | 'no-op';
   detail: string;
 }
 
@@ -129,7 +136,7 @@ export class Approvals {
 
     try {
       const embed = await this.embedFor(group, approvalId);
-      const { messageId } = await proposals.postProposal(embed, buttonsFor(approvalId));
+      const { messageId } = await proposals.postProposal(embed, buttonsFor(approvalId, groupTags(group)));
       db.update(schema.approvals)
         .set({
           messageId,
@@ -158,6 +165,19 @@ export class Approvals {
   }
 
   async approve(approvalId: number, userId: string): Promise<DecisionResult> {
+    return await this.decide(approvalId, userId, 'rewrite');
+  }
+
+  /** Applies the same edit the card proposed, but with the live label removed rather than rewritten. */
+  async strip(approvalId: number, userId: string): Promise<DecisionResult> {
+    return await this.decide(approvalId, userId, 'strip');
+  }
+
+  private async decide(
+    approvalId: number,
+    userId: string,
+    action: NormalizeAction,
+  ): Promise<DecisionResult> {
     const { db, executor, freshToken } = this.deps;
     const claimed = this.claim(approvalId, 'approved', userId);
     if (claimed.outcome !== 'ok') return claimed;
@@ -171,9 +191,25 @@ export class Approvals {
       return { outcome: 'stale', detail: 'could not get a Last.fm token; try again' };
     }
 
+    const items = this.editsFor(approvalId, token);
+    // Recomputed before any ledger status moves: a row left `planned` is written with no approval.
+    const rebuilt = action === 'strip' ? this.strippedEdits(items) : new Map<number, ResumableEdit>();
+    if (action === 'strip' && rebuilt.size === 0) {
+      db.update(schema.approvals)
+        .set({ status: 'pending', decidedBy: null, decidedAt: null })
+        .where(eq(schema.approvals.id, approvalId))
+        .run();
+      return { outcome: 'no-op', detail: 'nothing to remove — the label is not there to strip' };
+    }
+
     let applied = 0;
     let stale = 0;
-    for (const item of this.editsFor(approvalId, token)) {
+    for (const item of items) {
+      const toApply = action === 'strip' ? rebuilt.get(item.id) : item;
+      if (toApply === undefined) {
+        stale++;
+        continue;
+      }
       if (this.deps.stillThere !== undefined && !(await this.deps.stillThere(item))) {
         db.update(schema.appliedEdits)
           .set({ status: 'skipped', lastError: 'changed before approval' })
@@ -186,11 +222,16 @@ export class Approvals {
         .set({ status: 'planned' })
         .where(eq(schema.appliedEdits.id, item.id))
         .run();
-      if (item.kind === 'album') await executor.applyOneAlbum(item.edit);
-      else await executor.applyOne(item.edit, new Set());
+      if (action === 'strip') {
+        if (toApply.kind === 'album') executor.checkpointAlbum(toApply.edit);
+        else executor.checkpoint(toApply.edit);
+      }
+      if (toApply.kind === 'album') await executor.applyOneAlbum(toApply.edit);
+      else await executor.applyOne(toApply.edit, new Set());
       applied++;
     }
-    await this.retire(approvalId, 'approved');
+    if (action === 'strip') this.syncStrippedSubject(approvalId, rebuilt);
+    await this.retire(approvalId, 'approved', action === 'strip' ? 'stripped' : undefined);
     return {
       outcome: 'approved',
       detail:
@@ -377,6 +418,83 @@ export class Approvals {
       .map((r) => r.appliedEditId);
   }
 
+  /**
+   * Every item that still yields an edit once the live label is removed instead of rewritten, keyed
+   * by ledger id. An item whose recomputation leaves the title unchanged is absent, and an empty map
+   * means there is nothing to strip at all.
+   */
+  private strippedEdits(items: ResumableEdit[]): Map<number, ResumableEdit> {
+    const { enabledGroups, overrides } = this.deps;
+    const opts = { normalizeAction: 'strip' as NormalizeAction };
+    const lookup = (artist: string) =>
+      overrides === undefined ? undefined : { artist, lookup: overrides };
+    const out = new Map<number, ResumableEdit>();
+
+    for (const item of items) {
+      if (item.kind === 'album') {
+        const album = cleanTitle(
+          item.edit.from,
+          'album',
+          enabledGroups,
+          lookup(item.edit.artist),
+          opts,
+        );
+        if (album === null) continue;
+        out.set(item.id, { ...item, edit: { ...item.edit, to: album.clean } });
+        continue;
+      }
+
+      const { original } = item.edit;
+      const track = cleanTitle(
+        original.track_name,
+        'track',
+        enabledGroups,
+        lookup(original.artist_name),
+        opts,
+      );
+      const album =
+        original.album_name === ''
+          ? null
+          : cleanTitle(
+              original.album_name,
+              'album',
+              enabledGroups,
+              lookup(original.album_artist_name || original.artist_name),
+              opts,
+            );
+      if (track === null && album === null) continue;
+      const next = {
+        ...original,
+        track_name: track?.clean ?? original.track_name,
+        album_name: album?.clean ?? original.album_name,
+      };
+      out.set(item.id, { ...item, edit: { ...item.edit, next } });
+    }
+
+    return out;
+  }
+
+  /**
+   * `retiredEmbed` renders the subject from the approval row, not from the edit, so a stripped card
+   * would otherwise say the label was removed above the rewrite it was proposed as.
+   */
+  private syncStrippedSubject(approvalId: number, rebuilt: Map<number, ResumableEdit>): void {
+    const { db } = this.deps;
+    const row = db.select().from(schema.approvals).where(eq(schema.approvals.id, approvalId)).get();
+    if (!row || row.sharedTo === null || row.sharedField === null) return;
+    const first = [...rebuilt.values()][0];
+    if (first === undefined) return;
+    const to =
+      first.kind === 'album'
+        ? first.edit.to
+        : first.edit.next[row.sharedField as keyof typeof first.edit.next];
+    if (typeof to !== 'string' || to === row.sharedTo) return;
+    db.update(schema.approvals)
+      .set({ sharedTo: to })
+      .where(eq(schema.approvals.id, approvalId))
+      .run();
+  }
+
   private editsFor(approvalId: number, token: string): ResumableEdit[] {
     const ids = new Set(this.editIdsFor(approvalId));
     return this.deps.executor
@@ -414,12 +532,13 @@ export class Approvals {
   private async retire(
     approvalId: number,
     outcome: 'approved' | 'ignored' | 'expired' | 'superseded',
+    word?: keyof typeof EXTRA_RETIRED_WORD,
   ): Promise<void> {
     const { db, proposals } = this.deps;
     const row = db.select().from(schema.approvals).where(eq(schema.approvals.id, approvalId)).get();
     if (!row || row.messageId === null) return;
     try {
-      await proposals.editMessage(row.messageId, retiredEmbed(row, outcome), []);
+      await proposals.editMessage(row.messageId, retiredEmbed(row, outcome, word), []);
     } catch (error) {
       this.log(`could not retire approval ${approvalId}: ${String(error)}`);
     }
@@ -486,12 +605,28 @@ async function artFor(
   return await albumArt(artist, album).catch(() => undefined);
 }
 
-export function buttonsFor(approvalId: number): ProposalButton[] {
+/**
+ * Strip only appears for a rule that *rewrites* a segment, because that is the only case where
+ * "remove it entirely" is a third outcome — where the proposal is already a removal, Apply is it.
+ */
+/** Every rule tag across a group's members, which is what decides whether Strip is offered. */
+function groupTags(group: EditGroup): string[] {
+  return group.kind === 'album' ? group.album.groups : group.edits.flatMap((e) => e.groups);
+}
+
+export function buttonsFor(approvalId: number, groups: readonly string[] = []): ProposalButton[] {
+  const rewrites = groups.some((g) => isGroupName(g) && DASH_NORMALIZED[g] !== undefined);
   return [
     { customId: approveId(approvalId), label: 'Apply', style: 3 },
+    ...(rewrites ? [{ customId: stripId(approvalId), label: 'Strip', style: 2 as const }] : []),
     { customId: ignoreId(approvalId), label: 'Never', style: 4 },
   ];
 }
+
+/** A decision that applied something other than what the card proposed still retires as approved. */
+const EXTRA_RETIRED_WORD = {
+  stripped: 'Applied — label removed',
+} as const;
 
 const RETIRED_WORD = {
   approved: 'Applied',
@@ -510,6 +645,7 @@ const RETIRED_COLOR = {
 function retiredEmbed(
   row: typeof schema.approvals.$inferSelect,
   outcome: keyof typeof RETIRED_WORD,
+  word?: keyof typeof EXTRA_RETIRED_WORD,
 ): DiscordEmbed {
   const subject =
     row.sharedFrom !== null && row.sharedTo !== null
@@ -517,7 +653,7 @@ function retiredEmbed(
       : `${row.itemCount} edit(s)`;
   const by = row.decidedBy === 'system' ? 'the sweep' : row.decidedBy;
   return {
-    title: RETIRED_WORD[outcome],
+    title: word === undefined ? RETIRED_WORD[outcome] : EXTRA_RETIRED_WORD[word],
     color: RETIRED_COLOR[outcome],
     description: `**${row.artist}**\n${subject}`,
     footer: { text: by === null ? `#${row.id}` : `#${row.id} · by ${by}` },

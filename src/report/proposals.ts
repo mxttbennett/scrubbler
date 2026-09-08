@@ -34,11 +34,22 @@ export function ignoreId(approvalId: number): string {
   return `ignore:${approvalId}`;
 }
 
+export function stripId(approvalId: number): string {
+  return `strip:${approvalId}`;
+}
+
 export function parseCustomId(
   customId: string,
-): { action: 'approve' | 'ignore' | 'approve-all'; id: number } | undefined {
+): { action: 'approve' | 'ignore' | 'strip' | 'approve-all'; id: number } | undefined {
   const [action, raw] = customId.split(':');
-  if (action !== 'approve' && action !== 'ignore' && action !== 'approve-all') return undefined;
+  if (
+    action !== 'approve' &&
+    action !== 'ignore' &&
+    action !== 'strip' &&
+    action !== 'approve-all'
+  ) {
+    return undefined;
+  }
   const id = Number(raw);
   if (!Number.isInteger(id) || id < 0) return undefined;
   return { action, id };

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { GroupName } from '../../src/rules/markers.js';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
 import { Commands } from '../../src/report/commands.js';
 import { CustomRules } from '../../src/rules/customRules.js';
@@ -51,6 +52,7 @@ function harness(
     proposals: transport,
     freshToken: async () => 'fresh',
     ttlHours: 168,
+    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
     log: () => {},
   });
   const customRules = new CustomRules(d);

@@ -67,6 +67,7 @@ function harness() {
     proposals: transport,
     freshToken: async () => 'fresh',
     ttlHours: 168,
+    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
     log: () => {},
   });
   return { executor, approvals, applied, posted: () => posted };

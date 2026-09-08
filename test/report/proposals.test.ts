@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ProposalPostFailed, Proposals } from '../../src/report/proposals.js';
+import { ProposalPostFailed, Proposals, stripId, parseCustomId } from '../../src/report/proposals.js';
 
 const EMBED = { title: 'Approve album', color: 1 };
 const BUTTONS = [
@@ -102,5 +102,15 @@ describe('Proposals.editMessage', () => {
     expect(calls[0]!.method).toBe('PATCH');
     expect(calls[0]!.url).toContain('/channels/chan/messages/999');
     expect((calls[0]!.body as { components: unknown[] }).components).toEqual([]);
+  });
+});
+
+describe('stripId', () => {
+  it('round-trips through parseCustomId', () => {
+    expect(parseCustomId(stripId(42))).toEqual({ action: 'strip', id: 42 });
+  });
+
+  it('still rejects an action it does not know', () => {
+    expect(parseCustomId('demolish:42')).toBeUndefined();
   });
 });

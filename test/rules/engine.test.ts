@@ -713,6 +713,56 @@ describe('a segment with unnamed words is left alone, however marker-ish', () =>
   });
 });
 
+/**
+ * The decision path needs the answer the card did *not* propose, so a live label can be removed
+ * instead of standardised. "Recompute with normalization off" would not do: the group's retained
+ * whole-segment pattern is the bare word `live`, so a qualified title would match nothing.
+ */
+describe('normalizeAction: strip', () => {
+  const T = new Set<GroupName>(['live-track']);
+  const strip = { normalizeAction: 'strip' as const };
+
+  it('drops the whole live segment, qualifier and all', () => {
+    for (const title of ['Song (Live)', 'Song (Live in Tokyo)', 'Song [Live at Leeds]']) {
+      expect(cleanTitle(title, 'track', T, undefined, strip)?.clean).toBe('Song');
+    }
+  });
+
+  it('leaves the rewrite as the default when no action is named', () => {
+    expect(cleanTitle('Song (Live)', 'track', T)?.clean).toBe('Song - Live');
+    expect(cleanTitle('Song (Live)', 'track', T, undefined, {})?.clean).toBe('Song - Live');
+  });
+
+  it('still reports the group that acted', () => {
+    expect(cleanTitle('Song (Live)', 'track', T, undefined, strip)?.groups).toEqual(['live-track']);
+  });
+
+  /** The head guard is shared, so a title with nothing left over has no strip answer either. */
+  it('has no answer when the remainder would be too short', () => {
+    expect(cleanTitle('X (Live)', 'track', T, undefined, strip)).toBeNull();
+    expect(cleanTitle('X (Live)', 'track', T)).toBeNull();
+  });
+
+  /**
+   * The property that makes a mixed card safe: the flag only changes a normalizing group, so every
+   * other member of the group resolves to exactly what it would have anyway.
+   */
+  it('changes nothing for a group that already strips', () => {
+    const both = new Set<GroupName>(['edition', 'remaster']);
+    for (const title of ['Song (Deluxe Edition)', 'Song (2011 Remaster)']) {
+      expect(cleanTitle(title, 'track', both, undefined, strip)?.clean).toBe(
+        cleanTitle(title, 'track', both)?.clean,
+      );
+    }
+  });
+
+  it('strips an outer marker and the live label together', () => {
+    const r = cleanTitle('Song (Live) [Remastered]', 'track', new Set(['live-track', 'remaster']), undefined, strip);
+    expect(r?.clean).toBe('Song');
+    expect(r?.groups).toEqual(['live-track', 'remaster']);
+  });
+});
+
 describe('a colon can join two markers inside a segment', () => {
   it('strips a bracket whose parts are both markers, and stops at the real subtitle', () => {
     expect(

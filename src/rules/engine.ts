@@ -1,5 +1,11 @@
 import { DASH_NORMALIZED, type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
 
+/**
+ * What a normalizing group does with the tail it matched: rewrite it into the dash form, or drop it.
+ * Only the decision path passes `strip`; everything else takes the default.
+ */
+export type NormalizeAction = 'rewrite' | 'strip';
+
 export interface CleanResult {
   clean: string;
   groups: RuleTag[];
@@ -151,6 +157,7 @@ export function cleanTitle(
   field: Field,
   enabled: ReadonlySet<GroupName>,
   override?: { artist: string; lookup: OverrideLookup },
+  opts?: { normalizeAction?: NormalizeAction },
 ): CleanResult | null {
   // Checked before the loop, not inside it: a user's replacement is an arbitrary rename, so none of
   // splitTail's segment logic or remainder guards apply to it. One rule, one answer — the result is
@@ -183,12 +190,13 @@ export function cleanTitle(
     if (Array.from(head).length < 2 || !hasAlphanumeric(head)) break;
 
     if (normalizing !== null) {
+      const strip = opts?.normalizeAction === 'strip';
       // Already the dash form: rewriting is a no-op, and recording it would mistag an earlier strip.
-      if (tail.open === ' - ') break;
-      current = `${head} - ${normalized(tail.segment, normalizing)}`;
+      if (!strip && tail.open === ' - ') break;
+      current = strip ? head : `${head} - ${normalized(tail.segment, normalizing)}`;
       passes += 1;
       if (!groups.includes(normalizing)) groups.push(normalizing);
-      // Terminal: the result still ends in a Live-prefixed segment and would re-match itself.
+      // Terminal: a rewrite still ends in a marker-prefixed segment and would re-match itself.
       break;
     }
 
