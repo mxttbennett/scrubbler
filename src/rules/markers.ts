@@ -7,7 +7,7 @@ export type GroupName =
   | 'feat-album'
   | 'feat-track'
   | 'ep-single'
-  | 'live'
+  | 'live-track'
   | 'version'
   | 'mono-stereo';
 
@@ -52,6 +52,13 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`digital\s+remaster(?:ed)?`,
     String.raw`expanded\s*&\s*remastered`,
     String.raw`remastered\s*&\s*expanded`,
+    // Word orders the original survey missed; each was found unmatched in a real library.
+    String.raw`${YEAR}\s+remastered\s+version`,
+    String.raw`remaster(?:ed)?\s+${YEAR}`,
+    String.raw`remastered\s+original\s+album`,
+    String.raw`hd\s+remaster(?:ed)?`,
+    String.raw`digital\s+remaster(?:ed)?\s+${YEAR}`,
+    String.raw`${YEAR}\s+remaster(?:ed)?\s+version`,
   ]),
 
   edition: group(['track', 'album'], false, [
@@ -68,6 +75,8 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`japanese\s+edition`,
     String.raw`reissue`,
     String.raw`remastered\s+deluxe\s+edition`,
+    String.raw`expanded\s+${YEAR}`,
+    String.raw`deluxe\s+${YEAR}`,
   ]),
 
   bonus: group(['track', 'album'], false, [
@@ -92,7 +101,10 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   'ep-single': group(['album'], true, [String.raw`ep`, String.raw`single`]),
 
-  live: group(['track', 'album'], true, [String.raw`live`]),
+  // Track-only, and off: a live track sits beside the studio take you also own, so enabling this
+  // merges two different recordings irreversibly. Kept available because whether that matters is a
+  // judgement only the library's owner can make.
+  'live-track': group(['track'], true, [String.raw`live`]),
 
   // These name *which recording* it is, so merging them loses information: off by default.
   version: group(['track', 'album'], true, [

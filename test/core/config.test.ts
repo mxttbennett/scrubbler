@@ -23,8 +23,8 @@ describe('loadConfig', () => {
   });
 
   it('turns on an experimental group when named', () => {
-    const cfg = loadConfig({ ...BASE, RULES_EXPERIMENTAL_ENABLED: 'live,ep-single' });
-    expect(cfg.enabledGroups.has('live')).toBe(true);
+    const cfg = loadConfig({ ...BASE, RULES_EXPERIMENTAL_ENABLED: 'live-track,ep-single' });
+    expect(cfg.enabledGroups.has('live-track')).toBe(true);
     expect(cfg.enabledGroups.has('ep-single')).toBe(true);
   });
 
@@ -35,7 +35,7 @@ describe('loadConfig', () => {
   });
 
   it('rejects an experimental group listed in the stable list, and vice versa', () => {
-    expect(() => loadConfig({ ...BASE, RULES_ENABLED: 'remaster,live' })).toThrow(
+    expect(() => loadConfig({ ...BASE, RULES_ENABLED: 'remaster,live-track' })).toThrow(
       /belongs in RULES_EXPERIMENTAL_ENABLED/,
     );
     expect(() => loadConfig({ ...BASE, RULES_EXPERIMENTAL_ENABLED: 'remaster' })).toThrow(
@@ -107,5 +107,11 @@ describe('loadConfig — approval mode', () => {
     expect(config.approvalTtlHours).toBe(168);
     expect(config.gatewayAlertMinutes).toBe(15);
   });
-});
 
+  it('names the real groups when an old config still says "live"', () => {
+    // The group was split into live-album and live-track; an unchanged .env must fail loudly.
+    expect(() => loadConfig({ ...BASE, RULES_EXPERIMENTAL_ENABLED: 'live' })).toThrow(
+      /known groups: .*live-track/,
+    );
+  });
+});
