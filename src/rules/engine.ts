@@ -68,12 +68,41 @@ function hasAlphanumeric(value: string): boolean {
   return /[\p{L}\p{N}]/u.test(value);
 }
 
-function matchGroup(segment: string, field: Field, enabled: ReadonlySet<GroupName>): GroupName | null {
+function matchOne(segment: string, field: Field, enabled: ReadonlySet<GroupName>): GroupName | null {
   for (const [name, group] of Object.entries(MARKER_GROUPS) as [GroupName, typeof MARKER_GROUPS[GroupName]][]) {
     if (!enabled.has(name) || !group.appliesTo.includes(field)) continue;
     if (group.patterns.some((pattern) => pattern.test(segment))) return name;
   }
   return null;
+}
+
+// Labels join two claims inside one segment: "40th Anniversary Deluxe Edition; 2016 Remaster".
+const COMPOUND_SEPARATOR = /[;/]/;
+
+/**
+ * A segment matches when it matches whole, or when **every** part of a compound matches. Requiring
+ * all parts is what keeps this from becoming a substring match: one unrecognised part and the whole
+ * segment is left alone, so "Live in Rotterdam 1984" and "Vol. 3: … FL 5/22/77" stay untouched.
+ */
+function matchGroup(
+  segment: string,
+  field: Field,
+  enabled: ReadonlySet<GroupName>,
+): GroupName[] | null {
+  const whole = matchOne(segment, field, enabled);
+  if (whole !== null) return [whole];
+
+  if (!COMPOUND_SEPARATOR.test(segment)) return null;
+  const parts = segment.split(COMPOUND_SEPARATOR).map((p) => p.trim());
+  if (parts.length < 2 || parts.some((p) => p === '')) return null;
+
+  const found: GroupName[] = [];
+  for (const part of parts) {
+    const group = matchOne(part, field, enabled);
+    if (group === null) return null;
+    found.push(group);
+  }
+  return found;
 }
 
 /** Returns null when the title should be left untouched; never returns a casing-only change. */
@@ -99,21 +128,23 @@ export function cleanTitle(
     const tail = splitTail(current);
     if (!tail) break;
 
-    const group = matchGroup(tail.segment, field, enabled);
+    const matched = matchGroup(tail.segment, field, enabled);
     // A head that also ends in a year makes this a range ("The Beatles 1967 - 1970"), not cruft.
     const isContinuation =
-      group === null &&
+      matched === null &&
       passes > 0 &&
       BARE_YEAR.test(tail.segment) &&
       !ENDS_IN_YEAR.test(tail.head);
-    if (!group && !isContinuation) break;
+    if (matched === null && !isContinuation) break;
 
     const head = tail.head.trimEnd();
     if (Array.from(head).length < 2 || !hasAlphanumeric(head)) break;
 
     current = head;
     passes += 1;
-    if (group && !groups.includes(group)) groups.push(group);
+    for (const group of matched ?? []) {
+      if (!groups.includes(group)) groups.push(group);
+    }
   }
 
   if (passes === 0) return null;
