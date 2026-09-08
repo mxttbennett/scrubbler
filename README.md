@@ -96,9 +96,9 @@ typo cannot silently disable a group.
 
 | Group | Default | Applies to | Examples |
 |---|---|---|---|
-| `remaster` | **on** | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)` |
-| `edition` | **on** | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)` |
-| `bonus` | **on** | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Explicit)`, `(Clean)` |
+| `remaster` | **on** | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)`, `(2019 Remastering)`, `(Expanded & Remastered)` |
+| `edition` | **on** | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)`, `(40th Anniversary Remaster)`, `(Remastered And Expanded)`, `(Remastered & Expanded Edition)` |
+| `bonus` | **on** | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Bonus Version)`, `(Explicit)`, `(Clean)` |
 | `feat-album` | off | album | `(feat. X)` on an *album* title — store cruft |
 | `feat-track` | off | track | `(feat. X)` on a *track* title — **deletes a real credit** |
 | `ep-single` | off | album | `- EP`, `- Single` |

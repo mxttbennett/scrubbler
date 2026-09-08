@@ -18,8 +18,8 @@ const ENDS_IN_YEAR = /(?:19|20)\d{2}\s*$/u;
 
 const DELIMITERS = [
   { open: ' - ', close: '' },
-  { open: ' (', close: ')' },
-  { open: ' [', close: ']' },
+  { open: '(', close: ')' },
+  { open: '[', close: ']' },
 ] as const;
 
 interface Tail {
@@ -85,6 +85,9 @@ const COMPOUND_SEPARATOR = /[;/:]/;
  * A segment matches when it matches whole, or when **every** part of a compound matches. Requiring
  * all parts is what keeps this from becoming a substring match: one unrecognised part and the whole
  * segment is left alone, so "Live in Rotterdam 1984" and "Vol. 3: … FL 5/22/77" stay untouched.
+ *
+ * A segment carrying its own trailing tail is a compound too, by the same rule — which reaches the
+ * nested "Remastered (Bonus Version)" and the dash-joined "Deluxe Edition - Remaster" alike.
  */
 function matchGroup(
   segment: string,
@@ -93,6 +96,13 @@ function matchGroup(
 ): GroupName[] | null {
   const whole = matchOne(segment, field, enabled);
   if (whole !== null) return [whole];
+
+  const nested = splitTail(segment);
+  if (nested !== null) {
+    const head = matchOne(nested.head.trim(), field, enabled);
+    const tail = matchOne(nested.segment.trim(), field, enabled);
+    if (head !== null && tail !== null) return [head, tail];
+  }
 
   if (!COMPOUND_SEPARATOR.test(segment)) return null;
   const parts = segment.split(COMPOUND_SEPARATOR).map((p) => p.trim());
