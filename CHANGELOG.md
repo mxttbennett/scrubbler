@@ -7,6 +7,12 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.0.1] - 2026-09-08
+
+- Internal: the release step no longer fails when the tag already points at the commit being
+  released. A re-run or a force-push after a history rewrite is a no-op, not a forgotten version
+  bump, and only the second of those should turn `main` red.
+
 ## [1.0.0] - 2026-09-08
 
 First versioned release. The service has been running unattended against a real library for some

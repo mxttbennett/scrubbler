@@ -32,6 +32,9 @@ a tag that already exists**, so a merge without a bump turns `main` red; and one
 keeps releases and merge commits one-to-one, which is what makes the version a useful answer to
 "what is actually running?".
 
+The one exception is a tag that already points at *this* commit — a re-run, or a force-push after a
+history rewrite. That is a no-op, not a forgotten bump, and the release step says so and passes.
+
 Put the bump in its own final commit, with the changelog entry for the same version:
 
 ```sh
