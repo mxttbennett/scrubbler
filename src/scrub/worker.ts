@@ -77,14 +77,13 @@ export class ScrubWorker {
         executor.checkpoint(edit);
         await executor.applyOne(edit, rules.keys);
       },
-      (doneCount, total, edits) => {
-        if (doneCount % 10 === 0 || doneCount === total) {
-          const s = executor.streamedSummary;
-          console.log(
-            `resolved ${doneCount}/${total} candidates · ${edits} tuples · ` +
-              `${s.applied} applied · ${s.verified} verified · ${s.failed} failed`,
-          );
-        }
+      (doneCount, total, edits, candidate) => {
+        const s = executor.streamedSummary;
+        console.log(
+          `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
+            `${edits} tuples · ${s.applied} applied · ${s.verified} verified · ` +
+            `${s.unverified} unverified · ${s.failed} failed`,
+        );
       },
     );
 

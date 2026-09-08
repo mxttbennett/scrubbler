@@ -30,7 +30,7 @@ export class Resolver {
   async resolve(
     candidates: Candidate[],
     onEdit?: (edit: PlannedEdit) => Promise<void>,
-    onProgress?: (done: number, total: number, edits: number) => void,
+    onProgress?: (done: number, total: number, edits: number, candidate: Candidate) => void,
   ): Promise<ResolveResult> {
     const byTuple = new Map<string, PlannedEdit>();
     const skips: SkipRecord[] = [];
@@ -45,7 +45,7 @@ export class Resolver {
           : albumLibraryPath(this.username, candidate.artist, candidate.title);
 
       if (seenPaths.has(path)) {
-        onProgress?.(done, candidates.length, byTuple.size);
+        onProgress?.(done, candidates.length, byTuple.size, candidate);
         continue;
       }
       seenPaths.add(path);
@@ -53,7 +53,7 @@ export class Resolver {
       const rows = await this.collectRows(path, MAX_RECURSION);
       if (rows.length === 0) {
         skips.push({ candidate, reason: 'no scrobble rows found on library page' });
-        onProgress?.(done, candidates.length, byTuple.size);
+        onProgress?.(done, candidates.length, byTuple.size, candidate);
         continue;
       }
 
@@ -63,7 +63,7 @@ export class Resolver {
         // leave a second, partial edit for the same tuple to collide with later.
         if (added && onEdit) await onEdit(added);
       }
-      onProgress?.(done, candidates.length, byTuple.size);
+      onProgress?.(done, candidates.length, byTuple.size, candidate);
     }
 
     return { edits: [...byTuple.values()], skips };
