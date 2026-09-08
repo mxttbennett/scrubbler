@@ -6,6 +6,7 @@ import {
   extractFormAction,
   extractScrobbleRows,
   hasRealChartlist,
+  isThrottled,
   pageCount,
   trackLibraryPath,
 } from '../../src/lastfm/pages.js';
@@ -112,5 +113,20 @@ describe('extractAggregateLinks', () => {
 
   it('finds none on a leaf scrobble page', () => {
     expect(extractAggregateLinks(ROW_FORM)).toEqual([]);
+  });
+});
+
+describe('isThrottled', () => {
+  it('detects the soft rate-limit page, which arrives as HTTP 200', () => {
+    expect(isThrottled('<h1>You&#8217;re requesting too many pages</h1>')).toBe(true);
+    expect(isThrottled('<h1>You’re requesting too many pages</h1>')).toBe(true);
+    expect(isThrottled('<title>Page not available | Last.fm</title>')).toBe(true);
+  });
+
+  it('does not fire on a normal library page', () => {
+    expect(isThrottled('<title>Fleetwood Mac | Last.fm</title><table class="chartlist">')).toBe(
+      false,
+    );
+    expect(isThrottled('')).toBe(false);
   });
 });

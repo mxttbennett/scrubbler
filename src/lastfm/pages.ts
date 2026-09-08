@@ -1,11 +1,24 @@
+import { RateLimiter } from './rateLimiter.js';
 import type { Session } from './session.js';
 import type { ScrobbleRow } from '../scrub/types.js';
 
 const MAX_ATTEMPTS = 6;
+const THROTTLED_BACKOFF_MS = 120_000;
 
 export interface PagesOptions {
   sleep?: (ms: number) => Promise<void>;
   log?: (msg: string) => void;
+  /** Spacing between library page fetches; the web pages throttle far sooner than the API. */
+  minIntervalMs?: number;
+}
+
+/** Last.fm soft-throttles with HTTP 200 and an HTML page, so status alone cannot detect it. */
+export function isThrottled(html: string): boolean {
+  return (
+    html.includes('You&#8217;re requesting too many pages') ||
+    html.includes('You’re requesting too many pages') ||
+    /<title[^>]*>\s*Page not available/.test(html)
+  );
 }
 
 /** Last.fm URLs use `+` for spaces rather than %20. */
@@ -99,6 +112,7 @@ export function decodeEntities(value: string): string {
 export class LibraryPages {
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly log: (msg: string) => void;
+  private readonly limiter: RateLimiter;
 
   constructor(
     private readonly session: Session,
@@ -106,24 +120,40 @@ export class LibraryPages {
   ) {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.log = opts.log ?? ((m) => console.log(m));
+    this.limiter = new RateLimiter(opts.minIntervalMs ?? 1500, { sleep: this.sleep });
+  }
+
+  private throttledUntil = 0;
+
+  /** True once Last.fm has soft-throttled us, so a sweep can stop rather than dig deeper. */
+  get isBackingOff(): boolean {
+    return Date.now() < this.throttledUntil;
   }
 
   /** A 200 carrying only the placeholder skeleton is a failure, not an empty library page. */
   async fetch(path: string): Promise<string> {
     let backoffMs = 1000;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      await this.limiter.acquire();
       const res = await this.session.request(path);
       const retryAfter = Number(res.headers.get('retry-after'));
       const html = res.status === 200 ? await res.text() : (await res.body?.cancel(), '');
 
       if (res.status === 200 && hasRealChartlist(html)) return html;
-      if (attempt === MAX_ATTEMPTS) return html;
+
+      const throttled = res.status === 429 || isThrottled(html);
+      if (throttled) this.throttledUntil = Date.now() + THROTTLED_BACKOFF_MS;
+      if (attempt === MAX_ATTEMPTS) return throttled ? '' : html;
 
       const wait =
-        res.status === 429 && Number.isFinite(retryAfter) && retryAfter > 0
+        Number.isFinite(retryAfter) && retryAfter > 0
           ? retryAfter * 1000
-          : backoffMs;
-      this.log(`retrying ${path} (status ${res.status}, attempt ${attempt}) in ${wait}ms`);
+          : throttled
+            ? THROTTLED_BACKOFF_MS
+            : backoffMs;
+      this.log(
+        `retrying ${path} (${throttled ? 'throttled by Last.fm' : `status ${res.status}`}, attempt ${attempt}) in ${wait}ms`,
+      );
       await this.sleep(wait);
       backoffMs = Math.min(backoffMs * 2, 30_000);
     }

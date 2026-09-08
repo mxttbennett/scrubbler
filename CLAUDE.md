@@ -33,6 +33,10 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 - **HTTP status cannot detect auth state.** Wrong password → `200`. Successful login → `302`.
   Missing `Referer` → also `302`, with `csrftoken` cleared. The auth probe 302s either way and only
   the `Location` distinguishes them. `Session.isAuthenticated` is the single place that logic lives.
+- **Pace library page reads, and detect the throttle by content.** Last.fm soft-throttles the web
+  pages with an HTTP `200` page reading "You're requesting too many pages" — no `429`, no
+  `Retry-After`. `LibraryPages` owns a 1.5s rate limiter and `isThrottled()`; never bypass either.
+  The JSON API and the web pages are separate rate-limit domains, and the web one is far tighter.
 - **Writes are serial, and success is not implied by `200`.** Parallel writes produce inconsistent
   results, and Last.fm returns `200` for an accepted-but-no-op edit — hence `VERIFY_EDITS`, and the
   delay before verifying, because it serves stale rows briefly after a write.

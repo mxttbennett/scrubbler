@@ -19,7 +19,7 @@ async function main() {
     { username: config.username, password: config.password, userAgent: config.userAgent },
     { statePath: sessionStatePath(config.dbPath) },
   );
-  const pages = new LibraryPages(session);
+  const pages = new LibraryPages(session, { minIntervalMs: config.pageDelayMs });
   const api = new LastfmApi(config.apiKey);
   const planner = new Planner(api, config.username, config.enabledGroups);
   const resolver = new Resolver(pages, config.username, config.enabledGroups);
