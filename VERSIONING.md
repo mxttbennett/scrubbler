@@ -9,6 +9,31 @@ a matching [GitHub Release](../../releases) with notes from the changelog. It do
 Shipping is a separate manual step, because a deploy here rewrites a real Last.fm library and those
 edits are irreversible — see [deploy/README.md](deploy/README.md).
 
+## Pre-release until it has run
+
+A release is created as a **pre-release**. Deploying it promotes it to a full release, so the labels
+carry a fact rather than a date:
+
+| Label | Means |
+|---|---|
+| pre-release | The code exists and is tagged. It has never run. |
+| full release | It has been deployed at least once. |
+| **Latest** | The highest-numbered version that has ever run. |
+
+That makes the releases page a deployment log at no extra cost, and it is the honest label set for a
+repo where releasing and deploying are separate steps — the newest tag genuinely is not necessarily
+running.
+
+Promotion is **one-way**, and deliberately so:
+
+- A version you skip stays a pre-release forever. That is true and worth seeing; marking it a full
+  release because a later version shipped would claim it ran.
+- Rolling back does not demote the version you rolled back *from*. It did run, and re-marking it
+  pre-release would assert otherwise. So after a rollback **Latest is ahead of the box** — which is
+  why the checks below, not the release list, are the authority on what is running.
+- Nothing is promoted when the deployed tree is not exactly a tagged release, which is what
+  dispatching a branch that has moved past its tag does.
+
 ## Which number to bump
 
 | Bump | When | Examples |
@@ -55,7 +80,8 @@ past it rather than off `main`.
 - The deploy workflow's run summary, which reads it back off the box after the restart.
 
 Because the release and the deploy are separate, **the newest tag is not necessarily what is
-running.** That is the trade for keeping deploys manual; the three checks above are the truth.
+running** — though a *pre-release* tag definitely is not. That is the trade for keeping deploys
+manual; the four checks above are the truth.
 
 ## Versions as rollback targets
 

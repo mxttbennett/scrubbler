@@ -7,8 +7,10 @@ the pre-deploy snapshot, swaps the build in and confirms the service booted — 
 **Dispatch the tag you want, not the branch.** The run is titled after its ref, so
 `gh workflow run deploy --ref v1.1.0` reads `deploy v1.1.0` in the run list while dispatching `main`
 reads `deploy main` and deploys whatever `main` happens to be. Either way the run summary records the
-version that actually came up, read back from the box rather than from `package.json`. Deploying an
-*older* tag is a rollback — read *Rolling back* and *Rolling back past the approval gate* first.
+version that actually came up, read back from the box rather than from `package.json`, and a
+successful deploy promotes that release out of pre-release — see
+[VERSIONING.md](../VERSIONING.md#pre-release-until-it-has-run). Deploying an *older* tag is a
+rollback — read *Rolling back* and *Rolling back past the approval gate* first.
 
 The trigger is `workflow_dispatch` only. The sibling `feed1` service deploys on every push to
 `main`, but a merge here widens what this service rewrites on a real Last.fm account and those edits

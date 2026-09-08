@@ -63,11 +63,16 @@ jobs:
             exit 1
           fi
 
+          # Born a pre-release: merging to main proves the code exists, not that it ever ran. The
+          # deploy workflow promotes it, so "Latest release" means "has been deployed at least once"
+          # and a version that was skipped stays visibly marked as never having run.
           npx tsx scripts/changelog.ts "$version" > /tmp/notes.md || true
           if [ -s /tmp/notes.md ]; then
-            gh release create "$tag" --title "$tag" --notes-file /tmp/notes.md --target "${{ github.sha }}"
+            gh release create "$tag" --title "$tag" --notes-file /tmp/notes.md \
+              --target "${{ github.sha }}" --prerelease
           else
             echo "::warning::no CHANGELOG.md entry for $version"
-            gh release create "$tag" --title "$tag" --generate-notes --target "${{ github.sha }}"
+            gh release create "$tag" --title "$tag" --generate-notes \
+              --target "${{ github.sha }}" --prerelease
           fi
-          echo "released $tag"
+          echo "released $tag as a pre-release; deploying it promotes it"

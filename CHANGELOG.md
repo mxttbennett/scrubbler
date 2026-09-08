@@ -7,6 +7,15 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.1.2] - 2026-09-08
+
+- Releases are now created as **pre-releases** and promoted when they are deployed, so GitHub's
+  "Latest release" means "the highest version that has ever run" rather than "the newest tag". A
+  version you skip stays marked as never having run, and the releases page becomes a deployment log.
+- Promotion is one-way: a rollback does not demote the release it rolled back from, because that one
+  did run. After a rollback the release list is therefore ahead of the box, and `/scrub status`, the
+  startup line and the deploy summary remain the authority on what is running.
+
 ## [1.1.1] - 2026-09-08
 
 - The deploy workflow's run is now titled after the ref it is deploying, so the Actions list reads
