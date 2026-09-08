@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/core/config.js';
+import { readPackageVersion } from '../../src/core/version.js';
 
 const BASE = {
   LASTFM_USERNAME: 'u',
@@ -20,6 +21,10 @@ describe('loadConfig', () => {
   it('does not send a browser-impersonating User-Agent, which Last.fm answers with 406', () => {
     expect(loadConfig({ ...BASE }).userAgent).not.toMatch(/^Mozilla\/5\.0/);
     expect(loadConfig({ ...BASE }).userAgent).toContain('scrubbler');
+  });
+
+  it('names the real package version, so Last.fm logs identify the running build', () => {
+    expect(loadConfig({ ...BASE }).userAgent).toContain(`scrubbler/${readPackageVersion()}`);
   });
 
   it('turns on an experimental group when named', () => {

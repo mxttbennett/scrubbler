@@ -12,6 +12,22 @@ Damned Damned Damned (Bonus Tracks Version)  ->  Damned Damned Damned
 It runs unattended on a small VM alongside other personal services. There is no UI and no review
 queue: it applies only changes it is confident about and logs everything else.
 
+## Disclaimer
+
+Last.fm's API exposes no method for editing a scrobble. Correcting one means driving the same
+authenticated web forms a browser uses, which is what this service does: it logs in with your
+credentials, reads your library pages, and posts to `/library/edit-track`.
+
+That is contrary to clause 2.6 of the Last.fm [API Terms of Service](https://www.last.fm/api/tos),
+which permits gathering data only through the documented API, and Last.fm may restrict, suspend or
+terminate any account at its sole discretion ([Terms of Use](https://www.last.fm/legal/terms),
+section 18).
+
+Run it on your own account, at your own risk. It is non-commercial, identifies itself honestly in
+its User-Agent, paces library reads at 15s with jitter, and backs off when Last.fm signals a
+throttle — but none of that amounts to permission. The MIT licence covers defects in this code. It
+does not cover what happens to your Last.fm account.
+
 ## How it works
 
 There is no Last.fm API for editing scrobbles — editing exists only as an authenticated web form.
@@ -328,3 +344,8 @@ The Last.fm edit contract was originally reverse-engineered by
 [lastfm-bulk-edit](https://github.com/Rudey/lastfm-bulk-edit) (AGPL), a browser userscript. This
 service reimplements the same contract headlessly; note that the endpoint has since moved from
 `/library/edit` to `/library/edit-track`, which the userscript still hardcodes.
+
+Library and listening data comes from [Last.fm](https://www.last.fm), powered by AudioScrobbler. All
+Last.fm Data remains the property of Last.fm. The corpus under `test/fixtures/` is a small
+non-commercial extract of one account's own library, kept well inside the 100 MB Reasonable Usage
+Cap set by clause 4.3.4 of the API Terms of Service.
