@@ -63,9 +63,11 @@ export class Commands {
       case 'stats':
         return { text: this.stats() };
       case 'pending':
-        return { text: this.pendingList() };
-      case 'approve-all':
-        return this.approveAll();
+      case 'approve-all': {
+        const off = this.requireApprovalMode();
+        if (off !== undefined) return { text: off };
+        return sub === 'pending' ? { text: this.pendingList() } : this.approveAll();
+      }
       case 'ignored':
         return { text: this.ignoredList(Number(args['page'] ?? 1)) };
       case 'unignore':
@@ -81,6 +83,21 @@ export class Commands {
       default:
         return { text: `Unknown subcommand: ${sub}` };
     }
+  }
+
+  /**
+   * Replies rather than hiding: the command list is the same in both modes, so a missing command
+   * would read as a broken bot instead of a mode that is off.
+   */
+  private requireApprovalMode(): string | undefined {
+    if (this.deps.approvalMode) return undefined;
+    const pending = this.deps.approvals.pending().length;
+    return (
+      'Approval mode is off — corrections apply unattended, so there is nothing to approve.' +
+      (pending > 0
+        ? ` ${pending} proposal(s) are still queued from an earlier run; the next sweep drains them.`
+        : ' Set APPROVAL_MODE=true and restart to turn it on.')
+    );
   }
 
   private state() {

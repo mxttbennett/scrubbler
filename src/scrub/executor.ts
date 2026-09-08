@@ -1,5 +1,6 @@
 import { eq, and } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
+import type { WriteLock } from '../core/writeLock.js';
 import { schema } from '../db/index.js';
 import type { AlbumEditor, PlannedAlbumEdit } from '../lastfm/albumEditor.js';
 import type { Editor } from '../lastfm/editor.js';
@@ -19,6 +20,11 @@ export interface ExecutorOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Post-edit album art, looked up per album and cached by the API client. */
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
+  /**
+   * Shared across every executor in the process. Omitted only in tests that write nothing
+   * concurrently; production must pass one or the worker, an approval and a command can interleave.
+   */
+  writeLock?: WriteLock;
 }
 
 export interface ExecutionSummary {
@@ -173,7 +179,7 @@ export class Executor {
     if (this.stopRequested) return;
 
     try {
-      const outcome = await this.albumEditor.apply(edit);
+      const outcome = await this.locked(() => this.albumEditor.apply(edit));
       summary.applied++;
       summary.byKind.album.applied++;
       summary.byKind.album.tracksCovered += edit.trackNames?.length ?? 0;
@@ -290,6 +296,15 @@ export class Executor {
         ),
       )
       .get();
+  }
+
+  /**
+   * The POST and its verification read are one critical section: Last.fm serves stale rows briefly
+   * after a write, so another writer landing between them makes the verification read the wrong row.
+   */
+  private async locked<T>(fn: () => Promise<T>): Promise<T> {
+    const lock = this.opts.writeLock;
+    return lock === undefined ? await fn() : await lock.run(fn);
   }
 
   /** The approval row's buttons address ledger rows by id, so the caller needs the id back. */
@@ -428,7 +443,7 @@ export class Executor {
       if (this.stopRequested) break;
 
       try {
-        const outcome = await this.editor.apply(edit);
+        const outcome = await this.locked(() => this.editor.apply(edit));
         summary.applied++;
         summary.byKind.track.applied++;
         if (outcome === 'verified') summary.verified++;

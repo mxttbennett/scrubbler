@@ -1,5 +1,6 @@
 import { loadConfig } from './core/config.js';
 import { AlreadyRunningError, acquireLock, lockPath } from './core/lock.js';
+import { WriteLock } from './core/writeLock.js';
 import { createDb, runMigrations, schema } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
 import { AlbumEditor } from './lastfm/albumEditor.js';
@@ -59,6 +60,10 @@ async function main() {
 
   const albumArt = (artist: string, album: string) => api.albumArt(artist, album);
 
+  // One per process, shared by every executor: the worker, an approval click and a slash command
+  // are otherwise three unordered writers against the same account.
+  const writeLock = new WriteLock();
+
   const proposals = new Proposals({
     botToken: config.discordBotToken,
     channelId: config.discordChannelId,
@@ -74,6 +79,7 @@ async function main() {
       writeDelayMs: config.writeDelayMs,
       digestEvery: config.digestEvery,
       albumArt,
+      writeLock,
     }),
     proposals,
     freshToken: () => session.freshCsrfToken(`/user/${config.username}/library`),
@@ -96,6 +102,7 @@ async function main() {
     reporter,
     albumArt,
     approvals,
+    writeLock,
   });
 
   console.log(
@@ -126,14 +133,22 @@ async function main() {
     return;
   }
 
-  // Gateway first in approval mode: a proposal posted before the client is listening has live
-  // buttons nothing would answer.
+  // Not gated on approval mode: status, stats, pause and the reset commands are just as useful
+  // unattended, and tying the whole surface to the gate left an unattended deploy with no commands.
+  const { discordBotToken, discordOwnerId, discordGuildId } = config;
+
+  // In approval mode this must come before the worker: a proposal posted before the client is
+  // listening has live buttons nothing would answer.
   let gateway: Gateway | undefined;
-  if (config.approvalMode) {
+  if (
+    discordBotToken !== undefined &&
+    discordOwnerId !== undefined &&
+    discordGuildId !== undefined
+  ) {
     gateway = new Gateway({
-      botToken: config.discordBotToken!,
-      ownerId: config.discordOwnerId!,
-      guildId: config.discordGuildId!,
+      botToken: discordBotToken,
+      ownerId: discordOwnerId,
+      guildId: discordGuildId,
       commands: new Commands({
         db,
         approvals,
