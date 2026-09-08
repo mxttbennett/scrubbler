@@ -1,0 +1,65 @@
+name: release
+
+# Separate from deploy, unlike the sibling feed1 service which releases inside its deploy job.
+# Deploying here is deliberately manual because it writes to a real Last.fm account; tagging writes
+# nothing, so it can safely be automatic. Decoupling them means a merge always gets a release —
+# which is what makes the version a reliable answer to "what is on the box?" — while shipping still
+# waits for a human.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+
+          if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::package.json version '$version' is not MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+
+          git fetch --tags --force
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::$tag already exists — the merge did not bump the version. See VERSIONING.md"
+            exit 1
+          fi
+
+          # Catches a backwards typo (2.1.0 -> 2.0.9), which collides with no existing tag but would
+          # leave the release list out of order.
+          highest=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+          if [ -n "$highest" ] && [ "$(printf '%s\n%s\n' "${highest#v}" "$version" | sort -V | tail -1)" != "$version" ]; then
+            echo "::error::$tag is not newer than the latest release $highest"
+            exit 1
+          fi
+
+          npx tsx scripts/changelog.ts "$version" > /tmp/notes.md || true
+          if [ -s /tmp/notes.md ]; then
+            gh release create "$tag" --title "$tag" --notes-file /tmp/notes.md --target "${{ github.sha }}"
+          else
+            echo "::warning::no CHANGELOG.md entry for $version"
+            gh release create "$tag" --title "$tag" --generate-notes --target "${{ github.sha }}"
+          fi
+          echo "released $tag"

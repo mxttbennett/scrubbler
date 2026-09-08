@@ -8,9 +8,13 @@ The trigger is `workflow_dispatch` only. The sibling `feed1` service deploys on 
 `main`, but a merge here widens what this service rewrites on a real Last.fm account and those edits
 are irreversible, so the button is the human beat before that happens.
 
-Also unlike `feed1`: no rollback-by-tag and no migration guard. Those need version and CHANGELOG
-discipline this repo does not keep, and rollback here carries a hazard `feed1` has no analogue for —
-see *Rolling back past the approval gate*.
+Releases are tagged separately, on merge to `main`, by the `release` workflow — tagging writes
+nothing to Last.fm, so it is safe to automate where deploying is not. **The newest tag is therefore
+not necessarily what is running**; see [VERSIONING.md](../VERSIONING.md) for how to tell.
+
+Also unlike `feed1`: no rollback-by-tag input and no migration guard. Rollback here carries two
+hazards that need a human reading this file first — Drizzle being forward-only, and an old build not
+recognising `awaiting_approval`. See *Rolling back past the approval gate*.
 
 ## One-time
 

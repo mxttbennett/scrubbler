@@ -1,4 +1,5 @@
 import { loadConfig } from './core/config.js';
+import { readPackageVersion } from './core/version.js';
 import { AlreadyRunningError, acquireLock, lockPath } from './core/lock.js';
 import { WriteLock } from './core/writeLock.js';
 import { createDb, runMigrations, schema } from './db/index.js';
@@ -125,7 +126,8 @@ async function main() {
   });
 
   console.log(
-    `scrubbler starting | user ${config.username} | dryRun ${String(config.dryRun)}` +
+    `scrubbler ${readPackageVersion()} starting | user ${config.username}` +
+      ` | dryRun ${String(config.dryRun)}` +
       ` | groups ${[...config.enabledGroups].sort().join(',')}` +
       ` | discord ${discord.enabled ? 'on' : 'off'}` +
       ` | mode ${config.approvalMode ? 'approval' : 'unattended'}`,

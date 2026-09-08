@@ -5,6 +5,7 @@ import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
 import { EXPERIMENTAL_GROUPS, type Field } from '../rules/markers.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
+import { readPackageVersion } from '../core/version.js';
 
 export interface CommandDeps {
   db: Db;
@@ -220,6 +221,7 @@ export class Commands {
     const counts = this.countsByStatus();
     const pending = this.deps.approvals.pending().length;
     const lines = [
+      `version     ${readPackageVersion()}`,
       `mode        ${this.deps.approvalMode ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
       `phase       ${s?.phase ?? 'idle'}${s?.paused === true ? ' — PAUSED' : ''}`,
       `progress    ${s?.candidatesDone ?? 0}/${s?.candidatesTotal ?? 0} candidates`,

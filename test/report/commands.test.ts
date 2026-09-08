@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
 import { Commands } from '../../src/report/commands.js';
@@ -119,6 +121,20 @@ describe('/scrub status', () => {
     expect(text).toContain('mode        approval');
     expect(text).toContain('resolving — PAUSED');
     expect(text).toContain('12/40 candidates');
+  });
+
+  /** The one place in Discord that answers "which build is this?" — see VERSIONING.md. */
+  it('names the running version, which is what makes a release traceable', async () => {
+    const version = (
+      JSON.parse(readFileSync(join(import.meta.dirname, '..', '..', 'package.json'), 'utf8')) as {
+        version: string;
+      }
+    ).version;
+
+    const text = (await harness().commands.handle('status')).text;
+
+    expect(text).toContain(`version     ${version}`);
+    expect(text).not.toContain('version     unknown');
   });
 
   it('says unattended when approval mode is off', async () => {
