@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ConsoleAndDiscordReporter, describeCorrection, escapeMd, libraryLinks } from '../../src/report/reporter.js';
 import { Discord, type DiscordEmbed } from '../../src/report/discord.js';
+import { LINK_GLYPH } from '../../src/report/links.js';
 
 function spy() {
   const sent: DiscordEmbed[] = [];
@@ -248,6 +249,100 @@ describe('embed titles name the subject and count, not the artist', () => {
     const { sent, reporter } = spy();
     await reporter.corrections([track], TOTALS);
     expect(sent[0]!.description!.startsWith('**The Smiths**')).toBe(true);
+  });
+});
+
+describe('the rule field links to where the automatic-edit rule lives', () => {
+  const ALBUMS = 'https://www.last.fm/settings/subscription/automatic-edits/albums';
+  const TRACKS = 'https://www.last.fm/settings/subscription/automatic-edits/tracks';
+
+  /** spy() builds an unlinked reporter; these cards need the configured-username shape. */
+  function linked() {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+      libraryLinks('dankjankem'),
+    );
+    return { sent, reporter };
+  }
+
+  const trackCorrection = {
+    artist: 'Wire',
+    kind: 'track' as const,
+    track: 'Brazil - 2006 Remastered Version',
+    album: 'Pink Flag',
+    changes: [{ field: 'track_name', from: 'Brazil - 2006 Remastered Version', to: 'Brazil' }],
+    groups: ['remaster'],
+    outcome: 'verified' as const,
+  };
+
+  const albumCorrection = {
+    artist: 'Nirvana',
+    kind: 'album' as const,
+    track: '(whole album)',
+    album: 'In Utero (Deluxe Edition)',
+    changes: [{ field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' }],
+    groups: ['edition'],
+    outcome: 'verified' as const,
+  };
+
+  function ruleField(sent: DiscordEmbed[]): string {
+    return sent[0]!.fields?.find((f) => f.name === 'rule')?.value ?? '';
+  }
+
+  it('sends a track edit to the tracks page', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([trackCorrection], TOTALS);
+    expect(ruleField(sent)).toBe(`remaster [${LINK_GLYPH}](${TRACKS})`);
+  });
+
+  /** The two kinds of rule live on separate pages, so the wrong one lists nothing relevant. */
+  it('sends an album rename to the albums page', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([albumCorrection], TOTALS);
+    expect(ruleField(sent)).toBe(`edition [${LINK_GLYPH}](${ALBUMS})`);
+    expect(ruleField(sent)).not.toContain(TRACKS);
+  });
+
+  it('links an unverified edit too, since the rule is created by the write', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([{ ...trackCorrection, outcome: 'unverified' }], TOTALS);
+    expect(ruleField(sent)).toContain(TRACKS);
+  });
+
+  /** No write, no rule — the page would not mention this edit. */
+  it.each(['planned', 'failed'] as const)('does not link a %s edit', async (outcome) => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([{ ...trackCorrection, outcome }], TOTALS);
+    expect(ruleField(sent)).toBe('remaster');
+  });
+
+  it('links from a grouped card by the group kind', async () => {
+    const { sent, reporter } = linked();
+    await reporter.group(
+      {
+        artist: 'Wire',
+        kind: 'track',
+        shared: undefined,
+        items: [trackCorrection],
+        outcome: 'verified',
+      },
+      TOTALS,
+    );
+    expect(ruleField(sent)).toContain(TRACKS);
+  });
+
+  it('stays unlinked with the rest of the card when no username is configured', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+    await reporter.corrections([trackCorrection], TOTALS);
+    expect(ruleField(sent)).toBe('remaster');
   });
 });
 

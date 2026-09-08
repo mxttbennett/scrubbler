@@ -2,9 +2,15 @@ import type { Session } from './session.js';
 import { decodeEntities } from './pages.js';
 import { type Tuple, tupleKey } from '../scrub/types.js';
 
+/** Two separate pages, and the only place these paths are written: the endpoint has moved before. */
+export const AUTOMATIC_EDITS_PATH: Record<'album' | 'track', string> = {
+  album: '/settings/subscription/automatic-edits/albums',
+  track: '/settings/subscription/automatic-edits/tracks',
+};
+
 const RULE_PAGES = [
-  { path: '/settings/subscription/automatic-edits/albums', kind: 'album' as const },
-  { path: '/settings/subscription/automatic-edits/tracks', kind: 'track' as const },
+  { path: AUTOMATIC_EDITS_PATH.album, kind: 'album' as const },
+  { path: AUTOMATIC_EDITS_PATH.track, kind: 'track' as const },
 ];
 
 export interface RuleSet {

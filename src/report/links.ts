@@ -1,3 +1,4 @@
+import { AUTOMATIC_EDITS_PATH } from '../lastfm/rules.js';
 import { ORIGIN } from '../lastfm/session.js';
 
 /**
@@ -26,6 +27,14 @@ export function albumUrl(user: string, artist: string, album: string): string {
 
 export function trackUrl(user: string, artist: string, track: string): string {
   return `${artistUrl(user, artist)}/_/${segment(track)}`;
+}
+
+/**
+ * Where the rule each write creates shows up. Needs no username, unlike the library links: it is the
+ * signed-in user's own settings page, so this one renders even when none is configured.
+ */
+export function automaticEditsUrl(kind: 'track' | 'album'): string {
+  return `${ORIGIN}${AUTOMATIC_EDITS_PATH[kind]}`;
 }
 
 export const LINK_GLYPH = '↗';
