@@ -6,6 +6,8 @@ export interface RunTotals {
   unverified: number;
   failed: number;
   planned: number;
+  /** Set so the footer can say "nothing written" honestly, instead of inferring it from zeroes. */
+  dryRun?: boolean;
 }
 
 export type Outcome = 'planned' | 'applied' | 'verified' | 'unverified' | 'failed';
@@ -196,9 +198,14 @@ export function escapeMd(value: string): string {
   return value.replace(/([\\`*_~|>[\]()#-])/g, '\\$1');
 }
 
+/**
+ * Never infers "nothing written" from zero counts — an all-zero summary used to print that under a
+ * card titled "Corrected", because album renames bypassed the counter entirely.
+ */
 function progressText(t: RunTotals): string {
-  if (t.applied === 0 && t.failed === 0) {
-    return `${t.planned} planned · nothing written`;
-  }
-  return `${t.applied} applied · ${t.verified} verified · ${t.unverified} unverified · ${t.failed} failed`;
+  if (t.dryRun === true) return `${t.planned} planned this run · dry run, nothing written`;
+  const parts = [`${t.applied} applied`, `${t.verified} verified`];
+  if (t.unverified > 0) parts.push(`${t.unverified} unverified`);
+  if (t.failed > 0) parts.push(`${t.failed} failed`);
+  return `this run: ${parts.join(' · ')}`;
 }

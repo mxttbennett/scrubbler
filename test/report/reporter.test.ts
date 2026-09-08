@@ -163,3 +163,41 @@ describe('grouped corrections', () => {
     expect(sent[0]!.fields?.some((f) => f.name === 'track')).toBe(true);
   });
 });
+
+describe('the footer never claims "nothing written" from zero counts', () => {
+  const c = {
+    artist: 'The Beatles',
+    track: '(whole album)',
+    album: 'Please Please Me (Remastered)',
+    changes: [{ field: 'album_name', from: 'Please Please Me (Remastered)', to: 'Please Please Me' }],
+    groups: ['remaster'],
+    outcome: 'verified' as const,
+  };
+
+  it('says dry run only when it really was one', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([c], { planned: 4, applied: 0, verified: 0, unverified: 0, failed: 0, dryRun: true });
+    expect(sent[0]!.footer?.text).toContain('dry run');
+  });
+
+  it('does not say "nothing written" under a Corrected card just because counts are zero', async () => {
+    const { sent, reporter } = spy();
+    // this is the shape album renames produced before they went through the executor
+    await reporter.corrections([c], { planned: 0, applied: 0, verified: 0, unverified: 0, failed: 0 });
+    expect(sent[0]!.title).toContain('Corrected');
+    expect(sent[0]!.footer?.text).not.toContain('nothing written');
+  });
+
+  it('omits unverified and failed from the footer when they are zero', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([c], { planned: 3, applied: 3, verified: 3, unverified: 0, failed: 0 });
+    expect(sent[0]!.footer?.text).toBe('this run: 3 applied · 3 verified');
+  });
+
+  it('shows them when they are not', async () => {
+    const { sent, reporter } = spy();
+    await reporter.corrections([c], { planned: 5, applied: 5, verified: 3, unverified: 1, failed: 1 });
+    expect(sent[0]!.footer?.text).toContain('1 unverified');
+    expect(sent[0]!.footer?.text).toContain('1 failed');
+  });
+});

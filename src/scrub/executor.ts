@@ -218,6 +218,7 @@ export class Executor {
       verified: s.verified,
       unverified: s.unverified,
       failed: s.failed,
+      dryRun: this.opts.dryRun,
     };
   }
 
@@ -270,13 +271,7 @@ export class Executor {
     const summary: ExecutionSummary = into ?? blankSummary();
     summary.planned += edits.length;
 
-    const totals = (): RunTotals => ({
-      planned: summary.planned,
-      applied: summary.applied,
-      verified: summary.verified,
-      unverified: summary.unverified,
-      failed: summary.failed,
-    });
+    const totals = (): RunTotals => this.totalsOf(summary);
     const pending: Correction[] = [];
     const flush = async () => {
       if (pending.length === 0) return;
