@@ -8,6 +8,9 @@ export interface RunTotals {
   planned: number;
   /** Set so the footer can say "nothing written" honestly, instead of inferring it from zeroes. */
   dryRun?: boolean;
+  /** One album rename is one write covering many tracks, so the two cannot share a counter. */
+  albums?: number;
+  tracks?: number;
 }
 
 export type Outcome = 'planned' | 'applied' | 'verified' | 'unverified' | 'failed';
@@ -31,6 +34,11 @@ export interface Correction {
   error?: string;
   /** Art for the post-edit album, so the embed shows what it will be. */
   imageUrl?: string;
+  /**
+   * Set on album corrections only. A whole-album rename is one request covering many tracks, so
+   * without this the card cannot say how many or which — the count is not the item count.
+   */
+  trackNames?: string[];
 }
 
 export interface CorrectionGroup {
@@ -187,9 +195,16 @@ export class ConsoleAndDiscordReporter implements Reporter {
       fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
       fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
     }
+    const covered = c.trackNames ?? [];
+    if (covered.length > 1) {
+      fields.push({
+        name: `tracks (${covered.length})`,
+        value: trackList(covered.map((track) => ({ ...c, track }))),
+      });
+    }
     fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
     return {
-      title: embedTitle(c.outcome, c.kind, 1),
+      title: embedTitle(c.outcome, c.kind, Math.max(covered.length, 1)),
       color: OUTCOME_COLOR[c.outcome],
       description: `**${escapeMd(c.artist)}**`,
       fields,
@@ -206,6 +221,12 @@ export class ConsoleAndDiscordReporter implements Reporter {
       color: totals.failed > 0 ? COLOR.failed : COLOR.done,
       ...(lines.length > 0 ? { description: fenceLines(lines) } : {}),
       fields: [
+        ...(totals.albums === undefined
+          ? []
+          : [{ name: 'Albums', value: String(totals.albums), inline: true }]),
+        ...(totals.tracks === undefined
+          ? []
+          : [{ name: 'Tracks', value: String(totals.tracks), inline: true }]),
         { name: 'Tuples', value: String(totals.planned), inline: true },
         { name: 'Applied', value: String(totals.applied), inline: true },
         { name: 'Verified', value: String(totals.verified), inline: true },
