@@ -40,25 +40,48 @@ function group(
   };
 }
 
+/** Qualifiers that appear in front of a remaster claim; each is store cruft on its own too. */
+const REMASTER_QUALIFIERS = ['digital', 'hd', 'expanded', 'deluxe', 'super deluxe'] as const;
+
+/**
+ * Every order of (qualifier?, year?, "remaster(ed)", "version"?) that a label actually ships, with
+ * the year before or after the word and a dash or space between. The word "remaster" is mandatory in
+ * all of them, so nothing here can match a title that is not claiming to be one.
+ */
+function remasterOrders(): string[] {
+  const WS = String.raw`\s+`;
+  const word = String.raw`remaster(?:ed)?`;
+  const sep = String.raw`\s*[-–]?\s*`;
+  const out = new Set<string>();
+  for (const q of ['', ...REMASTER_QUALIFIERS]) {
+    // Concatenated, not interpolated: `\s` inside a non-raw template literal collapses to `s`.
+    const prefix = q === '' ? '' : q.replace(/ /g, WS) + WS;
+    // "Digital Master" has no "re", but a bare "Master" is a real title word (Master of Puppets), so
+    // the shorter form is only ever generated behind a qualifier.
+    const words = prefix === '' ? [word] : [word, String.raw`master(?:ed)?`];
+    for (const w of words) {
+      for (const suffix of ['', String.raw`\s+version`]) {
+        out.add(`${prefix}${w}${suffix}`);
+        out.add(`${prefix}${YEAR}${sep}${w}${suffix}`);
+        out.add(`${prefix}${w}${sep}${YEAR}${suffix}`);
+        // Year ahead of the qualifier too: "2019 Digital Remaster".
+        out.add(`${YEAR}${sep}${prefix}${w}${suffix}`);
+      }
+    }
+  }
+  return [...out];
+}
+
 export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
+  // Generated rather than listed: the same three parts recur in every order a label has ever used,
+  // and enumerating them by hand kept missing one ("2006 Remastered Version", "Expanded 2004
+  // Remaster"). Every combination still requires the literal word "remaster", so this stays a
+  // closed catalogue of named cruft and never matches by shape.
   remaster: group(['track', 'album'], false, [
-    String.raw`remastered(?:\s+${YEAR})?`,
-    String.raw`remastered\s+${YEAR}\s+version`,
-    String.raw`${YEAR}\s+remaster(?:ed)?`,
-    String.raw`${YEAR}\s+digital\s+remaster(?:ed)?`,
-    String.raw`${YEAR}\s+digital\s+master(?:ed)?`,
-    String.raw`remaster`,
-    String.raw`remastered\s+version`,
-    String.raw`digital\s+remaster(?:ed)?`,
+    ...remasterOrders(),
     String.raw`expanded\s*&\s*remastered`,
     String.raw`remastered\s*&\s*expanded`,
-    // Word orders the original survey missed; each was found unmatched in a real library.
-    String.raw`${YEAR}\s+remastered\s+version`,
-    String.raw`remaster(?:ed)?\s+${YEAR}`,
     String.raw`remastered\s+original\s+album`,
-    String.raw`hd\s+remaster(?:ed)?`,
-    String.raw`digital\s+remaster(?:ed)?\s+${YEAR}`,
-    String.raw`${YEAR}\s+remaster(?:ed)?\s+version`,
   ]),
 
   edition: group(['track', 'album'], false, [
