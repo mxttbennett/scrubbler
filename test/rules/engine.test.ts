@@ -508,3 +508,31 @@ describe('edition word orders', () => {
     );
   });
 });
+
+describe('a colon can join two markers inside a segment', () => {
+  it('strips a bracket whose parts are both markers, and stops at the real subtitle', () => {
+    expect(
+      cleanTitle("L.A.M.F. (The Lost '77 Mixes) [40th anniversary: remaster]", 'album', DEFAULT_ON)
+        ?.clean,
+    ).toBe("L.A.M.F. (The Lost '77 Mixes)");
+    expect(cleanTitle('Album (40th anniversary: remaster)', 'album', DEFAULT_ON)?.clean).toBe(
+      'Album',
+    );
+  });
+
+  /**
+   * The colon rule only applies *inside* an already-split trailing segment, so a colon in the title
+   * itself is never reached — there is no ` - `, ` (` or ` [` to split on first.
+   */
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Deadringer: Deluxe', 'album'],
+    ['The King of Limbs: Live from the Basement', 'album'],
+    ["Dick's Picks Vol. 3: Hollywood Sportatorium, Pembroke Pines, FL 5/22/77", 'album'],
+    ['Album (Remix: Extended)', 'album'],
+    ['Album (Live: In Tokyo)', 'album'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+});
