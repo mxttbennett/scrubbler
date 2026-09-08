@@ -190,8 +190,8 @@ describe('album corrections name their tracks again', () => {
   });
 });
 
-describe('the scrobble count is read before the write', () => {
-  it('asks for the ORIGINAL title, not the renamed one', async () => {
+describe('the two album lookups', () => {
+  it('asks the ORIGINAL title first, then the canonical one', async () => {
     const s = spy();
     const asked: string[] = [];
     const e = executor(s.reporter, {
@@ -203,11 +203,12 @@ describe('the scrobble count is read before the write', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    // Once the album is renamed the old title has no scrobbles left to count.
-    expect(asked).toEqual(['In Utero (Deluxe Edition)']);
+    // The original for the scrobble count (it has none once renamed), then the canonical name for
+    // the track list, which Last.fm only catalogues under the clean title.
+    expect(asked).toEqual(['In Utero (Deluxe Edition)', 'In Utero']);
   });
 
-  it('reads it before the POST, not after', async () => {
+  it('reads the scrobble count before the POST and the track list after', async () => {
     const order: string[] = [];
     const s = spy();
     const e = new Executor(
@@ -231,7 +232,7 @@ describe('the scrobble count is read before the write', () => {
 
     await e.applyOneAlbum(albumEdit());
 
-    expect(order).toEqual(['lookup', 'post']);
+    expect(order).toEqual(['lookup', 'post', 'lookup']);
   });
 
   it('still corrects when the lookup fails, since the count is only reporting', async () => {
@@ -249,3 +250,37 @@ describe('the scrobble count is read before the write', () => {
     expect(s.items[0]!.trackNames).toBeUndefined();
   });
 });
+
+  it('prefers the canonical track list, which the cruft-laden title does not carry', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async (_artist, album) =>
+        // Exactly what Last.fm does: no tracks under "(Deluxe Edition)", the real list under the
+        // canonical name.
+        album === 'In Utero'
+          ? { imageUrl: 'art.jpg', trackNames: ['Serve the Servants', 'Scentless Apprentice'], scrobbles: 61 }
+          : { imageUrl: undefined, trackNames: [], scrobbles: 37 },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(s.items[0]!.trackNames).toEqual(['Serve the Servants', 'Scentless Apprentice']);
+    // …but the count still comes from the original, where the scrobbles actually were.
+    expect(s.items[0]!.scrobbles).toBe(37);
+    expect(e.streamedSummary.byKind.album.tracksCovered).toBe(2);
+    expect(e.streamedSummary.byKind.album.scrobblesCovered).toBe(37);
+  });
+
+  it('falls back to the original title list when the canonical one has none', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      albumDetails: async (_artist, album) =>
+        album === 'In Utero'
+          ? { imageUrl: undefined, trackNames: [], scrobbles: 0 }
+          : { imageUrl: undefined, trackNames: ['a', 'b', 'c'], scrobbles: 9 },
+    });
+
+    await e.applyOneAlbum(albumEdit());
+
+    expect(s.items[0]!.trackNames).toEqual(['a', 'b', 'c']);
+  });
