@@ -35,7 +35,7 @@ describe('Discord', () => {
     expect(calls[0]!.url).toBe('https://discord.com/api/v10/channels/123/messages');
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers.Authorization).toBe('Bot tok');
-    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ embeds: [EMBED] });
+    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ embeds: [EMBED] });
   });
 
   it('waits out a 429 using retry_after, then succeeds', async () => {
