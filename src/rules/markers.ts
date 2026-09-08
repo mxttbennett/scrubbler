@@ -7,6 +7,7 @@ export type GroupName =
   | 'feat-album'
   | 'feat-track'
   | 'ep-single'
+  | 'live-album'
   | 'live-track'
   | 'version'
   | 'mono-stereo';
@@ -124,9 +125,12 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   'ep-single': group(['album'], true, [String.raw`ep`, String.raw`single`]),
 
-  // Track-only, and off: a live track sits beside the studio take you also own, so enabling this
-  // merges two different recordings irreversibly. Kept available because whether that matters is a
-  // judgement only the library's owner can make.
+  // Split by field, and both off. A live *album* labelled "(Live)" is usually a release that only
+  // exists live, so the label is redundant — 14 in a real library, none with a studio twin. A live
+  // *track* sits beside the studio take you also own, and merging them is irreversible. Use shadow
+  // mode to see what either would do before enabling it.
+  'live-album': group(['album'], true, [String.raw`live`]),
+
   'live-track': group(['track'], true, [String.raw`live`]),
 
   // These name *which recording* it is, so merging them loses information: off by default.

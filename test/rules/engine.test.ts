@@ -290,8 +290,41 @@ describe('cleanTitle — real library corpus', () => {
   });
 });
 
-describe('live is track-only, and off by default', () => {
+describe('live is split by field, and both are off by default', () => {
   const TRACK_ONLY = new Set<GroupName>(['live-track']);
+  const ALBUM_ONLY = new Set<GroupName>([...DEFAULT_ON, 'live-album']);
+
+  it('reaches a compound that pairs Live with a remaster claim, once enabled', () => {
+    // Unreachable without live-album: the remaster half matches but nothing matches a bare "Live".
+    expect(cleanTitle("Europe '72 (Live; 2001 Remaster)", 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle("Europe '72 (Live; 2001 Remaster)", 'album', ALBUM_ONLY)?.clean).toBe(
+      "Europe '72",
+    );
+  });
+
+  it('strips a bare (Live) from an album whose release only exists live', () => {
+    expect(cleanTitle('Yessongs (Live)', 'album', ALBUM_ONLY)?.clean).toBe('Yessongs');
+    expect(cleanTitle('Stop Making Sense (Live)', 'album', ALBUM_ONLY)?.clean).toBe(
+      'Stop Making Sense',
+    );
+  });
+
+  it('leaves a live TRACK alone under the album group, since the studio take exists too', () => {
+    expect(cleanTitle('all apologies - live', 'track', ALBUM_ONLY)).toBeNull();
+    expect(cleanTitle('White Light/White Heat - Live', 'track', ALBUM_ONLY)).toBeNull();
+  });
+
+  it('never touches a segment that merely starts with Live, in either group', () => {
+    const both = new Set<GroupName>([...DEFAULT_ON, 'live-album', 'live-track']);
+    for (const [title, field] of [
+      ['The King of Limbs: Live from the Basement', 'album'],
+      ['Live at Leeds', 'album'],
+      ['Live Through This', 'album'],
+      ['Sister Ray - Live in Rotterdam 1984', 'track'],
+    ] as [string, 'album' | 'track'][]) {
+      expect(cleanTitle(title, field, both)).toBeNull();
+    }
+  });
 
   it('does nothing at all unless explicitly enabled', () => {
     expect(cleanTitle('all apologies - live', 'track', DEFAULT_ON)).toBeNull();
