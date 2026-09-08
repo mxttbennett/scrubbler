@@ -59,14 +59,17 @@ typo cannot silently disable a group.
 | Group | Default | Applies to | Examples |
 |---|---|---|---|
 | `remaster` | **on** | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)` |
-| `edition` | **on** | album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)` |
-| `bonus` | **on** | track, album | `- Bonus Track`, `- Album Version`, `(Explicit)` |
+| `edition` | **on** | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)` |
+| `bonus` | **on** | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Explicit)`, `(Clean)` |
 | `feat-album` | off | album | `(feat. X)` on an *album* title — store cruft |
 | `feat-track` | off | track | `(feat. X)` on a *track* title — **deletes a real credit** |
 | `ep-single` | off | album | `- EP`, `- Single` |
 | `live` | off | track, album | `(Live)` |
-| `version` | off | track, album | `- Radio Edit`, `- Single Version` |
+| `version` | off | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
 | `mono-stereo` | off | track, album | `(Mono)`, `(Stereo)` |
+
+`- Album Version` sits with `- Single Version` and `- Radio Edit` rather than with the bonus
+markers: all three name *which recording* it is, so stripping them merges takes that differ.
 
 The experimental groups are off because they distinguish *different recordings*. Merging them loses
 real information and cannot be undone. `feat` is split so you can enable the safe album half without

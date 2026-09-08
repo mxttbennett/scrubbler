@@ -87,7 +87,6 @@ describe('cleanTitle — recall (must strip)', () => {
     ['Street Fighting Man - 50th Anniversary Edition', 'Street Fighting Man'],
     ['Paranoid Android (Remastered)', 'Paranoid Android'],
     ['Tomorrow Never Knows - 2009 Digital Remaster', 'Tomorrow Never Knows'],
-    ['Bohemian Rhapsody - Album Version', 'Bohemian Rhapsody'],
     ['WAP (Explicit)', 'WAP'],
   ];
 
@@ -103,8 +102,8 @@ describe('cleanTitle — recall (must strip)', () => {
 });
 
 describe('cleanTitle — field scoping', () => {
-  it('does not apply album-only markers to track titles', () => {
-    expect(cleanTitle('Some Song (Deluxe Edition)', 'track', EVERYTHING)).toBeNull();
+  it('applies edition markers to both fields, since releases label tracks that way too', () => {
+    expect(cleanTitle('Some Song (Deluxe Edition)', 'track', EVERYTHING)?.clean).toBe('Some Song');
     expect(cleanTitle('Some Album (Deluxe Edition)', 'album', EVERYTHING)?.clean).toBe(
       'Some Album',
     );
@@ -117,6 +116,20 @@ describe('cleanTitle — field scoping', () => {
 });
 
 describe('cleanTitle — group toggles', () => {
+  it('leaves "album version" alone by default, since it names which recording it is', () => {
+    expect(cleanTitle('Teen Age Riot (album version)', 'track', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Teen Age Riot (album version)', 'track', new Set(['version']))?.clean).toBe(
+      'Teen Age Riot',
+    );
+  });
+
+  it('strips an anniversary edition from a track title via the edition group, not bonus', () => {
+    const noBonus = new Set<GroupName>(['remaster', 'edition']);
+    expect(
+      cleanTitle('Street Fighting Man - 50th Anniversary Edition', 'track', noBonus)?.clean,
+    ).toBe('Street Fighting Man');
+  });
+
   it('leaves experimental markers alone by default', () => {
     expect(cleanTitle('all apologies - live', 'track', DEFAULT_ON)).toBeNull();
     expect(cleanTitle('Midnight City - EP', 'album', DEFAULT_ON)).toBeNull();

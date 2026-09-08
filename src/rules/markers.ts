@@ -48,7 +48,7 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`remastered\s*&\s*expanded`,
   ]),
 
-  edition: group(['album'], false, [
+  edition: group(['track', 'album'], false, [
     String.raw`deluxe(?:\s+(?:edition|version))?`,
     String.raw`super\s+deluxe(?:\s+(?:edition|version))?`,
     String.raw`expanded(?:\s+(?:edition|version))?`,
@@ -66,10 +66,8 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   bonus: group(['track', 'album'], false, [
     String.raw`bonus\s+tracks?`,
-    String.raw`album\s+version`,
     String.raw`explicit(?:\s+version)?`,
     String.raw`clean(?:\s+version)?`,
-    String.raw`\d+(?:st|nd|rd|th)\s+anniversary\s+edition`,
   ]),
 
   // Split from feat-track because deleting a credit from an *album* title drops store cruft, while
@@ -90,9 +88,11 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   live: group(['track', 'album'], true, [String.raw`live`]),
 
+  // These name *which recording* it is, so merging them loses information: off by default.
   version: group(['track', 'album'], true, [
     String.raw`radio\s+edit`,
     String.raw`single\s+version`,
+    String.raw`album\s+version`,
   ]),
 
   'mono-stereo': group(['track', 'album'], true, [
