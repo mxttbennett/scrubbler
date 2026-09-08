@@ -27,6 +27,8 @@ export interface ExecutorOptions {
    * BEFORE the write: afterwards the old name has no scrobbles left to count.
    */
   albumDetails?: (artist: string, album: string) => Promise<AlbumSummary>;
+  /** Same contract as albumDetails: the ORIGINAL track title, read before the write. */
+  trackScrobbles?: (artist: string, track: string) => Promise<number | undefined>;
   /**
    * Shared across every executor in the process. Omitted only in tests that write nothing
    * concurrently; production must pass one or the worker, an approval and a command can interleave.
@@ -437,7 +439,13 @@ export class Executor {
       await this.emit([...pending], totals());
       pending.length = 0;
     };
-    const record = (edit: PlannedEdit, outcome: Outcome, error?: string, imageUrl?: string) => {
+    const record = (
+      edit: PlannedEdit,
+      outcome: Outcome,
+      error?: string,
+      imageUrl?: string,
+      scrobbles?: number,
+    ) => {
       pending.push({
         artist: edit.original.artist_name,
         kind: 'track',
@@ -452,6 +460,7 @@ export class Executor {
         outcome,
         ...(error === undefined ? {} : { error }),
         ...(imageUrl === undefined ? {} : { imageUrl }),
+        ...(scrobbles === undefined ? {} : { scrobbles }),
       });
     };
 
@@ -485,10 +494,16 @@ export class Executor {
       }
       if (this.stopRequested) break;
 
+      // Before the write, and for the ORIGINAL title: the scrobbles move with the rename.
+      const scrobbles = await this.opts
+        .trackScrobbles?.(edit.original.artist_name, edit.original.track_name)
+        .catch(() => undefined);
+
       try {
         const outcome = await this.locked(() => this.editor.apply(edit));
         summary.applied++;
         summary.byKind.track.applied++;
+        summary.byKind.track.scrobblesCovered += scrobbles ?? 0;
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
@@ -501,7 +516,7 @@ export class Executor {
           edit.next.album_artist_name || edit.next.artist_name,
           edit.next.album_name,
         );
-        record(edit, outcome, undefined, art);
+        record(edit, outcome, undefined, art, scrobbles);
       } catch (error) {
         summary.failed++;
         summary.byKind.track.failed++;

@@ -6,6 +6,7 @@ import {
   type RecentTracks,
   type TopAlbums,
   type TopTracks,
+  type TrackInfo,
   bestImageUrl,
   toInt,
 } from './types.js';
@@ -138,6 +139,26 @@ export class LastfmApi {
     }
     this.albumCache.set(key, details);
     return details;
+  }
+
+  /**
+   * The user's scrobbles of one track, for the ORIGINAL title and before the write — afterwards the
+   * old name has none left to count. Uncached: unlike an album, a track is asked about once per run.
+   * Silent on failure because this is reporting only and must never fail a correction.
+   */
+  async trackScrobbles(artist: string, track: string): Promise<number | undefined> {
+    if (artist === '' || track === '' || this.username === undefined) return undefined;
+    try {
+      const data = await this.request<TrackInfo>('track.getinfo', {
+        artist,
+        track,
+        username: this.username,
+      });
+      const plays = Number(data.track?.userplaycount ?? NaN);
+      return Number.isFinite(plays) ? plays : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   /** Art for the POST-edit album name — the point is to show what it will be. */
