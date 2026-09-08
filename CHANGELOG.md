@@ -7,6 +7,17 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.1.4] - 2026-09-08
+
+- Play counts are gone from the rule-engine test corpus, along with the scrobble totals in its
+  header. Only the title is ever read, so nothing is lost, and a repo that is about to be public has
+  no business carrying a listening history. Titles and artists are unchanged, and the verdict
+  snapshot is byte-identical — the safety net is exactly what it was.
+- `CLAUDE.md` no longer spells out the edit forms field by field. The invariants stay, the
+  step-by-step transcript goes — it read as a recipe rather than as guidance, which is the wrong
+  thing for a repo that is about to be public.
+- No change to how the service runs, what it matches, or what it writes.
+
 ## [1.1.3] - 2026-09-08
 
 - The README now states the Last.fm terms position up front: the API has no method for editing a
