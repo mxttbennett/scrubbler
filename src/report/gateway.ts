@@ -186,7 +186,7 @@ export class Gateway {
     }
 
     try {
-      const reply = commands.handle(sub, args);
+      const reply = await commands.handle(sub, args);
       await interaction.editReply({
         content: reply.text.slice(0, 1900),
         ...(reply.confirm === undefined

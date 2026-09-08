@@ -1,10 +1,13 @@
-import { type Field, type GroupName, MARKER_GROUPS } from './markers.js';
+import { type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
 
 export interface CleanResult {
   clean: string;
-  groups: GroupName[];
+  groups: RuleTag[];
   passes: number;
 }
+
+/** Returns the replacement for this exact (field, artist, title), or undefined to fall through. */
+export type OverrideLookup = (field: Field, artist: string, title: string) => string | undefined;
 
 const MAX_PASSES = 3;
 
@@ -62,7 +65,16 @@ export function cleanTitle(
   title: string,
   field: Field,
   enabled: ReadonlySet<GroupName>,
+  override?: { artist: string; lookup: OverrideLookup },
 ): CleanResult | null {
+  // Checked before the loop, not inside it: a user's replacement is an arbitrary rename, so none of
+  // splitTail's segment logic or remainder guards apply to it. One rule, one answer — the result is
+  // never fed back through the catalogue, so what the user typed is what lands.
+  const replacement = override?.lookup(field, override.artist, title);
+  if (replacement !== undefined && replacement.toLowerCase() !== title.toLowerCase()) {
+    return { clean: replacement, groups: ['custom'], passes: 1 };
+  }
+
   const groups: GroupName[] = [];
   let current = title;
   let passes = 0;

@@ -7,6 +7,7 @@ import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
 import type { Correction, Outcome, RunTotals } from '../report/reporter.js';
+import type { RuleTag } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
@@ -25,6 +26,11 @@ export interface ExecutorOptions {
    * concurrently; production must pass one or the worker, an approval and a command can interleave.
    */
   writeLock?: WriteLock;
+  /**
+   * Fired only once a write actually landed as applied or verified — never on failure — so a custom
+   * rule's apply count can never claim an edit that did not happen.
+   */
+  onApplied?: (tags: RuleTag[], entity: { kind: 'track' | 'album'; artist: string; title: string }) => void;
 }
 
 export interface ExecutionSummary {
@@ -187,6 +193,11 @@ export class Executor {
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
       this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+      this.opts.onApplied?.(edit.groups as RuleTag[], {
+        kind: 'album',
+        artist: edit.artist,
+        title: edit.from,
+      });
       await this.emit(
         [
           {
@@ -449,6 +460,11 @@ export class Executor {
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+        this.opts.onApplied?.(edit.groups, {
+          kind: 'track',
+          artist: edit.original.artist_name,
+          title: edit.original.track_name,
+        });
         const art = await this.opts.albumArt?.(
           edit.next.album_artist_name || edit.next.artist_name,
           edit.next.album_name,

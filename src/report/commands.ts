@@ -2,10 +2,18 @@ import { eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import type { Approvals } from '../scrub/approvals.js';
+import { RuleRejected, type CustomRules } from '../rules/customRules.js';
+import type { Field } from '../rules/markers.js';
 
 export interface CommandDeps {
   db: Db;
   approvals: Approvals;
+  customRules: CustomRules;
+  /**
+   * Resolves and applies one named entity now. A new rule cannot be discovered until the next full
+   * sweep, which is weekly, so without this the command would appear to do nothing.
+   */
+  applyNow: (rule: { kind: Field; artist: string; fromTitle: string }) => Promise<string>;
   approvalMode: boolean;
   dryRun: boolean;
   channelId: string | undefined;
@@ -44,6 +52,46 @@ export const COMMAND_DEFINITION = {
         { type: 3, name: 'title', description: 'Track or album title', required: true },
       ],
     },
+    {
+      type: 1,
+      name: 'replace',
+      description: 'Replace a title the rule catalogue cannot express',
+      options: [
+        {
+          type: 3,
+          name: 'kind',
+          description: 'track or album',
+          required: true,
+          choices: [
+            { name: 'track', value: 'track' },
+            { name: 'album', value: 'album' },
+          ],
+        },
+        { type: 3, name: 'artist', description: 'Artist name, exactly as scrobbled', required: true },
+        { type: 3, name: 'from', description: 'The current title', required: true },
+        { type: 3, name: 'to', description: 'What it should be', required: true },
+      ],
+    },
+    { type: 1, name: 'rules', description: 'The custom replacements you have set' },
+    {
+      type: 1,
+      name: 'unrule',
+      description: 'Remove a custom replacement',
+      options: [
+        {
+          type: 3,
+          name: 'kind',
+          description: 'track or album',
+          required: true,
+          choices: [
+            { name: 'track', value: 'track' },
+            { name: 'album', value: 'album' },
+          ],
+        },
+        { type: 3, name: 'artist', description: 'Artist name', required: true },
+        { type: 3, name: 'from', description: 'The current title', required: true },
+      ],
+    },
     { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
     { type: 1, name: 'resume', description: 'Carry on sweeping' },
     { type: 1, name: 'resweep', description: 'Clear the scrobble cursor so the next sweep is full' },
@@ -56,7 +104,10 @@ const PAGE_SIZE = 15;
 export class Commands {
   constructor(private readonly deps: CommandDeps) {}
 
-  handle(sub: string, args: Record<string, string | number> = {}): CommandReply {
+  async handle(
+    sub: string,
+    args: Record<string, string | number> = {},
+  ): Promise<CommandReply> {
     switch (sub) {
       case 'status':
         return { text: this.status() };
@@ -78,6 +129,12 @@ export class Commands {
         return { text: this.setPaused(false) };
       case 'resweep':
         return { text: this.resweep() };
+      case 'replace':
+        return { text: await this.replace(args) };
+      case 'rules':
+        return { text: this.rulesList() };
+      case 'unrule':
+        return { text: this.unrule(args) };
       case 'retry-dead':
         return { text: this.retryDead() };
       default:
@@ -238,6 +295,67 @@ export class Commands {
       .onConflictDoUpdate({ target: schema.sweepState.id, set: { lastScrobbleUts: null } })
       .run();
     return 'Cursor cleared. The next sweep walks the whole library.';
+  }
+
+  private static kindOf(raw: unknown): Field | undefined {
+    return raw === 'track' || raw === 'album' ? raw : undefined;
+  }
+
+  private async replace(args: Record<string, string | number>): Promise<string> {
+    const kind = Commands.kindOf(args['kind']);
+    if (kind === undefined) return 'kind must be track or album.';
+
+    const state = this.state();
+    // The apply is a real write; running it against a paused service would contradict the pause.
+    if (state?.paused === true) {
+      return 'The service is paused. Run /scrub resume first, or the rule cannot be applied.';
+    }
+
+    const artist = String(args['artist'] ?? '');
+    const fromTitle = String(args['from'] ?? '');
+    const toTitle = String(args['to'] ?? '');
+
+    let rule;
+    try {
+      rule = this.deps.customRules.add({ kind, artist, fromTitle, toTitle });
+    } catch (error) {
+      if (error instanceof RuleRejected) return error.message;
+      throw error;
+    }
+
+    const outcome = await this.deps.applyNow({
+      kind: rule.kind,
+      artist: rule.artist,
+      fromTitle: rule.fromTitle,
+    });
+    return (
+      `Rule saved: ${rule.kind} "${rule.fromTitle}" by ${rule.artist} -> "${rule.toTitle}".\n` +
+      `${outcome}\nIt will also be applied to anything else matching on the next full sweep.`
+    );
+  }
+
+  private rulesList(): string {
+    const rules = this.deps.customRules.list();
+    if (rules.length === 0) return 'No custom replacements set.';
+    const lines = rules.slice(0, PAGE_SIZE).map((r) => {
+      const applied = r.timesApplied === 0 ? 'never applied' : `applied ${r.timesApplied}x`;
+      return `${r.kind} ${r.artist}\n  "${r.fromTitle}"\n  -> "${r.toTitle}"  (${applied})`;
+    });
+    if (rules.length > PAGE_SIZE) lines.push(`… ${rules.length - PAGE_SIZE} more`);
+    return fence(lines);
+  }
+
+  private unrule(args: Record<string, string | number>): string {
+    const kind = Commands.kindOf(args['kind']);
+    if (kind === undefined) return 'kind must be track or album.';
+    const artist = String(args['artist'] ?? '');
+    const fromTitle = String(args['from'] ?? '');
+    if (artist === '' || fromTitle === '') return 'Both artist and the current title are required.';
+
+    const removed = this.deps.customRules.remove(kind, artist, fromTitle);
+    return removed
+      ? `Removed the ${kind} rule for ${artist} — "${fromTitle}".`
+      : `No ${kind} rule for ${artist} — "${fromTitle}".`;
   }
 
   private retryDead(): string {
