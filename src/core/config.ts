@@ -19,7 +19,7 @@ const envSchema = z.object({
   DB_PATH: z.string().default('.data/scrubbler.sqlite'),
   DISCORD_BOT_TOKEN: z.string().optional(),
   DISCORD_CHANNEL_ID: z.string().optional(),
-  DIGEST_EVERY: z.string().default('25'),
+  DIGEST_EVERY: z.string().default('1'),
   DRY_RUN: z.string().default('true'),
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
   RULES_EXPERIMENTAL_ENABLED: z.string().default(''),

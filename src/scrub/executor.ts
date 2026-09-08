@@ -4,7 +4,7 @@ import { schema } from '../db/index.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
-import type { RunTotals } from '../report/reporter.js';
+import type { Correction, Outcome, RunTotals } from '../report/reporter.js';
 import { type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
@@ -27,7 +27,6 @@ export interface ExecutionSummary {
   skippedByLedger: number;
   alsoHasRule: number;
   capped: boolean;
-  samples: string[];
 }
 
 export class Executor {
@@ -82,7 +81,6 @@ export class Executor {
       skippedByLedger: 0,
       alsoHasRule: 0,
       capped: false,
-      samples: [],
     };
 
     const totals = (): RunTotals => ({
@@ -92,11 +90,24 @@ export class Executor {
       unverified: summary.unverified,
       failed: summary.failed,
     });
-    const pending: string[] = [];
+    const pending: Correction[] = [];
     const flush = async () => {
       if (pending.length === 0) return;
-      await this.reporter.digest([...pending], totals(), this.opts.dryRun);
+      await this.reporter.corrections([...pending], totals());
       pending.length = 0;
+    };
+    const record = (edit: PlannedEdit, outcome: Outcome, error?: string) => {
+      pending.push({
+        artist: edit.original.artist_name,
+        changes: changedFields(edit).map((f) => ({
+          field: f,
+          from: edit.original[f],
+          to: edit.next[f],
+        })),
+        groups: edit.groups,
+        outcome,
+        ...(error === undefined ? {} : { error }),
+      });
     };
 
     let writes = 0;
@@ -117,11 +128,9 @@ export class Executor {
         continue;
       }
 
-      if (summary.samples.length < 20) summary.samples.push(this.editor.describe(edit));
-
       if (this.opts.dryRun) {
         this.upsert(edit, 'planned', existing?.attempts ?? 0, null);
-        pending.push(this.editor.describe(edit));
+        record(edit, 'planned');
         if (pending.length >= this.opts.digestEvery) await flush();
         continue;
       }
@@ -138,13 +147,13 @@ export class Executor {
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
-        pending.push(`${outcome === 'unverified' ? '? ' : '  '}${this.editor.describe(edit)}`);
+        record(edit, outcome);
       } catch (error) {
         writes++;
         summary.failed++;
         const message = error instanceof Error ? error.message : String(error);
         this.upsert(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
-        pending.push(`! ${this.editor.describe(edit)} — ${message}`);
+        record(edit, 'failed', message);
         if (!(error instanceof EditRejectedError)) {
           await this.reporter.report(error, `edit ${edit.original.artist_name}`);
         }

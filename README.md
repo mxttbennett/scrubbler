@@ -113,13 +113,19 @@ steps, the pre-deploy snapshot, and what rollback can and cannot undo.
 Everything goes to journald (`journalctl -u scrubbler -f`). Set `DISCORD_BOT_TOKEN` and
 `DISCORD_CHANNEL_ID` and it also posts:
 
-- a **digest embed every `DIGEST_EVERY` corrections** while a sweep runs, listing that batch with
-  running totals — so a long backfill is watchable without one message per edit;
+- **one embed per correction** by default, with the old title struck through above the new one, the
+  rule that fired, and running totals in the footer. Set `DIGEST_EVERY` above 1 to batch them into a
+  code-fenced digest instead, which is quieter for a large backfill;
 - a **summary embed** at the end of each sweep, with tuple / applied / verified / unverified /
   failed counts;
 - an **error embed** for anything that fails, immediately.
 
-Failed writes are prefixed `!` in a digest and unverified ones `?`, so the batch reads at a glance.
+The embed title names the outcome — *Corrected*, *Corrected, unconfirmed*, *Failed to correct*, or
+*Would correct* in a dry run — and is coloured to match, so the channel reads at a glance. In the
+journald log and in batched digests the same outcomes are marked `+`, `?`, `!` and `·`.
+
+Posting is rate limited to one message per 1.2s, under Discord's ~5-per-5s channel limit, so
+one-per-correction is safe even in a dry run where nothing pauses between edits.
 
 It posts over the REST API with no gateway connection, so **the bot shows as offline** in Discord's
 member list. That is deliberate: this service only ever posts, so a websocket would be a process to

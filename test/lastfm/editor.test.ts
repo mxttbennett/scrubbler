@@ -85,15 +85,6 @@ describe('Editor.buildBody', () => {
   });
 });
 
-describe('Editor.describe', () => {
-  it('names only the fields that actually change', () => {
-    const text = new Editor(stubSession, stubPages).describe(edit());
-    expect(text).toContain('track_name');
-    expect(text).toContain('album_name');
-    expect(text).not.toContain('artist_name:');
-  });
-});
-
 describe('extractAlerts', () => {
   it('pulls the text out of an alert-danger block', () => {
     const html = '<div class="alert alert-danger"><p>Something went wrong</p></div>';

@@ -1,3 +1,5 @@
+import { RateLimiter } from '../lastfm/rateLimiter.js';
+
 const API = 'https://discord.com/api/v10';
 const DESCRIPTION_LIMIT = 4000;
 
@@ -5,6 +7,7 @@ export const COLOR = {
   dryRun: 0x6b6167,
   applied: 0x1f6a7a,
   failed: 0xc4161c,
+  warn: 0x8a5a12,
   done: 0x2e7d4f,
 } as const;
 
@@ -28,6 +31,8 @@ export interface DiscordOptions {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   log?: (msg: string) => void;
+  /** Discord allows ~5 messages per 5s per channel; this keeps one-per-correction under it. */
+  minIntervalMs?: number;
 }
 
 /**
@@ -40,6 +45,7 @@ export class Discord {
   private readonly fetchImpl: typeof fetch;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly log: (msg: string) => void;
+  private readonly limiter: RateLimiter;
 
   constructor(opts: DiscordOptions) {
     this.botToken = opts.botToken;
@@ -47,6 +53,7 @@ export class Discord {
     this.fetchImpl = opts.fetchImpl ?? fetch;
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.log = opts.log ?? ((m) => console.log(m));
+    this.limiter = new RateLimiter(opts.minIntervalMs ?? 1200, { sleep: this.sleep });
   }
 
   get enabled(): boolean {
@@ -59,6 +66,7 @@ export class Discord {
     const body = JSON.stringify({ embeds: [clampEmbed(embed)] });
 
     for (let attempt = 1; attempt <= 3; attempt++) {
+      await this.limiter.acquire();
       try {
         const res = await this.fetchImpl(`${API}/channels/${this.channelId!}/messages`, {
           method: 'POST',

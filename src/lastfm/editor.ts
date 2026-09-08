@@ -1,7 +1,7 @@
 import { EditRejectedError } from './errors.js';
 import { LibraryPages } from './pages.js';
 import { ORIGIN, type Session } from './session.js';
-import { type PlannedEdit, changedFields } from '../scrub/types.js';
+import type { PlannedEdit } from '../scrub/types.js';
 import { extractScrobbleRows } from './pages.js';
 import { tupleKey, rowTuple } from '../scrub/types.js';
 
@@ -86,12 +86,6 @@ export class Editor {
     return false;
   }
 
-  describe(edit: PlannedEdit): string {
-    const parts = changedFields(edit).map(
-      (f) => `${f}: ${JSON.stringify(edit.original[f])} -> ${JSON.stringify(edit.next[f])}`,
-    );
-    return `${edit.original.artist_name} — ${parts.join(' | ')} [${edit.groups.join(',')}]`;
-  }
 }
 
 export function extractAlerts(html: string): string[] {
