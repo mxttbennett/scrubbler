@@ -21,8 +21,14 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # `git describe --exact-match` below needs the tags, which a shallow clone omits.
+          fetch-depth: 0
+          fetch-tags: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -110,3 +116,24 @@ jobs:
             echo "| version live on the box | \`${version:-unknown}\` |"
             echo "| commit | \`${{ github.sha }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Only now — the service is confirmed up. Promotion is one-way and means "this ran at least
+      # once", so a rollback never demotes the version it rolled back from. Nothing is promoted when
+      # the deployed tree is not exactly a release, which is what dispatching a moved branch does.
+      - name: Promote the deployed release out of pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag=$(git describe --exact-match --tags HEAD 2>/dev/null || true)
+          if [ -z "$tag" ]; then
+            echo "::notice::deployed tree is not a tagged release; nothing to promote"
+            exit 0
+          fi
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            echo "::notice::$tag has no GitHub release; nothing to promote"
+            exit 0
+          fi
+          gh release edit "$tag" --prerelease=false --latest
+          echo "promoted $tag to a full release"
+          echo "| release | \`$tag\` promoted out of pre-release |" >> "$GITHUB_STEP_SUMMARY"
