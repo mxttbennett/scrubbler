@@ -1,3 +1,4 @@
+import type { PlannedAlbumEdit } from '../lastfm/albumEditor.js';
 import type { GroupName } from '../rules/markers.js';
 
 export interface Candidate {
@@ -58,12 +59,19 @@ export interface SharedChange {
   to: string;
 }
 
-export interface EditGroup {
-  artist: string;
-  edits: PlannedEdit[];
-  /** Set only when every edit changes exactly one field, identically. */
-  shared: SharedChange | undefined;
-}
+/**
+ * One candidate's worth of change, so an approval decides a whole album at once rather than per
+ * track. An album rename is a one-member group, which keeps a proposal the same shape either way.
+ */
+export type EditGroup =
+  | {
+      kind: 'track';
+      artist: string;
+      edits: PlannedEdit[];
+      /** Set only when every edit changes exactly one field, identically. */
+      shared: SharedChange | undefined;
+    }
+  | { kind: 'album'; artist: string; album: PlannedAlbumEdit; shared: SharedChange };
 
 /**
  * Requires exactly one changed field per edit: fold() can clean track and album together, so a group
@@ -94,5 +102,14 @@ export function detectShared(edits: PlannedEdit[]): SharedChange | undefined {
 }
 
 export function toGroup(artist: string, edits: PlannedEdit[]): EditGroup {
-  return { artist, edits, shared: detectShared(edits) };
+  return { kind: 'track', artist, edits, shared: detectShared(edits) };
+}
+
+export function toAlbumGroup(album: PlannedAlbumEdit): EditGroup {
+  return {
+    kind: 'album',
+    artist: album.artist,
+    album,
+    shared: { field: 'album_name', from: album.from, to: album.to },
+  };
 }

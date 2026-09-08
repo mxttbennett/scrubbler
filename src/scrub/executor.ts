@@ -6,7 +6,7 @@ import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
 import type { Correction, Outcome, RunTotals } from '../report/reporter.js';
-import { type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
+import { type EditGroup, type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
 const MAX_ATTEMPTS = 3;
@@ -146,7 +146,7 @@ export class Executor {
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
       this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
-      await this.reporter.corrections(
+      await this.emit(
         [
           {
             artist: edit.artist,
@@ -258,6 +258,52 @@ export class Executor {
     await this.run([edit], existingRuleKeys, this.streamed);
   }
 
+  /** Set while a group is applying, so its members report as one card instead of one card each. */
+  private collector: Correction[] | null = null;
+
+  private async emit(items: Correction[], totals: RunTotals): Promise<void> {
+    if (this.collector !== null) {
+      this.collector.push(...items);
+      return;
+    }
+    await this.reporter.corrections(items, totals);
+  }
+
+  /**
+   * Applies a whole candidate and reports it once. The group is reported even when the ledger
+   * skipped every member, because an empty card is how a no-op candidate stays visible.
+   */
+  async applyGroup(group: EditGroup, existingRuleKeys: ReadonlySet<string>): Promise<void> {
+    const collected: Correction[] = [];
+    this.collector = collected;
+    try {
+      if (group.kind === 'album') {
+        this.checkpointAlbum(group.album);
+        await this.applyOneAlbum(group.album);
+      } else {
+        for (const edit of group.edits) this.checkpoint(edit);
+        await this.run(group.edits, existingRuleKeys, this.streamed);
+      }
+    } finally {
+      this.collector = null;
+    }
+    if (collected.length === 0) return;
+
+    await this.reporter.group(
+      {
+        artist: group.artist,
+        kind: group.kind,
+        shared: group.shared,
+        items: collected,
+        outcome: worstOutcome(collected),
+        ...(collected.find((c) => c.imageUrl !== undefined)?.imageUrl === undefined
+          ? {}
+          : { imageUrl: collected.find((c) => c.imageUrl !== undefined)!.imageUrl }),
+      },
+      this.totalsOf(this.streamed),
+    );
+  }
+
   get streamedSummary(): ExecutionSummary {
     return this.streamed;
   }
@@ -276,7 +322,7 @@ export class Executor {
     const pending: Correction[] = [];
     const flush = async () => {
       if (pending.length === 0) return;
-      await this.reporter.corrections([...pending], totals());
+      await this.emit([...pending], totals());
       pending.length = 0;
     };
     const record = (edit: PlannedEdit, outcome: Outcome, error?: string, imageUrl?: string) => {
@@ -402,4 +448,21 @@ function blankSummary(): ExecutionSummary {
     alsoHasRule: 0,
     capped: false,
   };
+}
+
+/** The card's colour must reflect the worst member, not the last one applied. */
+const OUTCOME_RANK: Record<Outcome, number> = {
+  verified: 0,
+  applied: 1,
+  planned: 2,
+  unverified: 3,
+  failed: 4,
+};
+
+function worstOutcome(items: Correction[]): Outcome {
+  let worst: Outcome = 'verified';
+  for (const item of items) {
+    if (OUTCOME_RANK[item.outcome] > OUTCOME_RANK[worst]) worst = item.outcome;
+  }
+  return worst;
 }

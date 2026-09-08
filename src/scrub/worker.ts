@@ -104,18 +104,11 @@ export class ScrubWorker {
     console.log(`sweep complete: ${candidates.length} candidates`);
 
     let albumApplied = 0;
-    let albumFailed = 0;
     const { skips } = await this.resolver.resolve(candidates, {
-      onEdit: async (edit) => {
-        executor.checkpoint(edit);
-        await executor.applyOne(edit, rules.keys);
-      },
-      onAlbumEdit: async (albumEdit) => {
-        executor.checkpointAlbum(albumEdit);
+      onGroup: async (group) => {
         const before = executor.streamedSummary.applied;
-        await executor.applyOneAlbum(albumEdit);
-        if (executor.streamedSummary.applied > before) albumApplied++;
-        else if (executor.streamedSummary.failed > 0) albumFailed = executor.streamedSummary.failed;
+        await executor.applyGroup(group, rules.keys);
+        if (group.kind === 'album' && executor.streamedSummary.applied > before) albumApplied++;
       },
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
@@ -154,7 +147,7 @@ export class ScrubWorker {
       this.config.dryRun ? 'Dry run complete — nothing written' : 'Sweep complete',
       [
         `candidates      ${candidates.length}`,
-        `album renames  ${albumApplied}${albumFailed > 0 ? ` (${albumFailed} failed)` : ''}`,
+        `album renames   ${albumApplied}`,
         `distinct tuples ${summary.planned}`,
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,

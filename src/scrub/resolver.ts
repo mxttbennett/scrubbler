@@ -2,7 +2,16 @@ import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.j
 import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { GroupName } from '../rules/markers.js';
-import { type Candidate, type PlannedEdit, type ScrobbleRow, rowTuple, tupleKey } from './types.js';
+import {
+  type Candidate,
+  type EditGroup,
+  type PlannedEdit,
+  type ScrobbleRow,
+  rowTuple,
+  toAlbumGroup,
+  toGroup,
+  tupleKey,
+} from './types.js';
 
 const MAX_RECURSION = 2;
 
@@ -16,6 +25,11 @@ export interface ResolveHooks {
   shouldStop?: () => boolean;
   onEdit?: (edit: PlannedEdit) => Promise<void>;
   onAlbumEdit?: (edit: PlannedAlbumEdit) => Promise<void>;
+  /**
+   * Takes precedence over onEdit and onAlbumEdit, which apply immediately: registering both would
+   * write a candidate's tuples before its proposal existed.
+   */
+  onGroup?: (group: EditGroup) => Promise<void>;
   onProgress?: (done: number, total: number, edits: number, candidate: Candidate) => void;
 }
 
@@ -38,7 +52,7 @@ export class Resolver {
    * on — so track and album cleanups for the same tuple must share a request.
    */
   async resolve(candidates: Candidate[], hooks: ResolveHooks = {}): Promise<ResolveResult> {
-    const { onEdit, onAlbumEdit, onProgress, shouldStop } = hooks;
+    const { onEdit, onAlbumEdit, onGroup, onProgress, shouldStop } = hooks;
     const byTuple = new Map<string, PlannedEdit>();
     const albumEdits: PlannedAlbumEdit[] = [];
     const skips: SkipRecord[] = [];
@@ -63,7 +77,8 @@ export class Resolver {
         const resolved = await this.resolveAlbum(candidate, path);
         if (resolved.edit) {
           albumEdits.push(resolved.edit);
-          if (onAlbumEdit) await onAlbumEdit(resolved.edit);
+          if (onGroup) await onGroup(toAlbumGroup(resolved.edit));
+          else if (onAlbumEdit) await onAlbumEdit(resolved.edit);
         } else {
           skips.push({ candidate, reason: resolved.reason });
         }
@@ -78,12 +93,17 @@ export class Resolver {
         continue;
       }
 
+      // Candidate-local, not byTuple: that map is run-wide and would regroup every earlier edit.
+      const found: PlannedEdit[] = [];
       for (const { row, action, refererPath } of rows) {
         const added = this.fold(byTuple, row, action, refererPath);
+        if (!added) continue;
+        found.push(added);
         // fold() produces the complete change for a tuple from one row, so writing here cannot
         // leave a second, partial edit for the same tuple to collide with later.
-        if (added && onEdit) await onEdit(added);
+        if (!onGroup && onEdit) await onEdit(added);
       }
+      if (onGroup && found.length > 0) await onGroup(toGroup(candidate.artist, found));
       onProgress?.(done, candidates.length, byTuple.size, candidate);
     }
 
