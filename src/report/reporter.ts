@@ -1,5 +1,5 @@
 import { COLOR, Discord, type DiscordEmbed, type DiscordEmbedField, fenceLines } from './discord.js';
-import { albumUrl, artistUrl, linkSuffix, trackUrl } from './links.js';
+import { albumUrl, artistUrl, automaticEditsUrl, linkSuffix, trackUrl } from './links.js';
 
 export interface RunTotals {
   applied: number;
@@ -93,6 +93,19 @@ const OUTCOME_WORD: Record<Outcome, string> = {
   unverified: 'Corrected, unconfirmed',
   failed: 'Failed to correct',
 };
+
+/** Outcomes where the write landed, so Last.fm actually created the rule the settings page lists. */
+const LANDED = new Set<Outcome>(['applied', 'verified', 'unverified']);
+
+/**
+ * A dry run and a failure create no rule, so the link would point at a page that does not mention
+ * this edit. Album and track rules live on separate pages, hence the kind. `links` is only consulted
+ * for its presence: an unconfigured card renders unlinked throughout, and one lone link is worse.
+ */
+function rulesLink(outcome: Outcome, kind: 'track' | 'album', links: Links | undefined): string {
+  if (links === undefined || !LANDED.has(outcome)) return '';
+  return linkSuffix(automaticEditsUrl(kind));
+}
 
 /** "Corrected album (4 tracks)" or "Corrected 2 tracks" — the subject, not the artist. */
 export function embedTitle(outcome: Outcome, kind: 'track' | 'album', count: number): string {
@@ -188,7 +201,12 @@ export function groupEmbed(g: CorrectionGroup, footer: string, links?: Links): D
       ...(n > 1
         ? [{ name: `tracks (${n})`, value: trackList(g.items, links, g.artist, album) }]
         : []),
-      { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
+      {
+        name: 'rule',
+        value:
+          ([...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—') +
+          rulesLink(g.outcome, g.kind, links),
+      },
     ],
     ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
     footer: { text: footer },
@@ -291,7 +309,10 @@ export class ConsoleAndDiscordReporter implements Reporter {
         inline: true,
       });
     }
-    fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
+    fields.push({
+      name: 'rule',
+      value: (c.groups.join(', ') || '—') + rulesLink(c.outcome, c.kind, links),
+    });
     return {
       title: embedTitle(c.outcome, c.kind, Math.max(covered.length, 1)),
       color: OUTCOME_COLOR[c.outcome],
