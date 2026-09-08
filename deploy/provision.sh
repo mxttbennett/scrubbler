@@ -40,7 +40,8 @@ sudo systemctl enable scrubbler
 cat <<'NEXT'
 == next steps ==
 1. Create /opt/scrubbler/.env (copy .env.example) with LASTFM_USERNAME,
-   LASTFM_PASSWORD, LASTFM_API_KEY and optionally DISCORD_WEBHOOK_URL. chmod 600.
+   LASTFM_PASSWORD, LASTFM_API_KEY and optionally DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID.
+   chmod 600.
 2. LEAVE DRY_RUN=true. Start the service, read one sweep's report, and only then set
    DRY_RUN=false and restart. The first real run is the irreversible one.
 3. Allow the deploy user to restart without a password (visudo):
