@@ -1,11 +1,12 @@
 import { eq, and } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
+import type { AlbumEditor, PlannedAlbumEdit } from '../lastfm/albumEditor.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
 import type { Correction, Outcome, RunTotals } from '../report/reporter.js';
-import { type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
+import { type EditGroup, type PlannedEdit, type Tuple, changedFields, tupleKey } from './types.js';
 import type { SkipRecord } from './resolver.js';
 
 const MAX_ATTEMPTS = 3;
@@ -16,6 +17,8 @@ export interface ExecutorOptions {
   writeDelayMs: number;
   digestEvery: number;
   sleep?: (ms: number) => Promise<void>;
+  /** Post-edit album art, looked up per album and cached by the API client. */
+  albumArt?: (artist: string, album: string) => Promise<string | undefined>;
 }
 
 export interface ExecutionSummary {
@@ -28,6 +31,12 @@ export interface ExecutionSummary {
   alsoHasRule: number;
   capped: boolean;
 }
+
+export type ResumableStatus = 'planned' | 'awaiting_approval';
+
+export type ResumableEdit =
+  | { kind: 'track'; id: number; edit: PlannedEdit }
+  | { kind: 'album'; id: number; edit: PlannedAlbumEdit };
 
 export class Executor {
   private readonly sleep: (ms: number) => Promise<void>;
@@ -45,6 +54,7 @@ export class Executor {
   constructor(
     private readonly db: Db,
     private readonly editor: Editor,
+    private readonly albumEditor: AlbumEditor,
     private readonly reporter: Reporter,
     private readonly opts: ExecutorOptions,
   ) {
@@ -62,17 +72,41 @@ export class Executor {
    * Rebuilds edits left as `planned` by an interrupted run. The CSRF token comes from the session
    * cookie rather than the page, so one fresh token serves every resumed write.
    */
-  resumable(csrfToken: string): PlannedEdit[] {
+  /**
+   * Discriminated by kind: an album row carries '' for every track field, so rebuilding one as a
+   * PlannedEdit would POST a track rename with an empty track name.
+   */
+  resumable(csrfToken: string, status: ResumableStatus = 'planned'): ResumableEdit[] {
     const rows = this.db
       .select()
       .from(schema.appliedEdits)
-      .where(eq(schema.appliedEdits.status, 'planned'))
+      .where(eq(schema.appliedEdits.status, status))
       .all();
 
-    const out: PlannedEdit[] = [];
+    const out: ResumableEdit[] = [];
     for (const r of rows) {
-      if (r.timestamp === null || r.action === null || r.refererPath === null) continue;
+      if (r.action === null || r.refererPath === null) continue;
+      if (r.kind === 'album') {
+        out.push({
+          kind: 'album',
+          id: r.id,
+          edit: {
+            artist: r.albumArtistNameOriginal,
+            from: r.albumNameOriginal,
+            to: r.albumName,
+            csrfToken,
+            action: r.action,
+            refererPath: r.refererPath,
+            groups: r.groups === '' ? [] : r.groups.split(','),
+          },
+        });
+        continue;
+      }
+      if (r.timestamp === null) continue;
       out.push({
+        kind: 'track',
+        id: r.id,
+        edit: {
         original: {
           track_name: r.trackNameOriginal,
           artist_name: r.artistNameOriginal,
@@ -90,9 +124,134 @@ export class Executor {
         action: r.action,
         refererPath: r.refererPath,
         groups: r.groups === '' ? [] : (r.groups.split(',') as PlannedEdit['groups']),
+        },
       });
     }
     return out;
+  }
+
+  /** Album rows use '' for the track fields, so the tuple index keeps them distinct from tracks. */
+  private albumTuple(edit: PlannedAlbumEdit): Tuple {
+    return {
+      track_name: '',
+      artist_name: '',
+      album_name: edit.from,
+      album_artist_name: edit.artist,
+    };
+  }
+
+  checkpointAlbum(edit: PlannedAlbumEdit): void {
+    const existing = this.ledgerRow(this.albumTuple(edit));
+    if (existing && existing.status !== 'planned') return;
+    this.upsertAlbum(edit, 'planned', existing?.attempts ?? 0, null);
+  }
+
+  /** Mirrors applyOne, so album renames are deduped, backed off and counted like track edits. */
+  async applyOneAlbum(edit: PlannedAlbumEdit): Promise<void> {
+    const summary = this.streamed;
+    summary.planned += 1;
+
+    const existing = this.ledgerRow(this.albumTuple(edit));
+    if (existing && (existing.status === 'verified' || existing.status === 'applied')) {
+      summary.skippedByLedger++;
+      return;
+    }
+    if (existing && existing.attempts >= MAX_ATTEMPTS) {
+      summary.skippedByLedger++;
+      return;
+    }
+    if (this.opts.dryRun) {
+      this.upsertAlbum(edit, 'planned', existing?.attempts ?? 0, null);
+      return;
+    }
+    if (summary.applied + summary.failed >= this.opts.maxEditsPerRun) {
+      summary.capped = true;
+      return;
+    }
+    if (this.stopRequested) return;
+
+    try {
+      const outcome = await this.albumEditor.apply(edit);
+      summary.applied++;
+      const imageUrl = await this.opts.albumArt?.(edit.artist, edit.to);
+      if (outcome === 'verified') summary.verified++;
+      else if (outcome === 'unverified') summary.unverified++;
+      this.upsertAlbum(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
+      await this.emit(
+        [
+          {
+            artist: edit.artist,
+            kind: 'album',
+            track: '(whole album)',
+            album: edit.from,
+            changes: [{ field: 'album_name', from: edit.from, to: edit.to }],
+            groups: edit.groups,
+            outcome: outcome === 'applied' ? 'applied' : outcome,
+            ...(imageUrl === undefined ? {} : { imageUrl }),
+          },
+        ],
+        this.totalsOf(summary),
+      );
+    } catch (error) {
+      summary.failed++;
+      const message = error instanceof Error ? error.message : String(error);
+      this.upsertAlbum(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
+      if (!(error instanceof EditRejectedError)) {
+        await this.reporter.report(error, `album edit ${edit.artist} — ${edit.from}`);
+      }
+    }
+    await this.sleep(this.opts.writeDelayMs);
+  }
+
+  private upsertAlbum(
+    edit: PlannedAlbumEdit,
+    status: string,
+    attempts: number,
+    lastError: string | null,
+  ) {
+    const values = {
+      trackNameOriginal: '',
+      artistNameOriginal: '',
+      albumNameOriginal: edit.from,
+      albumArtistNameOriginal: edit.artist,
+      trackName: '',
+      artistName: '',
+      albumName: edit.to,
+      albumArtistName: edit.artist,
+      kind: 'album' as const,
+      groups: edit.groups.join(','),
+      timestamp: '',
+      action: edit.action,
+      refererPath: edit.refererPath,
+      status: status as 'applied' | 'verified' | 'unverified' | 'failed' | 'skipped' | 'planned',
+      attempts,
+      lastError,
+      verifiedAt: status === 'verified' ? new Date() : null,
+    };
+    this.db
+      .insert(schema.appliedEdits)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [
+          schema.appliedEdits.trackNameOriginal,
+          schema.appliedEdits.artistNameOriginal,
+          schema.appliedEdits.albumNameOriginal,
+          schema.appliedEdits.albumArtistNameOriginal,
+        ],
+        set: values,
+      })
+      .run();
+  }
+
+  private totalsOf(s: ExecutionSummary): RunTotals {
+    return {
+      planned: s.planned,
+      applied: s.applied,
+      verified: s.verified,
+      unverified: s.unverified,
+      failed: s.failed,
+      dryRun: this.opts.dryRun,
+    };
   }
 
   recordSkips(skips: SkipRecord[]): void {
@@ -125,9 +284,70 @@ export class Executor {
       .get();
   }
 
+  /** The approval row's buttons address ledger rows by id, so the caller needs the id back. */
+  ledgerId(original: Tuple): number | undefined {
+    return this.ledgerRow(original)?.id;
+  }
+
   /** Streams one resolved tuple straight to a write, so corrections land during resolution. */
   async applyOne(edit: PlannedEdit, existingRuleKeys: ReadonlySet<string>): Promise<void> {
     await this.run([edit], existingRuleKeys, this.streamed);
+  }
+
+  async applyCarried(
+    carried: ResumableEdit[],
+    existingRuleKeys: ReadonlySet<string>,
+  ): Promise<void> {
+    for (const item of carried) {
+      if (item.kind === 'album') await this.applyOneAlbum(item.edit);
+      else await this.run([item.edit], existingRuleKeys, this.streamed);
+    }
+  }
+
+  /** Set while a group is applying, so its members report as one card instead of one card each. */
+  private collector: Correction[] | null = null;
+
+  private async emit(items: Correction[], totals: RunTotals): Promise<void> {
+    if (this.collector !== null) {
+      this.collector.push(...items);
+      return;
+    }
+    await this.reporter.corrections(items, totals);
+  }
+
+  /**
+   * Applies a whole candidate and reports it once. The group is reported even when the ledger
+   * skipped every member, because an empty card is how a no-op candidate stays visible.
+   */
+  async applyGroup(group: EditGroup, existingRuleKeys: ReadonlySet<string>): Promise<void> {
+    const collected: Correction[] = [];
+    this.collector = collected;
+    try {
+      if (group.kind === 'album') {
+        this.checkpointAlbum(group.album);
+        await this.applyOneAlbum(group.album);
+      } else {
+        for (const edit of group.edits) this.checkpoint(edit);
+        await this.run(group.edits, existingRuleKeys, this.streamed);
+      }
+    } finally {
+      this.collector = null;
+    }
+    if (collected.length === 0) return;
+
+    await this.reporter.group(
+      {
+        artist: group.artist,
+        kind: group.kind,
+        shared: group.shared,
+        items: collected,
+        outcome: worstOutcome(collected),
+        ...(collected.find((c) => c.imageUrl !== undefined)?.imageUrl === undefined
+          ? {}
+          : { imageUrl: collected.find((c) => c.imageUrl !== undefined)!.imageUrl }),
+      },
+      this.totalsOf(this.streamed),
+    );
   }
 
   get streamedSummary(): ExecutionSummary {
@@ -144,22 +364,17 @@ export class Executor {
     const summary: ExecutionSummary = into ?? blankSummary();
     summary.planned += edits.length;
 
-    const totals = (): RunTotals => ({
-      planned: summary.planned,
-      applied: summary.applied,
-      verified: summary.verified,
-      unverified: summary.unverified,
-      failed: summary.failed,
-    });
+    const totals = (): RunTotals => this.totalsOf(summary);
     const pending: Correction[] = [];
     const flush = async () => {
       if (pending.length === 0) return;
-      await this.reporter.corrections([...pending], totals());
+      await this.emit([...pending], totals());
       pending.length = 0;
     };
-    const record = (edit: PlannedEdit, outcome: Outcome, error?: string) => {
+    const record = (edit: PlannedEdit, outcome: Outcome, error?: string, imageUrl?: string) => {
       pending.push({
         artist: edit.original.artist_name,
+        kind: 'track',
         track: edit.original.track_name,
         album: edit.original.album_name,
         changes: changedFields(edit).map((f) => ({
@@ -170,6 +385,7 @@ export class Executor {
         groups: edit.groups,
         outcome,
         ...(error === undefined ? {} : { error }),
+        ...(imageUrl === undefined ? {} : { imageUrl }),
       });
     };
 
@@ -209,7 +425,11 @@ export class Executor {
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
-        record(edit, outcome);
+        const art = await this.opts.albumArt?.(
+          edit.next.album_artist_name || edit.next.artist_name,
+          edit.next.album_name,
+        );
+        record(edit, outcome, undefined, art);
       } catch (error) {
         summary.failed++;
         const message = error instanceof Error ? error.message : String(error);
@@ -274,4 +494,21 @@ function blankSummary(): ExecutionSummary {
     alsoHasRule: 0,
     capped: false,
   };
+}
+
+/** The card's colour must reflect the worst member, not the last one applied. */
+const OUTCOME_RANK: Record<Outcome, number> = {
+  verified: 0,
+  applied: 1,
+  planned: 2,
+  unverified: 3,
+  failed: 4,
+};
+
+function worstOutcome(items: Correction[]): Outcome {
+  let worst: Outcome = 'verified';
+  for (const item of items) {
+    if (OUTCOME_RANK[item.outcome] > OUTCOME_RANK[worst]) worst = item.outcome;
+  }
+  return worst;
 }

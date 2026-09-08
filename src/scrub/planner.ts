@@ -39,8 +39,27 @@ export class Planner {
     return row !== undefined;
   }
 
-  private live(candidates: Candidate[]): Candidate[] {
-    return candidates.filter((c) => !this.isDead(c));
+  /** A user decision, unlike isDead: only /scrub unignore may lift it. */
+  private isIgnored(c: Candidate): boolean {
+    if (this.db === undefined) return false;
+    return (
+      this.db
+        .select()
+        .from(schema.ignored)
+        .where(
+          and(
+            eq(schema.ignored.kind, c.kind),
+            eq(schema.ignored.artist, c.artist),
+            eq(schema.ignored.title, c.title),
+          ),
+        )
+        .get() !== undefined
+    );
+  }
+
+  /** Public so the ignore path can be asserted end to end without a network sweep. */
+  filterLive(candidates: Candidate[]): Candidate[] {
+    return candidates.filter((c) => !this.isDead(c) && !this.isIgnored(c));
   }
 
   /** Only examines scrobbles newer than the cursor; cheap enough to run every few minutes. */
@@ -81,7 +100,7 @@ export class Planner {
       ...candidates.filter((c) => c.kind === 'album'),
       ...candidates.filter((c) => c.kind === 'track'),
     ];
-    return { candidates: this.live(ordered), newestUts };
+    return { candidates: this.filterLive(ordered), newestUts };
   }
 
   async sweep(onProgress?: (seen: number, hits: number) => void): Promise<Candidate[]> {
@@ -105,7 +124,7 @@ export class Planner {
     }
 
     onProgress?.(seen, candidates.length);
-    return this.live(candidates);
+    return this.filterLive(candidates);
   }
 
   /** Records that a candidate resolved to nothing, so repeated emptiness stops costing a fetch. */

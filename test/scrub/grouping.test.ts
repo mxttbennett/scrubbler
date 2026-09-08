@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectShared, toGroup, type PlannedEdit } from '../../src/scrub/types.js';
+import { detectShared, toAlbumGroup, toGroup, type PlannedEdit } from '../../src/scrub/types.js';
 
 function edit(track: [string, string], album: [string, string]): PlannedEdit {
   return {
@@ -71,8 +71,30 @@ describe('detectShared', () => {
 describe('toGroup', () => {
   it('carries the artist, the edits and the shared change', () => {
     const g = toGroup('The Replacements', ['x', 'y'].map(ALBUM_ONLY));
+    expect(g.kind).toBe('track');
     expect(g.artist).toBe('The Replacements');
-    expect(g.edits).toHaveLength(2);
+    expect(g.kind === 'track' ? g.edits : []).toHaveLength(2);
     expect(g.shared?.to).toBe('Let It Be');
+  });
+});
+
+describe('toAlbumGroup', () => {
+  it('is a one-member group whose shared change is the album rename', () => {
+    const g = toAlbumGroup({
+      artist: 'Nirvana',
+      from: 'In Utero (Deluxe Edition)',
+      to: 'In Utero',
+      csrfToken: 't',
+      action: '/library/edit-album',
+      refererPath: '/x',
+      groups: ['edition'],
+    });
+    expect(g.kind).toBe('album');
+    expect(g.artist).toBe('Nirvana');
+    expect(g.shared).toEqual({
+      field: 'album_name',
+      from: 'In Utero (Deluxe Edition)',
+      to: 'In Utero',
+    });
   });
 });

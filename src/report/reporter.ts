@@ -1,4 +1,4 @@
-import { COLOR, Discord, type DiscordEmbedField, fenceLines } from './discord.js';
+import { COLOR, Discord, type DiscordEmbed, type DiscordEmbedField, fenceLines } from './discord.js';
 
 export interface RunTotals {
   applied: number;
@@ -6,6 +6,8 @@ export interface RunTotals {
   unverified: number;
   failed: number;
   planned: number;
+  /** Set so the footer can say "nothing written" honestly, instead of inferring it from zeroes. */
+  dryRun?: boolean;
 }
 
 export type Outcome = 'planned' | 'applied' | 'verified' | 'unverified' | 'failed';
@@ -17,7 +19,9 @@ export interface FieldChange {
 }
 
 export interface Correction {
+  /** Album corrections carry the ALBUM artist here; track corrections the track artist. */
   artist: string;
+  kind: 'track' | 'album';
   /** The tuple's identity, so a correction that only changed the album still names its track. */
   track: string;
   album: string;
@@ -25,13 +29,17 @@ export interface Correction {
   groups: string[];
   outcome: Outcome;
   error?: string;
+  /** Art for the post-edit album, so the embed shows what it will be. */
+  imageUrl?: string;
 }
 
 export interface CorrectionGroup {
   artist: string;
+  kind: 'track' | 'album';
   shared: { field: string; from: string; to: string } | undefined;
   items: Correction[];
   outcome: Outcome;
+  imageUrl?: string;
 }
 
 export interface Reporter {
@@ -65,6 +73,15 @@ const OUTCOME_WORD: Record<Outcome, string> = {
   failed: 'Failed to correct',
 };
 
+/** "Corrected album (4 tracks)" or "Corrected 2 tracks" — the subject, not the artist. */
+export function embedTitle(outcome: Outcome, kind: 'track' | 'album', count: number): string {
+  const word = OUTCOME_WORD[outcome];
+  if (kind === 'album') {
+    return count > 1 ? `${word} album (${count} tracks)` : `${word} album`;
+  }
+  return `${word} ${count} track${count === 1 ? '' : 's'}`;
+}
+
 export function describeCorrection(c: Correction): string {
   const parts = c.changes.map((ch) => `${ch.field}: "${ch.from}" -> "${ch.to}"`);
   const tail = c.error === undefined ? '' : ` — ${c.error}`;
@@ -88,6 +105,38 @@ export function trackList(items: Correction[]): string {
     size += line.length + 1;
   }
   return lines.join('\n');
+}
+
+/**
+ * Shared with proposals so an approval card and the report it becomes look the same — the only
+ * difference is the buttons and the footer.
+ */
+export function groupEmbed(g: CorrectionGroup, footer: string): DiscordEmbed {
+  const n = g.items.length;
+  const shared = g.shared;
+  return {
+    title: embedTitle(g.outcome, g.kind, n),
+    color: OUTCOME_COLOR[g.outcome],
+    description: `**${escapeMd(g.artist)}**`,
+    fields: [
+      ...(shared === undefined
+        ? []
+        : [
+            {
+              name: shared.field.replace(/_/g, ' '),
+              value: `~~${escapeMd(shared.from)}~~\n**${escapeMd(shared.to)}**`,
+            },
+          ]),
+      ...(n > 1 ? [{ name: `tracks (${n})`, value: trackList(g.items) }] : []),
+      { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
+    ],
+    ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
+    footer: { text: footer },
+  };
+}
+
+export function progressLine(totals: RunTotals): string {
+  return progressText(totals);
 }
 
 export class ConsoleAndDiscordReporter implements Reporter {
@@ -123,20 +172,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
       await this.corrections(g.items, totals);
       return;
     }
-    const n = g.items.length;
-    await this.discord.send({
-      title: `${OUTCOME_WORD[g.outcome]} · ${g.artist} — ${n} tracks`,
-      color: OUTCOME_COLOR[g.outcome],
-      fields: [
-        {
-          name: g.shared.field.replace(/_/g, ' '),
-          value: `~~${escapeMd(g.shared.from)}~~\n**${escapeMd(g.shared.to)}**`,
-        },
-        { name: `tracks (${n})`, value: trackList(g.items) },
-        { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
-      ],
-      footer: { text: progressText(totals) },
-    });
+    await this.discord.send(groupEmbed(g, progressText(totals)));
   }
 
   /** One correction gets real fields rather than a one-line code fence. */
@@ -146,14 +182,18 @@ export class ConsoleAndDiscordReporter implements Reporter {
       value: `~~${escapeMd(ch.from)}~~\n**${escapeMd(ch.to)}**`,
     }));
     if (c.error !== undefined) fields.push({ name: 'error', value: escapeMd(c.error) });
-    // Named unconditionally: an album-only correction otherwise renders identically for every track.
-    fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
-    fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
+    // Named for track corrections: an album-only change otherwise renders identically per track.
+    if (c.kind === 'track') {
+      fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
+      fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
+    }
     fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
     return {
-      title: `${OUTCOME_WORD[c.outcome]} · ${c.artist}`,
+      title: embedTitle(c.outcome, c.kind, 1),
       color: OUTCOME_COLOR[c.outcome],
+      description: `**${escapeMd(c.artist)}**`,
       fields,
+      ...(c.imageUrl === undefined ? {} : { thumbnail: { url: c.imageUrl } }),
       footer: { text: progressText(totals) },
     };
   }
@@ -191,9 +231,14 @@ export function escapeMd(value: string): string {
   return value.replace(/([\\`*_~|>[\]()#-])/g, '\\$1');
 }
 
+/**
+ * Never infers "nothing written" from zero counts — an all-zero summary used to print that under a
+ * card titled "Corrected", because album renames bypassed the counter entirely.
+ */
 function progressText(t: RunTotals): string {
-  if (t.applied === 0 && t.failed === 0) {
-    return `${t.planned} planned · nothing written`;
-  }
-  return `${t.applied} applied · ${t.verified} verified · ${t.unverified} unverified · ${t.failed} failed`;
+  if (t.dryRun === true) return `${t.planned} planned this run · dry run, nothing written`;
+  const parts = [`${t.applied} applied`, `${t.verified} verified`];
+  if (t.unverified > 0) parts.push(`${t.unverified} unverified`);
+  if (t.failed > 0) parts.push(`${t.failed} failed`);
+  return `this run: ${parts.join(' · ')}`;
 }

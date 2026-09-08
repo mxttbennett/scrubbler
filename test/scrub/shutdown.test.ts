@@ -46,6 +46,7 @@ describe('graceful drain', () => {
           return 'verified' as const;
         },
       } as never,
+      {} as never,
       silent,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );
@@ -65,6 +66,7 @@ describe('graceful drain', () => {
     const ex = new Executor(
       d,
       { apply: async () => { calls++; return 'verified' as const; } } as never,
+      {} as never,
       silent,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );
