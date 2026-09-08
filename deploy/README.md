@@ -1,8 +1,16 @@
 # Deploying scrubbler
 
-Deployment is **manual**. The sibling `feed1` service has a full GitHub Actions deploy with rollback
-tags and a migration guard; that machinery is more moving parts than this three-table single-user
-daemon warrants. The risks it manages are real here too, so they are handled by the steps below.
+Deploy with the **`deploy` workflow** (Actions -> deploy -> Run workflow). It runs the checks, takes
+the pre-deploy snapshot, swaps the build in and confirms the service booted — the steps under
+*Every deploy* below, which remain the manual fallback.
+
+The trigger is `workflow_dispatch` only. The sibling `feed1` service deploys on every push to
+`main`, but a merge here widens what this service rewrites on a real Last.fm account and those edits
+are irreversible, so the button is the human beat before that happens.
+
+Also unlike `feed1`: no rollback-by-tag and no migration guard. Those need version and CHANGELOG
+discipline this repo does not keep, and rollback here carries a hazard `feed1` has no analogue for —
+see *Rolling back past the approval gate*.
 
 ## One-time
 
@@ -15,6 +23,8 @@ Then create `/opt/scrubbler/.env` from `.env.example`, `chmod 600`, and **leave
 `DRY_RUN=true`**.
 
 ## Every deploy
+
+The workflow does all of this. These are the same steps by hand, for when Actions is unavailable.
 
 ```sh
 npm run build
