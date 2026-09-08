@@ -30,6 +30,8 @@ export interface ExecutionSummary {
   skippedByLedger: number;
   alsoHasRule: number;
   capped: boolean;
+  /** Counted where the write happens, so an album rename cannot be tallied as a track edit. */
+  byKind: Record<'track' | 'album', { applied: number; failed: number; tracksCovered: number }>;
 }
 
 export type ResumableStatus = 'planned' | 'awaiting_approval';
@@ -173,6 +175,8 @@ export class Executor {
     try {
       const outcome = await this.albumEditor.apply(edit);
       summary.applied++;
+      summary.byKind.album.applied++;
+      summary.byKind.album.tracksCovered += edit.trackNames?.length ?? 0;
       const imageUrl = await this.opts.albumArt?.(edit.artist, edit.to);
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
@@ -188,6 +192,7 @@ export class Executor {
             groups: edit.groups,
             outcome: outcome === 'applied' ? 'applied' : outcome,
             ...(imageUrl === undefined ? {} : { imageUrl }),
+            ...(edit.trackNames === undefined ? {} : { trackNames: edit.trackNames }),
           },
         ],
         this.totalsOf(summary),
@@ -195,6 +200,7 @@ export class Executor {
     } catch (error) {
       summary.failed++;
       const message = error instanceof Error ? error.message : String(error);
+      summary.byKind.album.failed++;
       this.upsertAlbum(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
       if (!(error instanceof EditRejectedError)) {
         await this.reporter.report(error, `album edit ${edit.artist} — ${edit.from}`);
@@ -251,6 +257,8 @@ export class Executor {
       unverified: s.unverified,
       failed: s.failed,
       dryRun: this.opts.dryRun,
+      albums: s.byKind.album.applied,
+      tracks: s.byKind.track.applied,
     };
   }
 
@@ -422,6 +430,7 @@ export class Executor {
       try {
         const outcome = await this.editor.apply(edit);
         summary.applied++;
+        summary.byKind.track.applied++;
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
@@ -432,6 +441,7 @@ export class Executor {
         record(edit, outcome, undefined, art);
       } catch (error) {
         summary.failed++;
+        summary.byKind.track.failed++;
         const message = error instanceof Error ? error.message : String(error);
         this.upsert(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
         record(edit, 'failed', message);
@@ -493,6 +503,10 @@ function blankSummary(): ExecutionSummary {
     skippedByLedger: 0,
     alsoHasRule: 0,
     capped: false,
+    byKind: {
+      track: { applied: 0, failed: 0, tracksCovered: 0 },
+      album: { applied: 0, failed: 0, tracksCovered: 0 },
+    },
   };
 }
 

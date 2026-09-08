@@ -250,3 +250,110 @@ describe('embed titles name the subject and count, not the artist', () => {
     expect(sent[0]!.description!.startsWith('**The Smiths**')).toBe(true);
   });
 });
+
+describe('album cards name the tracks a single request covered', () => {
+  it('titles the card with the track count, not the one-item group size', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+
+    await reporter.corrections(
+      [
+        {
+          artist: 'Nirvana',
+          kind: 'album',
+          track: '(whole album)',
+          album: 'In Utero (Deluxe Edition)',
+          changes: [
+            { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
+          ],
+          groups: ['edition'],
+          outcome: 'verified',
+          trackNames: ['Serve the Servants', 'Heart-Shaped Box', 'Rape Me', 'Dumb'],
+        },
+      ],
+      { planned: 1, applied: 1, verified: 1, unverified: 0, failed: 0 },
+    );
+
+    expect(sent[0]!.title).toBe('Corrected album (4 tracks)');
+    const list = sent[0]!.fields?.find((f) => f.name === 'tracks (4)');
+    expect(list?.value).toContain('Serve the Servants');
+    expect(list?.value.split('\n')).toHaveLength(4);
+  });
+
+  it('says just "Corrected album" when the page listed one track or none', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+
+    await reporter.corrections(
+      [
+        {
+          artist: 'Nirvana',
+          kind: 'album',
+          track: '(whole album)',
+          album: 'In Utero (Deluxe Edition)',
+          changes: [
+            { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
+          ],
+          groups: ['edition'],
+          outcome: 'verified',
+        },
+      ],
+      { planned: 1, applied: 1, verified: 1, unverified: 0, failed: 0 },
+    );
+
+    expect(sent[0]!.title).toBe('Corrected album');
+    expect(sent[0]!.fields?.some((f) => f.name.startsWith('tracks ('))).toBe(false);
+  });
+});
+
+describe('the run summary counts albums and tracks apart', () => {
+  it('shows both when they are known', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+
+    await reporter.summary('Sweep complete', [], {
+      planned: 9,
+      applied: 9,
+      verified: 9,
+      unverified: 0,
+      failed: 0,
+      albums: 6,
+      tracks: 3,
+    });
+
+    const byName = new Map(sent[0]!.fields?.map((f) => [f.name, f.value]));
+    expect(byName.get('Albums')).toBe('6');
+    expect(byName.get('Tracks')).toBe('3');
+  });
+
+  it('omits them rather than printing a misleading zero when unknown', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+
+    await reporter.summary('Sweep complete', [], {
+      planned: 1,
+      applied: 1,
+      verified: 1,
+      unverified: 0,
+      failed: 0,
+    });
+
+    expect(sent[0]!.fields?.some((f) => f.name === 'Albums')).toBe(false);
+  });
+});

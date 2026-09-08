@@ -19,6 +19,11 @@ export interface PlannedAlbumEdit {
   action: string;
   refererPath: string;
   groups: string[];
+  /**
+   * The tracks this one request renames. A whole-album rename is a single POST, so this is the only
+   * record of what it covered — read off the album page the resolver already fetched, not requested.
+   */
+  trackNames?: string[];
 }
 
 export interface AlbumEditorOptions {
