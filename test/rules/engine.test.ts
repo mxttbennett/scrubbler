@@ -290,8 +290,41 @@ describe('cleanTitle — real library corpus', () => {
   });
 });
 
-describe('live is track-only, and off by default', () => {
+describe('live is split by field, and both are off by default', () => {
   const TRACK_ONLY = new Set<GroupName>(['live-track']);
+  const ALBUM_ONLY = new Set<GroupName>([...DEFAULT_ON, 'live-album']);
+
+  it('reaches a compound that pairs Live with a remaster claim, once enabled', () => {
+    // Unreachable without live-album: the remaster half matches but nothing matches a bare "Live".
+    expect(cleanTitle("Europe '72 (Live; 2001 Remaster)", 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle("Europe '72 (Live; 2001 Remaster)", 'album', ALBUM_ONLY)?.clean).toBe(
+      "Europe '72",
+    );
+  });
+
+  it('strips a bare (Live) from an album whose release only exists live', () => {
+    expect(cleanTitle('Yessongs (Live)', 'album', ALBUM_ONLY)?.clean).toBe('Yessongs');
+    expect(cleanTitle('Stop Making Sense (Live)', 'album', ALBUM_ONLY)?.clean).toBe(
+      'Stop Making Sense',
+    );
+  });
+
+  it('leaves a live TRACK alone under the album group, since the studio take exists too', () => {
+    expect(cleanTitle('all apologies - live', 'track', ALBUM_ONLY)).toBeNull();
+    expect(cleanTitle('White Light/White Heat - Live', 'track', ALBUM_ONLY)).toBeNull();
+  });
+
+  it('never touches a segment that merely starts with Live, in either group', () => {
+    const both = new Set<GroupName>([...DEFAULT_ON, 'live-album', 'live-track']);
+    for (const [title, field] of [
+      ['The King of Limbs: Live from the Basement', 'album'],
+      ['Live at Leeds', 'album'],
+      ['Live Through This', 'album'],
+      ['Sister Ray - Live in Rotterdam 1984', 'track'],
+    ] as [string, 'album' | 'track'][]) {
+      expect(cleanTitle(title, field, both)).toBeNull();
+    }
+  });
 
   it('does nothing at all unless explicitly enabled', () => {
     expect(cleanTitle('all apologies - live', 'track', DEFAULT_ON)).toBeNull();
@@ -376,5 +409,102 @@ describe('remaster word orders', () => {
 
   it.each(KEPT)('leaves %s alone', (title, field) => {
     expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+});
+
+describe('compound segments — every part must be a known marker', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)', 'album'],
+    ["Sinatra's Swingin' Session!!! And More (Remastered / Expanded Edition)", 'album'],
+    ['Freedom of Choice (2009 Remaster; Deluxe Edition)', 'album'],
+    ['Garbage (20th Anniversary Deluxe Edition/Remastered)', 'album'],
+    ['Goat (Remaster / Reissue)', 'album'],
+    ['Christmas Portrait (Special Edition/Reissue)', 'album'],
+    ['My Generation (50th Anniversary / Super Deluxe)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  it('names every rule that fired, not just the first', () => {
+    const r = cleanTitle('Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)', 'album', DEFAULT_ON);
+
+    expect(r?.groups).toEqual(['edition', 'remaster']);
+  });
+
+  /**
+   * One unrecognised part and the whole segment is left alone. This is what keeps the compound rule
+   * from degrading into a substring match — the property the entire catalogue depends on.
+   */
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Album (Deluxe Edition; Live in Tokyo)', 'album'],
+    ['Album (Remastered; Taylor\'s Version)', 'album'],
+    ["Dick's Picks Vol. 3: Hollywood Sportatorium, Pembroke Pines, FL 5/22/77", 'album'],
+    ['AC/DC', 'album'],
+    ['Fabric 01 (DJ Mix)', 'album'],
+    ["Sweet Bonnie Brown / It's Just Too Much - Live", 'track'],
+    ['Blues For Allah / Sand Castles & Glass Camels / Unusual Occurrences In The Desert', 'track'],
+    ['White Light/White Heat', 'track'],
+    ['Help on the Way / Slipknot!', 'track'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+
+  it('refuses a compound with an empty part, so a trailing separator changes nothing', () => {
+    expect(cleanTitle('Album (Remastered;)', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Album (/Remastered)', 'album', DEFAULT_ON)).toBeNull();
+  });
+
+  it('still requires the whole segment, so a marker plus prose is untouched', () => {
+    expect(cleanTitle('Album (Remastered at Abbey Road)', 'album', DEFAULT_ON)).toBeNull();
+    expect(cleanTitle('Album (Deluxe Edition Sampler)', 'album', DEFAULT_ON)).toBeNull();
+  });
+});
+
+describe('edition word orders', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['In Utero (30th Anniversary Super Deluxe)', 'album'],
+    ['Hex Enduction Hour (Expanded Deluxe Edition)', 'album'],
+    ['Purple Rain (Deluxe Expanded Edition)', 'album'],
+    ['Cosmic Thing (30th Anniversary Expanded Edition)', 'album'],
+    ["I Should Coco (20th Anniversary Collector's Edition)", 'album'],
+    ['Raw Power (50th Anniversary Legacy Edition)', 'album'],
+    ['Whatever And Ever Amen (Remastered Edition)', 'album'],
+    ['Cave World (Deluxe)', 'album'],
+    ['My Generation (50th Anniversary / Super Deluxe)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  /**
+   * The edition words are common in real album titles, so the whole-segment anchoring is doing all
+   * the work here: none of these has a trailing segment for the pattern to be the whole of.
+   */
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Love Deluxe', 'album'],
+    ['Deluxe', 'album'],
+    ['Deadringer: Deluxe', 'album'],
+    ['Special', 'album'],
+    ['The Definitive Collection', 'album'],
+    ["1989 (Taylor's Version)", 'album'],
+    ['Album (Expanded Reissue Sampler)', 'album'],
+    ['Album (2nd Sight)', 'album'],
+    ['Saturday Night Fever (The Original Movie Soundtrack)', 'album'],
+    ['Shine On You Crazy Diamond - Pt. II', 'track'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+
+  it('accepts a bare ordinal so an anniversary stands alone in a compound', () => {
+    expect(cleanTitle('Album (45th Anniversary / Super Deluxe)', 'album', DEFAULT_ON)?.clean).toBe(
+      'Album',
+    );
   });
 });
