@@ -16,7 +16,7 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 
 ## Invariants
 
-These five are the things a newcomer gets wrong. Each one was found the hard way.
+These are the things a newcomer gets wrong. Each one was found the hard way.
 
 - **The marker catalogue is closed, and patterns match the WHOLE trailing segment.** Never add a
   substring or shape-based match. A survey of the real library found most trailing segments are
@@ -27,10 +27,9 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 - **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
   canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
   stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.
-- **An album rename uses `edit-album`, not N `edit-track` calls.** `?edited-variation=` has two
-  values; `library-album-scrobble` posts to `/library/edit-album` and needs only the album name and
-  album artist pairs — no timestamp, no track, no `edit_all`. Album candidates therefore never
-  recurse into track pages. `edit-track` is for when a *track title* carries a marker.
+- **An album rename is one album-scoped edit, not N track edits.** The album form needs only the
+  album and artist pair — no timestamp, no track, no `edit_all` — so album candidates never recurse
+  into track pages. The track form is for when a *track title* carries a marker.
 - **Albums are swept before tracks and that order is load-bearing.** The album rename lands first, so
   a track page read afterwards already shows the clean album name and the track edit's
   `album_name_original` cannot go stale and silently no-op. `test/scrub/albumFirst.test.ts` fails if
@@ -48,12 +47,14 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
   second selects on. `Resolver.fold` therefore derives the *complete* change for a tuple (track and
   album title together) from a single row. Because it is complete, writes stream as tuples resolve;
   do not batch them up "to merge later", there is nothing left to merge.
-- **Never send a `Mozilla/5.0`-prefixed User-Agent.** Last.fm answers those with `406` and an ~8KB
-  error page that still carries `<title>Login | Last.fm</title>`, so it reads as a real page. Verify
-  by looking for `csrfmiddlewaretoken`, not by the title.
-- **HTTP status cannot detect auth state.** Wrong password → `200`. Successful login → `302`.
-  Missing `Referer` → also `302`, with `csrftoken` cleared. The auth probe 302s either way and only
-  the `Location` distinguishes them. `Session.isAuthenticated` is the single place that logic lives.
+- **Identify honestly in the User-Agent; never impersonate a browser.** The service names itself
+  and its repo, which is the point — a tool doing authenticated writes should be attributable. A
+  browser-shaped User-Agent is also rejected, and the rejection page is shaped enough like a real
+  one that page checks must look for the form token rather than the title.
+- **HTTP status cannot detect auth state.** Success and several distinct failures are
+  indistinguishable by status code alone, so every check has to read the response itself.
+  `Session.isAuthenticated` is the single place that logic lives — do not re-derive it at a call
+  site.
 - **Pace library page reads, and detect the throttle by content.** Last.fm soft-throttles the web
   pages with an HTTP `200` page reading "You're requesting too many pages" — no `429`, no
   `Retry-After`. `LibraryPages` owns a 1.5s rate limiter and `isThrottled()`; never bypass either.
@@ -71,14 +72,13 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 
 ## Wire contract
 
-`POST /user/<username>/library/edit-track?edited-variation=library-track-scrobble` — note
-`edit-track`, not `edit`; the userscript's hardcoded path is stale. Two steps: a library row's
-`form[data-edit-scrobble]` gives six fields, and POSTing those **plus `ajax=1` in the body** returns
-the real edit form. Full field set, including the `submit=edit-scrobble` field the userscript never
-names, is in `src/lastfm/editor.ts`.
+The edit is a two-step form submission against the ordinary library UI: read the row's edit form,
+then post it back with the changed fields. `src/lastfm/editor.ts` is the only description of the
+field set, and the only place it should live — it is a transcription of what the site's own form
+does, so it tracks the site rather than a spec, and it will need revisiting whenever that changes.
 
-Automatic-edit rules live at two separate URLs:
-`/settings/subscription/automatic-edits/albums` (unpaginated) and `.../tracks` (paginated).
+Automatic-edit rules are read from two separate settings pages, one for albums and one for tracks;
+only the track one paginates. See `src/lastfm/rules.ts`.
 
 ## Writes
 
@@ -147,6 +147,10 @@ No network in tests. `test/rules/engine.test.ts` runs against
 `test/fixtures/lfm-title-corpus.json` — a real library snapshot — and **snapshots the full verdict**.
 That snapshot is the safety net: read its diff on every catalogue change. It has already caught two
 regressions that the unit cases missed.
+
+The corpus carries titles and artists and nothing else: play counts were stripped because only the
+title is ever read, and a listening history is not something a public repo should carry. **Do not
+"tidy" the corpus.** Its value is that the awkward cases are real.
 
 ## Loop
 
