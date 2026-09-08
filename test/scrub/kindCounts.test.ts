@@ -79,12 +79,15 @@ function executor(
       trackNames: string[];
       scrobbles: number | undefined;
     }>;
+    trackScrobbles?: (artist: string, track: string) => Promise<number | undefined>;
+    onApply?: () => void;
   } = {},
 ) {
   return new Executor(
     db(),
     {
       apply: async () => {
+        opts.onApply?.();
         if (opts.failTrack === true) throw new Error('track rejected');
         return 'verified';
       },
@@ -99,6 +102,7 @@ function executor(
     {
       ...OPTS,
       ...(opts.albumDetails === undefined ? {} : { albumDetails: opts.albumDetails }),
+      ...(opts.trackScrobbles === undefined ? {} : { trackScrobbles: opts.trackScrobbles }),
     },
   );
 }
@@ -324,5 +328,109 @@ describe('the card names only tracks that were actually scrobbled', () => {
 
     expect(s.items[0]!.scrobbledTracks).toBeUndefined();
     expect(e.streamedSummary.byKind.album.tracksCovered).toBe(0);
+  });
+});
+
+describe("a track edit reports the user's scrobbles of it", () => {
+  it('puts the count on the correction card and in the run total', async () => {
+    const s = spy();
+    const e = executor(s.reporter, { trackScrobbles: async () => 606 });
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(s.items[0]!.scrobbles).toBe(606);
+    expect(e.streamedSummary.byKind.track.scrobblesCovered).toBe(606);
+  });
+
+  /** The whole point of the ordering: after the write those scrobbles hang off the new name. */
+  it('asks about the ORIGINAL title, before the write', async () => {
+    const s = spy();
+    const asked: [string, string][] = [];
+    let written = false;
+    const e = executor(s.reporter, {
+      onApply: () => {
+        written = true;
+      },
+      trackScrobbles: async (artist, track) => {
+        expect(written).toBe(false);
+        asked.push([artist, track]);
+        return 7;
+      },
+    });
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(asked).toEqual([['Joy Division', 'Disorder - Remastered']]);
+  });
+
+  it('sums the counts across several edits in one run', async () => {
+    const s = spy();
+    const e = executor(s.reporter, { trackScrobbles: async () => 4 });
+
+    for (const t of ['Disorder', 'Insight', 'Candidate'])
+      await e.applyOne(trackEdit(t), new Set());
+
+    expect(e.streamedSummary.byKind.track.scrobblesCovered).toBe(12);
+  });
+
+  it('omits the field rather than guessing when the lookup yields nothing', async () => {
+    const s = spy();
+    const e = executor(s.reporter, { trackScrobbles: async () => undefined });
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(s.items[0]!.scrobbles).toBeUndefined();
+    expect(e.streamedSummary.byKind.track.scrobblesCovered).toBe(0);
+  });
+
+  it('still applies the edit when the lookup throws, since this is reporting only', async () => {
+    const s = spy();
+    const e = executor(s.reporter, {
+      trackScrobbles: async () => {
+        throw new Error('last.fm down');
+      },
+    });
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(e.streamedSummary.applied).toBe(1);
+    expect(s.items[0]!.outcome).toBe('verified');
+    expect(s.items[0]!.scrobbles).toBeUndefined();
+  });
+
+  /** "scrobbles affected" would be a lie on a failure: the edit never landed, so none moved. */
+  it('reports no count on a failed edit', async () => {
+    const s = spy();
+    const e = executor(s.reporter, { failTrack: true, trackScrobbles: async () => 606 });
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(s.items[0]!.outcome).toBe('failed');
+    expect(s.items[0]!.scrobbles).toBeUndefined();
+    expect(e.streamedSummary.byKind.track.scrobblesCovered).toBe(0);
+  });
+
+  it('never asks in a dry run, which writes nothing to count against', async () => {
+    const s = spy();
+    let asked = 0;
+    const e = new Executor(
+      db(),
+      { apply: async () => 'verified' } as never,
+      { apply: async () => 'verified' } as never,
+      s.reporter,
+      {
+        ...OPTS,
+        dryRun: true,
+        trackScrobbles: async () => {
+          asked++;
+          return 606;
+        },
+      },
+    );
+
+    await e.applyOne(trackEdit('Disorder'), new Set());
+
+    expect(asked).toBe(0);
+    expect(s.items[0]!.scrobbles).toBeUndefined();
   });
 });

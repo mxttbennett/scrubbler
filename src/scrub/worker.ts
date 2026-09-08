@@ -27,6 +27,7 @@ export interface WorkerDeps {
   reporter: Reporter;
   albumArt: (artist: string, album: string) => Promise<string | undefined>;
   albumDetails?: (artist: string, album: string) => Promise<AlbumDetails>;
+  trackScrobbles?: (artist: string, track: string) => Promise<number | undefined>;
   /** Always present: the unattended path needs it to drain a queue left by an earlier mode. */
   approvals: Approvals;
   /** Present only when shadow mode is on; its absence is what keeps discovery silent. */
@@ -52,6 +53,9 @@ export class ScrubWorker {
   private readonly albumDetails:
     | ((artist: string, album: string) => Promise<AlbumDetails>)
     | undefined;
+  private readonly trackScrobbles:
+    | ((artist: string, track: string) => Promise<number | undefined>)
+    | undefined;
   private readonly approvals: Approvals;
   private readonly shadowStore: ShadowStore | undefined;
   private readonly writeLock: WriteLock | undefined;
@@ -68,6 +72,7 @@ export class ScrubWorker {
     this.reporter = deps.reporter;
     this.albumArt = deps.albumArt;
     this.albumDetails = deps.albumDetails;
+    this.trackScrobbles = deps.trackScrobbles;
     this.approvals = deps.approvals;
     this.shadowStore = deps.shadowStore;
     this.writeLock = deps.writeLock;
@@ -128,6 +133,7 @@ export class ScrubWorker {
       sleep: this.sleep,
       albumArt: this.albumArt,
       ...(this.albumDetails === undefined ? {} : { albumDetails: this.albumDetails }),
+      ...(this.trackScrobbles === undefined ? {} : { trackScrobbles: this.trackScrobbles }),
       ...(this.writeLock === undefined ? {} : { writeLock: this.writeLock }),
     });
     this.executor = executor;
@@ -241,6 +247,9 @@ export class ScrubWorker {
             : '') +
           (summary.byKind.album.failed > 0 ? ` (${summary.byKind.album.failed} failed)` : ''),
         `tracks          ${summary.byKind.track.applied} edited` +
+          (summary.byKind.track.scrobblesCovered > 0
+            ? `, covering ${summary.byKind.track.scrobblesCovered} scrobbles`
+            : '') +
           (summary.byKind.track.failed > 0 ? ` (${summary.byKind.track.failed} failed)` : ''),
         `distinct tuples ${summary.planned}`,
         `already done    ${summary.skippedByLedger}`,
