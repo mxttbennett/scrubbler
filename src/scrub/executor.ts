@@ -121,6 +121,7 @@ export class Executor {
             action: r.action,
             refererPath: r.refererPath,
             groups: r.groups === '' ? [] : r.groups.split(','),
+            ...trackNamesOf(r.trackNames),
           },
         });
         continue;
@@ -272,6 +273,8 @@ export class Executor {
       albumArtistName: edit.artist,
       kind: 'album' as const,
       groups: edit.groups.join(','),
+      // JSON, not comma-joined like `groups`: a track name can contain a comma.
+      trackNames: edit.trackNames === undefined ? null : JSON.stringify(edit.trackNames),
       timestamp: '',
       action: edit.action,
       refererPath: edit.refererPath,
@@ -585,4 +588,17 @@ function worstOutcome(items: Correction[]): Outcome {
     if (OUTCOME_RANK[item.outcome] > OUTCOME_RANK[worst]) worst = item.outcome;
   }
   return worst;
+}
+
+/** Tolerant on purpose: a row written before the column existed, or hand-edited, must still resume. */
+function trackNamesOf(raw: string | null): { trackNames?: string[] } {
+  if (raw === null || raw === '') return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return {};
+    const names = parsed.filter((v): v is string => typeof v === 'string');
+    return names.length === 0 ? {} : { trackNames: names };
+  } catch {
+    return {};
+  }
 }

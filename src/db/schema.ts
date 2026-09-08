@@ -26,6 +26,12 @@ export const appliedEdits = sqliteTable(
     timestamp: text('timestamp'),
     action: text('action'),
     refererPath: text('referer_path'),
+    /**
+     * JSON array of the tracks an album rename covers, for the same reason `action` and
+     * `referer_path` are here: a resume rebuilds the edit from this row, and these live nowhere else
+     * — the album page they were read from is gone once the rename lands.
+     */
+    trackNames: text('track_names'),
     status: text('status', {
       enum: [
         'applied',

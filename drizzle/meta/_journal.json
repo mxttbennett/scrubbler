@@ -50,6 +50,13 @@
       "when": 1788846322622,
       "tag": "0006_shadow_hits",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1788847822231,
+      "tag": "0007_album_track_names",
+      "breakpoints": true
     }
   ]
 }
