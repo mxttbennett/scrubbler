@@ -23,6 +23,13 @@ So the service uses each transport for what it is good at:
 | **Resolve** — build the edit | Scrape the library page (`+noredirect`, paced) | The API never returns `albumartist`, which the edit form requires to match exactly. |
 | **Write** | `POST /user/<you>/library/edit-track` | The only way to edit a scrobble. |
 
+Corrections are written **as each tuple resolves**, not after the whole library has been walked.
+`Resolver.fold` derives the complete change for a tuple from one row — both track and album title
+— so a tuple reached via an album page yields the same edit as one reached via a track page, and
+writing immediately cannot leave a partial edit to collide with later. That matters because
+resolving a dirty album means fetching its page *plus one page per track on it*, so a full pass
+takes hours; deferring writes until the end would mean hours of silence.
+
 Each write sets `edit_all` (apply to all past scrobbles of that exact tuple) and
 `create_automatic_edit_rule` (apply to all future ones). Because Last.fm then corrects new scrobbles
 itself, steady-state work approaches zero — the service is really a rule-discovery loop, and sweeps

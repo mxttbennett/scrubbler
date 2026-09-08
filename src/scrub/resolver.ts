@@ -29,31 +29,41 @@ export class Resolver {
    */
   async resolve(
     candidates: Candidate[],
-    onEdit?: (edit: PlannedEdit) => void,
+    onEdit?: (edit: PlannedEdit) => Promise<void>,
+    onProgress?: (done: number, total: number, edits: number) => void,
   ): Promise<ResolveResult> {
     const byTuple = new Map<string, PlannedEdit>();
     const skips: SkipRecord[] = [];
     const seenPaths = new Set<string>();
 
+    let done = 0;
     for (const candidate of candidates) {
+      done++;
       const path =
         candidate.kind === 'track'
           ? trackLibraryPath(this.username, candidate.artist, candidate.title)
           : albumLibraryPath(this.username, candidate.artist, candidate.title);
 
-      if (seenPaths.has(path)) continue;
+      if (seenPaths.has(path)) {
+        onProgress?.(done, candidates.length, byTuple.size);
+        continue;
+      }
       seenPaths.add(path);
 
       const rows = await this.collectRows(path, MAX_RECURSION);
       if (rows.length === 0) {
         skips.push({ candidate, reason: 'no scrobble rows found on library page' });
+        onProgress?.(done, candidates.length, byTuple.size);
         continue;
       }
 
       for (const { row, action, refererPath } of rows) {
         const added = this.fold(byTuple, row, action, refererPath);
-        if (added) onEdit?.(added);
+        // fold() produces the complete change for a tuple from one row, so writing here cannot
+        // leave a second, partial edit for the same tuple to collide with later.
+        if (added && onEdit) await onEdit(added);
       }
+      onProgress?.(done, candidates.length, byTuple.size);
     }
 
     return { edits: [...byTuple.values()], skips };

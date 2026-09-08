@@ -27,9 +27,11 @@ These five are the things a newcomer gets wrong. Each one was found the hard way
 - **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
   canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
   stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.
-- **Group into 4-tuples before computing the change.** The `*_original` 4-tuple is the edit's WHERE
-  clause, so two POSTs against one tuple cannot both land — the first rewrites what the second
-  selects on. `Resolver.fold` merges track and album cleanups for a tuple into one request.
+- **One request per tuple, carrying every field that changes.** The `*_original` 4-tuple is the
+  edit's WHERE clause, so two POSTs against one tuple cannot both land — the first rewrites what the
+  second selects on. `Resolver.fold` therefore derives the *complete* change for a tuple (track and
+  album title together) from a single row. Because it is complete, writes stream as tuples resolve;
+  do not batch them up "to merge later", there is nothing left to merge.
 - **Never send a `Mozilla/5.0`-prefixed User-Agent.** Last.fm answers those with `406` and an ~8KB
   error page that still carries `<title>Login | Last.fm</title>`, so it reads as a real page. Verify
   by looking for `csrfmiddlewaretoken`, not by the title.

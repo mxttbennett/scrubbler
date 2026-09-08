@@ -71,13 +71,25 @@ export class ScrubWorker {
     );
     console.log(`sweep complete: ${candidates.length} candidates`);
 
-    const { edits, skips } = await this.resolver.resolve(candidates, (edit) =>
-      executor.checkpoint(edit),
+    const { skips } = await this.resolver.resolve(
+      candidates,
+      async (edit) => {
+        executor.checkpoint(edit);
+        await executor.applyOne(edit, rules.keys);
+      },
+      (doneCount, total, edits) => {
+        if (doneCount % 10 === 0 || doneCount === total) {
+          const s = executor.streamedSummary;
+          console.log(
+            `resolved ${doneCount}/${total} candidates · ${edits} tuples · ` +
+              `${s.applied} applied · ${s.verified} verified · ${s.failed} failed`,
+          );
+        }
+      },
     );
-    console.log(`resolved to ${edits.length} distinct tuples, ${skips.length} skipped`);
 
     executor.recordSkips(skips);
-    const summary = await executor.run(edits, rules.keys);
+    const summary = executor.streamedSummary;
 
     this.db
       .insert(schema.sweepState)

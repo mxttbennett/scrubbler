@@ -115,17 +115,24 @@ export class Executor {
       .get();
   }
 
-  async run(edits: PlannedEdit[], existingRuleKeys: ReadonlySet<string>): Promise<ExecutionSummary> {
-    const summary: ExecutionSummary = {
-      planned: edits.length,
-      applied: 0,
-      verified: 0,
-      unverified: 0,
-      failed: 0,
-      skippedByLedger: 0,
-      alsoHasRule: 0,
-      capped: false,
-    };
+  /** Streams one resolved tuple straight to a write, so corrections land during resolution. */
+  async applyOne(edit: PlannedEdit, existingRuleKeys: ReadonlySet<string>): Promise<void> {
+    await this.run([edit], existingRuleKeys, this.streamed);
+  }
+
+  get streamedSummary(): ExecutionSummary {
+    return this.streamed;
+  }
+
+  private streamed: ExecutionSummary = blankSummary();
+
+  async run(
+    edits: PlannedEdit[],
+    existingRuleKeys: ReadonlySet<string>,
+    into?: ExecutionSummary,
+  ): Promise<ExecutionSummary> {
+    const summary: ExecutionSummary = into ?? blankSummary();
+    summary.planned += edits.length;
 
     const totals = (): RunTotals => ({
       planned: summary.planned,
@@ -154,7 +161,6 @@ export class Executor {
       });
     };
 
-    let writes = 0;
     for (const edit of edits) {
       if (changedFields(edit).length === 0) continue;
 
@@ -179,21 +185,19 @@ export class Executor {
         continue;
       }
 
-      if (writes >= this.opts.maxEditsPerRun) {
+      if (summary.applied + summary.failed >= this.opts.maxEditsPerRun) {
         summary.capped = true;
         break;
       }
 
       try {
         const outcome = await this.editor.apply(edit);
-        writes++;
         summary.applied++;
         if (outcome === 'verified') summary.verified++;
         else if (outcome === 'unverified') summary.unverified++;
         this.upsert(edit, outcome === 'applied' ? 'applied' : outcome, 0, null);
         record(edit, outcome);
       } catch (error) {
-        writes++;
         summary.failed++;
         const message = error instanceof Error ? error.message : String(error);
         this.upsert(edit, 'failed', (existing?.attempts ?? 0) + 1, message);
@@ -243,4 +247,17 @@ export class Executor {
       })
       .run();
   }
+}
+
+function blankSummary(): ExecutionSummary {
+  return {
+    planned: 0,
+    applied: 0,
+    verified: 0,
+    unverified: 0,
+    failed: 0,
+    skippedByLedger: 0,
+    alsoHasRule: 0,
+    capped: false,
+  };
 }
