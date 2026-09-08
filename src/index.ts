@@ -125,12 +125,15 @@ async function main() {
     writeLock,
   });
 
+  for (const warning of config.configWarnings) console.warn(`config: ${warning}`);
+
   console.log(
     `scrubbler ${readPackageVersion()} starting | user ${config.username}` +
       ` | dryRun ${String(config.dryRun)}` +
       ` | groups ${[...config.enabledGroups].sort().join(',')}` +
+      (config.gatedGroups.size > 0 ? ` | gated ${[...config.gatedGroups].sort().join(',')}` : '') +
       ` | discord ${discord.enabled ? 'on' : 'off'}` +
-      ` | mode ${config.approvalMode ? 'approval' : 'unattended'}`,
+      ` | mode ${config.gatedGroups.size > 0 ? 'approval' : 'unattended'}`,
   );
 
   // Reset flags: the slash-command equivalents arrive with the gateway client.
@@ -214,7 +217,7 @@ async function main() {
         approvals,
         customRules,
         applyNow: (rule) => applyOneEntity(rule),
-        approvalMode: config.approvalMode,
+        gatedRules: config.gatedGroups,
         dryRun: config.dryRun,
         shadowStore,
         shadowMode: config.shadowMode,

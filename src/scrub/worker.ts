@@ -12,6 +12,8 @@ import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
 import type { WriteLock } from '../core/writeLock.js';
 import type { AlbumDetails } from '../lastfm/types.js';
+import { CARRY_OVER_TOKEN } from './approvals.js';
+import { isGated, splitByTier } from './tiers.js';
 import type { Approvals } from './approvals.js';
 import type { ShadowStore } from './shadowStore.js';
 import type { Candidate } from './types.js';
@@ -138,27 +140,33 @@ export class ScrubWorker {
     });
     this.executor = executor;
 
-    // Approval mode must never write a carried row without a decision: propose instead of apply.
-    if (this.config.approvalMode) {
+    const gatedGroups = this.config.gatedGroups;
+
+    // The sentinel, not a real token: demanding one would drop gated rows whenever it failed.
+    if (gatedGroups.size > 0) {
       const expired = await this.approvals.expire();
       if (expired > 0) console.log(`expired ${expired} unanswered proposal(s)`);
-      const carried = await this.approvals.carryOver();
-      if (carried.proposed + carried.failed > 0) {
+      const gatedRows = executor
+        .resumable(CARRY_OVER_TOKEN)
+        .filter((row) => isGated(row.edit.groups, gatedGroups));
+      if (gatedRows.length > 0) {
+        const carried = await this.approvals.carryOver(gatedRows);
         console.log(
           `carried over: ${carried.proposed} proposed, ${carried.duplicate} already pending, ${carried.failed} failed to post`,
         );
       }
     } else {
-      // Mode was flipped off with proposals outstanding; incremental sweeps would never revisit them.
+      // Nothing is gated any more, and incremental sweeps would never revisit outstanding cards.
       const drained = await this.approvals.drainOnModeOff();
       if (drained > 0) console.log(`drained ${drained} pending proposal(s) into the normal path`);
-      // Apply anything a previous run resolved but never wrote, before hours of re-scraping.
-      const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
-      const carried = token === undefined ? [] : executor.resumable(token);
-      if (carried.length > 0) {
-        console.log(`resuming ${carried.length} tuple(s) planned by an earlier run`);
-        await executor.applyCarried(carried, rules.keys);
-      }
+    }
+
+    // resumable() selects only `planned`, and proposing moved the gated rows off it — hence no filter.
+    const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
+    const carried = token === undefined ? [] : executor.resumable(token);
+    if (carried.length > 0) {
+      console.log(`resuming ${carried.length} tuple(s) planned by an earlier run`);
+      await executor.applyCarried(carried, rules.keys);
     }
 
     const state = this.db.select().from(schema.sweepState).where(eq(schema.sweepState.id, 1)).get();
@@ -185,28 +193,27 @@ export class ScrubWorker {
 
     this.setState({ phase: 'resolving', candidatesDone: 0, candidatesTotal: candidates.length });
 
-    const approvals = this.config.approvalMode ? this.approvals : undefined;
     let proposed = 0;
     const { skips } = await this.resolver.resolve(candidates, {
       shouldStop: () => this.stopped || this.isPaused(),
+      // One candidate can span both tiers, and its tuples are independent, so each side goes alone.
       onGroup: async (group) => {
-        if (approvals !== undefined) {
-          const result = await approvals.propose(group);
-          if (result === 'proposed') proposed++;
-          return;
+        const split = splitByTier(group, gatedGroups);
+        if (split.gated !== undefined) {
+          if ((await this.approvals.propose(split.gated)) === 'proposed') proposed++;
         }
-        await executor.applyGroup(group, rules.keys);
+        if (split.auto !== undefined) await executor.applyGroup(split.auto, rules.keys);
       },
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
         this.setState({ candidatesDone: doneCount, candidatesTotal: total });
+        // Additive, not either/or: a mixed cycle both writes and proposes.
         console.log(
           `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
-            (approvals === undefined
-              ? `${s.byKind.album.applied} albums · ${s.byKind.track.applied} tracks · ` +
-                `${edits} tuples · ${s.verified} verified · ${s.unverified} unverified · ` +
-                `${s.failed} failed`
-              : `${proposed} proposed · ${edits} tuples`),
+            `${s.byKind.album.applied} albums · ${s.byKind.track.applied} tracks · ` +
+            `${edits} tuples · ${s.verified} verified · ${s.unverified} unverified · ` +
+            `${s.failed} failed` +
+            (gatedGroups.size > 0 ? ` · ${proposed} proposed` : ''),
         );
       },
     });
@@ -252,6 +259,7 @@ export class ScrubWorker {
             : '') +
           (summary.byKind.track.failed > 0 ? ` (${summary.byKind.track.failed} failed)` : ''),
         `distinct tuples ${summary.planned}`,
+        ...(gatedGroups.size > 0 ? [`proposed        ${proposed} awaiting approval`] : []),
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,
         `skipped         ${skips.length}`,

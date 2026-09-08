@@ -3,7 +3,7 @@ import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
-import { EXPERIMENTAL_GROUPS, type Field } from '../rules/markers.js';
+import { ALL_GROUPS, type Field } from '../rules/markers.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
 import { readPackageVersion } from '../core/version.js';
 
@@ -16,7 +16,8 @@ export interface CommandDeps {
    * sweep, which is weekly, so without this the command would appear to do nothing.
    */
   applyNow: (rule: { kind: Field; artist: string; fromTitle: string }) => Promise<string>;
-  approvalMode: boolean;
+  /** Any rule at the `gated` tier — a proposal can exist without the legacy global. */
+  gatedRules: ReadonlySet<string>;
   dryRun: boolean;
   shadowStore: ShadowStore;
   shadowMode: boolean;
@@ -101,14 +102,14 @@ export const COMMAND_DEFINITION = {
     {
       type: 1,
       name: 'shadow',
-      description: 'What a disabled experimental rule would have caught',
+      description: 'What a rule that is off would have caught',
       options: [
         {
           type: 3,
           name: 'rule',
           description: 'Limit to one rule',
           required: false,
-          choices: EXPERIMENTAL_GROUPS.map((g) => ({ name: g, value: g })),
+          choices: ALL_GROUPS.map((g) => ({ name: g, value: g })),
         },
         { type: 4, name: 'page', description: '1-based page', required: false },
       ],
@@ -123,7 +124,7 @@ export const COMMAND_DEFINITION = {
           name: 'rule',
           description: 'Limit to one rule',
           required: false,
-          choices: EXPERIMENTAL_GROUPS.map((g) => ({ name: g, value: g })),
+          choices: ALL_GROUPS.map((g) => ({ name: g, value: g })),
         },
       ],
     },
@@ -185,14 +186,24 @@ export class Commands {
    * Replies rather than hiding: the command list is the same in both modes, so a missing command
    * would read as a broken bot instead of a mode that is off.
    */
+  /** Groups by tier, so the answer to "why is this not being corrected?" is on the status card. */
+  private tierLine(): string {
+    const gated = [...this.deps.gatedRules].sort();
+    const auto = [...this.deps.enabledRules].filter((r) => !this.deps.gatedRules.has(r)).sort();
+    return (
+      `${auto.length} auto${auto.length > 0 ? ` (${auto.join(', ')})` : ''}` +
+      `, ${gated.length} gated${gated.length > 0 ? ` (${gated.join(', ')})` : ''}`
+    );
+  }
+
   private requireApprovalMode(): string | undefined {
-    if (this.deps.approvalMode) return undefined;
+    if (this.deps.gatedRules.size > 0) return undefined;
     const pending = this.deps.approvals.pending().length;
     return (
-      'Approval mode is off — corrections apply unattended, so there is nothing to approve.' +
+      'No rule is gated — corrections apply unattended, so there is nothing to approve.' +
       (pending > 0
         ? ` ${pending} proposal(s) are still queued from an earlier run; the next sweep drains them.`
-        : ' Set APPROVAL_MODE=true and restart to turn it on.')
+        : ' Set a rule to `gated` in RULES and restart to turn it on.')
     );
   }
 
@@ -222,7 +233,8 @@ export class Commands {
     const pending = this.deps.approvals.pending().length;
     const lines = [
       `version     ${readPackageVersion()}`,
-      `mode        ${this.deps.approvalMode ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
+      `mode        ${this.deps.gatedRules.size > 0 ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
+      `rules       ${this.tierLine()}`,
       `phase       ${s?.phase ?? 'idle'}${s?.paused === true ? ' — PAUSED' : ''}`,
       `progress    ${s?.candidatesDone ?? 0}/${s?.candidatesTotal ?? 0} candidates`,
       `verified    ${counts.get('verified') ?? 0}`,
@@ -400,12 +412,12 @@ export class Commands {
 
   private shadowList(args: Record<string, string | number>): string {
     const raw = args['rule'] === undefined ? undefined : String(args['rule']);
-    if (raw !== undefined && !EXPERIMENTAL_GROUPS.includes(raw as never)) {
-      return `\`${raw}\` is not an experimental rule. Try: ${EXPERIMENTAL_GROUPS.join(', ')}`;
+    if (raw !== undefined && !ALL_GROUPS.includes(raw as never)) {
+      return `\`${raw}\` is not a rule. Try: ${ALL_GROUPS.join(', ')}`;
     }
     if (raw !== undefined && this.deps.enabledRules.has(raw)) {
-      // Shadow rows only exist for disabled rules, so an empty list here would read as "clean".
-      return `\`${raw}\` is already enabled, so it corrects for real and records no shadow hits.`;
+      // Shadow rows only exist for rules that are off, so an empty list would read as "clean".
+      return `\`${raw}\` is not off, so it corrects for real and records no shadow hits.`;
     }
 
     const rows = this.deps.shadowStore.list(raw);

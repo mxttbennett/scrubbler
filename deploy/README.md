@@ -109,13 +109,19 @@ queued edit without a decision. Clear the queue before deploying the old build:
 Skipping step 2 does not corrupt anything, but it applies edits you never approved — and Last.fm
 edits are irreversible.
 
-## Turning approval mode on or off
+## Changing a rule's tier
 
-The mode is read once at startup, so both directions need a restart. Switching it **off** is safe
-with proposals outstanding: the next cycle drains them through the ordinary path and retires their
-cards, because incremental discovery only sees new scrobbles and would otherwise leave those
-entities waiting for the weekly full sweep. Use `/scrub pause` for a live stop that needs no
-restart.
+Tiers are read once at startup, so any change needs a restart. `/scrub pause` is the live stop.
+
+Promoting a group to `gated` is safe — its candidates simply start arriving as cards instead of
+being written.
+
+**Demoting a group from `gated` to `auto` applies its outstanding proposals.** The next cycle drains
+them through the ordinary path and retires their cards, because incremental discovery only sees new
+scrobbles and would otherwise leave those entities waiting for the weekly full sweep. That is the
+same behaviour as turning `APPROVAL_MODE` off, but it is now reachable one group at a time — and
+those cards were never answered. Answer them first if that matters, because the writes are
+irreversible.
 
 ## Rolling back past custom replacements
 

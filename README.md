@@ -91,27 +91,46 @@ Guards, each with a named test in `test/rules/engine.test.ts`:
 
 ### Rule groups
 
-Set via `RULES_ENABLED` / `RULES_EXPERIMENTAL_ENABLED`. An unknown name is a startup error, so a
-typo cannot silently disable a group.
+Each group has a **tier**, set via `RULES` as `group:tier` pairs. An unknown group or tier is a
+startup error, so a typo cannot silently disable a group.
 
-| Group | Default | Applies to | Examples |
+| Tier | What it does |
+|---|---|
+| `auto` | Fires and applies, reporting afterwards |
+| `gated` | Fires, but every candidate becomes a Discord card with **Apply** / **Never**; nothing is written until you click |
+| `off` | Never fires. Set `SHADOW_MODE=true` to see what it *would* catch, for free and with no decisions |
+
+```sh
+RULES=remaster:auto,edition:auto,bonus:auto,live-album:gated
+```
+
+A group you do not name keeps the default in the table below. The ladder is deliberate: `off` plus
+shadow mode surveys a rule across the whole library at no cost, `gated` costs one paced page fetch
+and one click per candidate, `auto` costs nothing but supervision.
+
+`APPROVAL_MODE=true` is kept as shorthand for "supervise everything" — it promotes every `auto`
+group to `gated`. `RULES_ENABLED` / `RULES_EXPERIMENTAL_ENABLED` still work and map to `auto`, but
+they are deprecated and log a notice at startup; they cannot be combined with `RULES`.
+
+| Group | Default tier | Applies to | Examples |
 |---|---|---|---|
-| `remaster` | **on** | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)`, `(2019 Remastering)`, `(Expanded & Remastered)` |
-| `edition` | **on** | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)`, `(40th Anniversary Remaster)`, `(Remastered And Expanded)`, `(Remastered & Expanded Edition)` |
-| `bonus` | **on** | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Bonus Version)`, `(Explicit)`, `(Clean)` |
-| `feat-album` | off | album | `(feat. X)` on an *album* title — store cruft |
-| `feat-track` | off | track | `(feat. X)` on a *track* title — **deletes a real credit** |
-| `ep-single` | off | album | `- EP`, `- Single` |
-| `live-album` | off | album | `(Live)` on a release that only exists live — 14 in this library |
-| `live-track` | off | track | `- Live` — **merges with the studio take you also own** |
-| `version` | off | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
-| `mono-stereo` | off | track, album | `(Mono)`, `(Stereo)` |
+| `remaster` | `auto` | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)`, `(2019 Remastering)`, `(Expanded & Remastered)` |
+| `edition` | `auto` | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)`, `(40th Anniversary Remaster)`, `(Remastered And Expanded)`, `(Remastered & Expanded Edition)` |
+| `bonus` | `auto` | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Bonus Version)`, `(Explicit)`, `(Clean)` |
+| `feat-album` | `off` | album | `(feat. X)` on an *album* title — store cruft |
+| `feat-track` | `off` | track | `(feat. X)` on a *track* title — **deletes a real credit** |
+| `ep-single` | `off` | album | `- EP`, `- Single` |
+| `live-album` | `off` | album | `(Live)` on a release that only exists live — 14 in this library |
+| `live-track` | `off` | track | `- Live` — **merges with the studio take you also own** |
+| `version` | `off` | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
+| `mono-stereo` | `off` | track, album | `(Mono)`, `(Stereo)` |
 
 `- Album Version` sits with `- Single Version` and `- Radio Edit` rather than with the bonus
 markers: all three name *which recording* it is, so stripping them merges takes that differ.
 
-The experimental groups are off because they distinguish *different recordings*. Merging them loses
-real information and cannot be undone. `feat` is split so you can enable the safe album half without
+The groups defaulting to `off` do so because they distinguish *different recordings*. Merging them
+loses real information and cannot be undone — `gated` is the middle ground when you want them
+mostly, but not silently. `feat` is split so you can enable the safe album half without
 the lossy track half.
 
 ## Safety
