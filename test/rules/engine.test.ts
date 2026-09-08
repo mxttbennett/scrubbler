@@ -50,6 +50,10 @@ describe('cleanTitle — precision (must never touch)', () => {
     'Yellow Submarine - 2022 Mix',
     'Tomorrow Never Knows - Mono Mix Remaster',
     'Tomorrow Never Knows - take 1',
+    'Big Day Coming - Second Version',
+    'Song - Alternate Version',
+    'Song - Acoustic Version',
+    'Song - Instrumental',
   ];
 
   it.each(mustSurviveTracks)('leaves track %s alone', (title) => {
