@@ -1,4 +1,4 @@
-import { COLOR, Discord, fenceLines } from './discord.js';
+import { COLOR, Discord, type DiscordEmbedField, fenceLines } from './discord.js';
 
 export interface RunTotals {
   applied: number;
@@ -18,14 +18,25 @@ export interface FieldChange {
 
 export interface Correction {
   artist: string;
+  /** The tuple's identity, so a correction that only changed the album still names its track. */
+  track: string;
+  album: string;
   changes: FieldChange[];
   groups: string[];
   outcome: Outcome;
   error?: string;
 }
 
+export interface CorrectionGroup {
+  artist: string;
+  shared: { field: string; from: string; to: string } | undefined;
+  items: Correction[];
+  outcome: Outcome;
+}
+
 export interface Reporter {
   corrections(items: Correction[], totals: RunTotals): Promise<void>;
+  group(group: CorrectionGroup, totals: RunTotals): Promise<void>;
   summary(headline: string, lines: string[], totals: RunTotals): Promise<void>;
   report(error: unknown, context: string): Promise<void>;
 }
@@ -57,7 +68,26 @@ const OUTCOME_WORD: Record<Outcome, string> = {
 export function describeCorrection(c: Correction): string {
   const parts = c.changes.map((ch) => `${ch.field}: "${ch.from}" -> "${ch.to}"`);
   const tail = c.error === undefined ? '' : ` — ${c.error}`;
-  return `${MARK[c.outcome]} ${c.artist} — ${parts.join(' | ')} [${c.groups.join(',')}]${tail}`;
+  return `${MARK[c.outcome]} ${c.artist} — ${c.track} [${c.album}] — ${parts.join(' | ')} [${c.groups.join(',')}]${tail}`;
+}
+
+const FIELD_VALUE_LIMIT = 1024;
+
+/** Fits as many whole track names as the embed field allows, then says how many are left. */
+export function trackList(items: Correction[]): string {
+  const lines: string[] = [];
+  let size = 0;
+  for (const [i, item] of items.entries()) {
+    const line = `• ${escapeMd(item.track)}`;
+    const more = `\n… ${items.length - i} more`;
+    if (size + line.length + 1 + more.length > FIELD_VALUE_LIMIT) {
+      lines.push(`… ${items.length - i} more`);
+      break;
+    }
+    lines.push(line);
+    size += line.length + 1;
+  }
+  return lines.join('\n');
 }
 
 export class ConsoleAndDiscordReporter implements Reporter {
@@ -82,13 +112,43 @@ export class ConsoleAndDiscordReporter implements Reporter {
     });
   }
 
+  async group(g: CorrectionGroup, totals: RunTotals): Promise<void> {
+    for (const c of g.items) this.log(describeCorrection(c));
+    if (g.items.length === 0) return;
+    if (g.items.length === 1) {
+      await this.discord.send(this.single(g.items[0]!, totals));
+      return;
+    }
+    if (g.shared === undefined) {
+      await this.corrections(g.items, totals);
+      return;
+    }
+    const n = g.items.length;
+    await this.discord.send({
+      title: `${OUTCOME_WORD[g.outcome]} · ${g.artist} — ${n} tracks`,
+      color: OUTCOME_COLOR[g.outcome],
+      fields: [
+        {
+          name: g.shared.field.replace(/_/g, ' '),
+          value: `~~${escapeMd(g.shared.from)}~~\n**${escapeMd(g.shared.to)}**`,
+        },
+        { name: `tracks (${n})`, value: trackList(g.items) },
+        { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
+      ],
+      footer: { text: progressText(totals) },
+    });
+  }
+
   /** One correction gets real fields rather than a one-line code fence. */
   private single(c: Correction, totals: RunTotals) {
-    const fields = c.changes.map((ch) => ({
+    const fields: DiscordEmbedField[] = c.changes.map((ch) => ({
       name: ch.field.replace(/_/g, ' '),
       value: `~~${escapeMd(ch.from)}~~\n**${escapeMd(ch.to)}**`,
     }));
     if (c.error !== undefined) fields.push({ name: 'error', value: escapeMd(c.error) });
+    // Named unconditionally: an album-only correction otherwise renders identically for every track.
+    fields.push({ name: 'track', value: escapeMd(c.track), inline: true });
+    fields.push({ name: 'on album', value: escapeMd(c.album) || '—', inline: true });
     fields.push({ name: 'rule', value: c.groups.join(', ') || '—' });
     return {
       title: `${OUTCOME_WORD[c.outcome]} · ${c.artist}`,

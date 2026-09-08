@@ -23,6 +23,8 @@ const TOTALS = { planned: 3, applied: 1, verified: 1, unverified: 0, failed: 0 }
 
 const ONE = {
   artist: 'Fleetwood Mac',
+  track: 'Silver Springs - 2004 Remaster',
+  album: 'Rumours (Deluxe Edition)',
   changes: [
     { field: 'track_name', from: 'Silver Springs - 2004 Remaster', to: 'Silver Springs' },
     { field: 'album_name', from: 'Rumours (Deluxe Edition)', to: 'Rumours' },
@@ -40,7 +42,15 @@ describe('one message per correction', () => {
     const e = sent[0]!;
     expect(e.title).toBe('Corrected · Fleetwood Mac');
     expect(e.description).toBeUndefined();
-    expect(e.fields?.map((f) => f.name)).toEqual(['track name', 'album name', 'rule']);
+    // track + on album are always present: an album-only correction otherwise renders identically
+    // for every track on the album, which is the bug this fixes.
+    expect(e.fields?.map((f) => f.name)).toEqual([
+      'track name',
+      'album name',
+      'track',
+      'on album',
+      'rule',
+    ]);
     expect(e.fields?.[0]!.value).toContain('Silver Springs');
     expect(e.footer?.text).toContain('1 applied');
   });
@@ -92,5 +102,64 @@ describe('describeCorrection', () => {
     expect(describeCorrection({ ...ONE, outcome: 'unverified' })).toMatch(/^\? /);
     expect(describeCorrection({ ...ONE, outcome: 'planned' })).toMatch(/^· /);
     expect(describeCorrection(ONE)).toContain('"Silver Springs - 2004 Remaster" -> "Silver Springs"');
+  });
+});
+
+describe('grouped corrections', () => {
+  const albumOnly = (track: string) => ({
+    artist: 'The Replacements',
+    track,
+    album: 'Let It Be (Expanded)',
+    changes: [{ field: 'album_name', from: 'Let It Be (Expanded)', to: 'Let It Be' }],
+    groups: ['edition'],
+    outcome: 'verified' as const,
+  });
+
+  it('collapses an album rename across tracks into one embed naming them', async () => {
+    const { sent, reporter } = spy();
+    const items = ['Bastards of Young', 'Left of the Dial', 'Answering Machine'].map(albumOnly);
+    await reporter.group(
+      { artist: 'The Replacements', shared: { field: 'album_name', from: 'Let It Be (Expanded)', to: 'Let It Be' }, items, outcome: 'verified' },
+      TOTALS,
+    );
+
+    expect(sent).toHaveLength(1);
+    const e = sent[0]!;
+    expect(e.title).toBe('Corrected · The Replacements — 3 tracks');
+    expect(e.fields?.map((f) => f.name)).toEqual(['album name', 'tracks (3)', 'rule']);
+    expect(e.fields?.[1]!.value).toContain('Bastards of Young');
+    expect(e.fields?.[1]!.value).toContain('Answering Machine');
+  });
+
+  it('truncates a long track list inside the embed field limit', async () => {
+    const { sent, reporter } = spy();
+    const items = Array.from({ length: 200 }, (_, i) => albumOnly(`A very long track title number ${i}`));
+    await reporter.group(
+      { artist: 'X', shared: { field: 'album_name', from: 'a', to: 'b' }, items, outcome: 'verified' },
+      TOTALS,
+    );
+    const list = sent[0]!.fields![1]!.value;
+    expect(list.length).toBeLessThanOrEqual(1024);
+    expect(list).toContain('more');
+  });
+
+  it('falls back to per-item reporting when the group shares no single change', async () => {
+    const { sent, reporter } = spy();
+    const items = [albumOnly('a'), { ...albumOnly('b'), changes: [{ field: 'track_name', from: 'b - Remastered', to: 'b' }] }];
+    await reporter.group({ artist: 'X', shared: undefined, items, outcome: 'verified' }, TOTALS);
+
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.title).toBe('2 corrections');
+    expect(sent[0]!.description).toContain('```');
+  });
+
+  it('renders a one-track group as the single-correction embed', async () => {
+    const { sent, reporter } = spy();
+    await reporter.group(
+      { artist: 'X', shared: { field: 'album_name', from: 'a', to: 'b' }, items: [albumOnly('solo')], outcome: 'verified' },
+      TOTALS,
+    );
+    expect(sent[0]!.title).toBe('Corrected · The Replacements');
+    expect(sent[0]!.fields?.some((f) => f.name === 'track')).toBe(true);
   });
 });

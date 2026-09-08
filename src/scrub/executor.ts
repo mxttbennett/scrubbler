@@ -150,6 +150,8 @@ export class Executor {
     const record = (edit: PlannedEdit, outcome: Outcome, error?: string) => {
       pending.push({
         artist: edit.original.artist_name,
+        track: edit.original.track_name,
+        album: edit.original.album_name,
         changes: changedFields(edit).map((f) => ({
           field: f,
           from: edit.original[f],
