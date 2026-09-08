@@ -19,6 +19,11 @@ const envSchema = z.object({
   DB_PATH: z.string().default('.data/scrubbler.sqlite'),
   DISCORD_BOT_TOKEN: z.string().optional(),
   DISCORD_CHANNEL_ID: z.string().optional(),
+  DISCORD_OWNER_ID: z.string().optional(),
+  DISCORD_GUILD_ID: z.string().optional(),
+  APPROVAL_MODE: z.string().default('false'),
+  APPROVAL_TTL_HOURS: z.string().default('168'),
+  GATEWAY_ALERT_MINUTES: z.string().default('15'),
   DIGEST_EVERY: z.string().default('1'),
   DRY_RUN: z.string().default('true'),
   RULES_ENABLED: z.string().default(DEFAULT_ENABLED.join(',')),
@@ -44,6 +49,12 @@ export interface Config {
   dbPath: string;
   discordBotToken: string | undefined;
   discordChannelId: string | undefined;
+  discordOwnerId: string | undefined;
+  discordGuildId: string | undefined;
+  /** Read once at startup: the worker never re-reads it, so switching modes needs a restart. */
+  approvalMode: boolean;
+  approvalTtlHours: number;
+  gatewayAlertMinutes: number;
   digestEvery: number;
   dryRun: boolean;
   enabledGroups: Set<GroupName>;
@@ -103,6 +114,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   const e = parsed.data;
 
+  const approvalMode = parseBool(e.APPROVAL_MODE, 'APPROVAL_MODE');
+  if (approvalMode) {
+    // A proposal nobody can see or click is worse than no approval gate at all.
+    const missing = (
+      [
+        ['DISCORD_BOT_TOKEN', e.DISCORD_BOT_TOKEN],
+        ['DISCORD_CHANNEL_ID', e.DISCORD_CHANNEL_ID],
+        ['DISCORD_OWNER_ID', e.DISCORD_OWNER_ID],
+        ['DISCORD_GUILD_ID', e.DISCORD_GUILD_ID],
+      ] as const
+    )
+      .filter(([, value]) => value === undefined || value.trim() === '')
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`APPROVAL_MODE=true requires ${missing.join(', ')}`);
+    }
+  }
+
   const enabledGroups = new Set<GroupName>([
     ...parseGroups(e.RULES_ENABLED, 'RULES_ENABLED', false),
     ...parseGroups(e.RULES_EXPERIMENTAL_ENABLED, 'RULES_EXPERIMENTAL_ENABLED', true),
@@ -115,6 +144,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dbPath: e.DB_PATH,
     discordBotToken: e.DISCORD_BOT_TOKEN,
     discordChannelId: e.DISCORD_CHANNEL_ID,
+    discordOwnerId: e.DISCORD_OWNER_ID,
+    discordGuildId: e.DISCORD_GUILD_ID,
+    approvalMode,
+    approvalTtlHours: parsePositiveInt(e.APPROVAL_TTL_HOURS, 'APPROVAL_TTL_HOURS'),
+    gatewayAlertMinutes: parsePositiveInt(e.GATEWAY_ALERT_MINUTES, 'GATEWAY_ALERT_MINUTES'),
     digestEvery: parsePositiveInt(e.DIGEST_EVERY, 'DIGEST_EVERY'),
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
     enabledGroups,

@@ -1,4 +1,4 @@
-import { COLOR, Discord, type DiscordEmbedField, fenceLines } from './discord.js';
+import { COLOR, Discord, type DiscordEmbed, type DiscordEmbedField, fenceLines } from './discord.js';
 
 export interface RunTotals {
   applied: number;
@@ -107,6 +107,38 @@ export function trackList(items: Correction[]): string {
   return lines.join('\n');
 }
 
+/**
+ * Shared with proposals so an approval card and the report it becomes look the same — the only
+ * difference is the buttons and the footer.
+ */
+export function groupEmbed(g: CorrectionGroup, footer: string): DiscordEmbed {
+  const n = g.items.length;
+  const shared = g.shared;
+  return {
+    title: embedTitle(g.outcome, g.kind, n),
+    color: OUTCOME_COLOR[g.outcome],
+    description: `**${escapeMd(g.artist)}**`,
+    fields: [
+      ...(shared === undefined
+        ? []
+        : [
+            {
+              name: shared.field.replace(/_/g, ' '),
+              value: `~~${escapeMd(shared.from)}~~\n**${escapeMd(shared.to)}**`,
+            },
+          ]),
+      ...(n > 1 ? [{ name: `tracks (${n})`, value: trackList(g.items) }] : []),
+      { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
+    ],
+    ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
+    footer: { text: footer },
+  };
+}
+
+export function progressLine(totals: RunTotals): string {
+  return progressText(totals);
+}
+
 export class ConsoleAndDiscordReporter implements Reporter {
   constructor(
     private readonly discord: Discord,
@@ -140,22 +172,7 @@ export class ConsoleAndDiscordReporter implements Reporter {
       await this.corrections(g.items, totals);
       return;
     }
-    const n = g.items.length;
-    await this.discord.send({
-      title: embedTitle(g.outcome, g.kind, n),
-      color: OUTCOME_COLOR[g.outcome],
-      description: `**${escapeMd(g.artist)}**`,
-      fields: [
-        {
-          name: g.shared.field.replace(/_/g, ' '),
-          value: `~~${escapeMd(g.shared.from)}~~\n**${escapeMd(g.shared.to)}**`,
-        },
-        { name: `tracks (${n})`, value: trackList(g.items) },
-        { name: 'rule', value: [...new Set(g.items.flatMap((i) => i.groups))].join(', ') || '—' },
-      ],
-      ...(g.imageUrl === undefined ? {} : { thumbnail: { url: g.imageUrl } }),
-      footer: { text: progressText(totals) },
-    });
+    await this.discord.send(groupEmbed(g, progressText(totals)));
   }
 
   /** One correction gets real fields rather than a one-line code fence. */

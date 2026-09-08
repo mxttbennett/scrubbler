@@ -10,9 +10,21 @@ import { eq } from 'drizzle-orm';
 import { Executor } from './executor.js';
 import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
+import type { Approvals } from './approvals.js';
 import type { Candidate } from './types.js';
 
-export interface WorkerHooks {
+export interface WorkerDeps {
+  config: Config;
+  db: Db;
+  session: Session;
+  planner: Planner;
+  resolver: Resolver;
+  editor: Editor;
+  albumEditor: AlbumEditor;
+  reporter: Reporter;
+  albumArt: (artist: string, album: string) => Promise<string | undefined>;
+  /** Always present: the unattended path needs it to drain a queue left by an earlier mode. */
+  approvals: Approvals;
   sleep?: (ms: number) => Promise<void>;
 }
 
@@ -21,21 +33,30 @@ export class ScrubWorker {
   private stopped = false;
   private inFlight: Promise<void> | undefined;
   private executor: Executor | undefined;
+  private readonly config: Config;
+  private readonly db: Db;
+  private readonly session: Session;
+  private readonly planner: Planner;
+  private readonly resolver: Resolver;
+  private readonly editor: Editor;
+  private readonly albumEditor: AlbumEditor;
+  private readonly reporter: Reporter;
+  private readonly albumArt: (artist: string, album: string) => Promise<string | undefined>;
+  private readonly approvals: Approvals;
   private readonly sleep: (ms: number) => Promise<void>;
 
-  constructor(
-    private readonly config: Config,
-    private readonly db: Db,
-    private readonly session: Session,
-    private readonly planner: Planner,
-    private readonly resolver: Resolver,
-    private readonly editor: Editor,
-    private readonly albumEditor: AlbumEditor,
-    private readonly reporter: Reporter,
-    private readonly albumArt: (artist: string, album: string) => Promise<string | undefined>,
-    hooks: WorkerHooks = {},
-  ) {
-    this.sleep = hooks.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  constructor(deps: WorkerDeps) {
+    this.config = deps.config;
+    this.db = deps.db;
+    this.session = deps.session;
+    this.planner = deps.planner;
+    this.resolver = deps.resolver;
+    this.editor = deps.editor;
+    this.albumEditor = deps.albumEditor;
+    this.reporter = deps.reporter;
+    this.albumArt = deps.albumArt;
+    this.approvals = deps.approvals;
+    this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
   start(): void {
@@ -56,6 +77,27 @@ export class ScrubWorker {
     await this.inFlight;
   }
 
+  /** Live, unlike the mode: read at every candidate boundary so /scrub pause needs no restart. */
+  private isPaused(): boolean {
+    const row = this.db
+      .select()
+      .from(schema.sweepState)
+      .where(eq(schema.sweepState.id, 1))
+      .get();
+    return row?.paused === true;
+  }
+
+  private setState(patch: Partial<typeof schema.sweepState.$inferInsert>): void {
+    this.db
+      .insert(schema.sweepState)
+      .values({ id: 1, ...patch, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: schema.sweepState.id,
+        set: { ...patch, updatedAt: new Date() },
+      })
+      .run();
+  }
+
   async runOnce(): Promise<void> {
     await this.session.ensureSession();
     const rules = await readExistingRules(this.session, (m) => console.log(m));
@@ -73,12 +115,27 @@ export class ScrubWorker {
     });
     this.executor = executor;
 
-    // Apply anything a previous run resolved but never wrote, before spending hours re-scraping.
-    const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
-    const carried = token === undefined ? [] : executor.resumable(token);
-    if (carried.length > 0) {
-      console.log(`resuming ${carried.length} tuple(s) planned by an earlier run`);
-      await executor.run(carried, rules.keys);
+    // Approval mode must never write a carried row without a decision: propose instead of apply.
+    if (this.config.approvalMode) {
+      const expired = await this.approvals.expire();
+      if (expired > 0) console.log(`expired ${expired} unanswered proposal(s)`);
+      const carried = await this.approvals.carryOver();
+      if (carried.proposed + carried.failed > 0) {
+        console.log(
+          `carried over: ${carried.proposed} proposed, ${carried.duplicate} already pending, ${carried.failed} failed to post`,
+        );
+      }
+    } else {
+      // Mode was flipped off with proposals outstanding; incremental sweeps would never revisit them.
+      const drained = await this.approvals.drainOnModeOff();
+      if (drained > 0) console.log(`drained ${drained} pending proposal(s) into the normal path`);
+      // Apply anything a previous run resolved but never wrote, before hours of re-scraping.
+      const token = await this.session.freshCsrfToken(`/user/${this.config.username}/library`);
+      const carried = token === undefined ? [] : executor.resumable(token);
+      if (carried.length > 0) {
+        console.log(`resuming ${carried.length} tuple(s) planned by an earlier run`);
+        await executor.applyCarried(carried, rules.keys);
+      }
     }
 
     const state = this.db.select().from(schema.sweepState).where(eq(schema.sweepState.id, 1)).get();
@@ -103,19 +160,32 @@ export class ScrubWorker {
     }
     console.log(`sweep complete: ${candidates.length} candidates`);
 
+    this.setState({ phase: 'resolving', candidatesDone: 0, candidatesTotal: candidates.length });
+
+    const approvals = this.config.approvalMode ? this.approvals : undefined;
     let albumApplied = 0;
+    let proposed = 0;
     const { skips } = await this.resolver.resolve(candidates, {
+      shouldStop: () => this.stopped || this.isPaused(),
       onGroup: async (group) => {
+        if (approvals !== undefined) {
+          const result = await approvals.propose(group);
+          if (result === 'proposed') proposed++;
+          return;
+        }
         const before = executor.streamedSummary.applied;
         await executor.applyGroup(group, rules.keys);
         if (group.kind === 'album' && executor.streamedSummary.applied > before) albumApplied++;
       },
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
+        this.setState({ candidatesDone: doneCount, candidatesTotal: total });
         console.log(
           `[${doneCount}/${total}] ${candidate.kind} ${candidate.artist} — ${candidate.title} · ` +
-            `${albumApplied} albums · ${edits} tuples · ${s.applied} applied · ` +
-            `${s.verified} verified · ${s.unverified} unverified · ${s.failed} failed`,
+            (approvals === undefined
+              ? `${albumApplied} albums · ${edits} tuples · ${s.applied} applied · ` +
+                `${s.verified} verified · ${s.unverified} unverified · ${s.failed} failed`
+              : `${proposed} proposed · ${edits} tuples`),
         );
       },
     });

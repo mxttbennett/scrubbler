@@ -32,6 +32,12 @@ export interface ExecutionSummary {
   capped: boolean;
 }
 
+export type ResumableStatus = 'planned' | 'awaiting_approval';
+
+export type ResumableEdit =
+  | { kind: 'track'; id: number; edit: PlannedEdit }
+  | { kind: 'album'; id: number; edit: PlannedAlbumEdit };
+
 export class Executor {
   private readonly sleep: (ms: number) => Promise<void>;
   private stopRequested = false;
@@ -66,17 +72,41 @@ export class Executor {
    * Rebuilds edits left as `planned` by an interrupted run. The CSRF token comes from the session
    * cookie rather than the page, so one fresh token serves every resumed write.
    */
-  resumable(csrfToken: string): PlannedEdit[] {
+  /**
+   * Discriminated by kind: an album row carries '' for every track field, so rebuilding one as a
+   * PlannedEdit would POST a track rename with an empty track name.
+   */
+  resumable(csrfToken: string, status: ResumableStatus = 'planned'): ResumableEdit[] {
     const rows = this.db
       .select()
       .from(schema.appliedEdits)
-      .where(eq(schema.appliedEdits.status, 'planned'))
+      .where(eq(schema.appliedEdits.status, status))
       .all();
 
-    const out: PlannedEdit[] = [];
+    const out: ResumableEdit[] = [];
     for (const r of rows) {
-      if (r.timestamp === null || r.action === null || r.refererPath === null) continue;
+      if (r.action === null || r.refererPath === null) continue;
+      if (r.kind === 'album') {
+        out.push({
+          kind: 'album',
+          id: r.id,
+          edit: {
+            artist: r.albumArtistNameOriginal,
+            from: r.albumNameOriginal,
+            to: r.albumName,
+            csrfToken,
+            action: r.action,
+            refererPath: r.refererPath,
+            groups: r.groups === '' ? [] : r.groups.split(','),
+          },
+        });
+        continue;
+      }
+      if (r.timestamp === null) continue;
       out.push({
+        kind: 'track',
+        id: r.id,
+        edit: {
         original: {
           track_name: r.trackNameOriginal,
           artist_name: r.artistNameOriginal,
@@ -94,6 +124,7 @@ export class Executor {
         action: r.action,
         refererPath: r.refererPath,
         groups: r.groups === '' ? [] : (r.groups.split(',') as PlannedEdit['groups']),
+        },
       });
     }
     return out;
@@ -253,9 +284,24 @@ export class Executor {
       .get();
   }
 
+  /** The approval row's buttons address ledger rows by id, so the caller needs the id back. */
+  ledgerId(original: Tuple): number | undefined {
+    return this.ledgerRow(original)?.id;
+  }
+
   /** Streams one resolved tuple straight to a write, so corrections land during resolution. */
   async applyOne(edit: PlannedEdit, existingRuleKeys: ReadonlySet<string>): Promise<void> {
     await this.run([edit], existingRuleKeys, this.streamed);
+  }
+
+  async applyCarried(
+    carried: ResumableEdit[],
+    existingRuleKeys: ReadonlySet<string>,
+  ): Promise<void> {
+    for (const item of carried) {
+      if (item.kind === 'album') await this.applyOneAlbum(item.edit);
+      else await this.run([item.edit], existingRuleKeys, this.streamed);
+    }
   }
 
   /** Set while a group is applying, so its members report as one card instead of one card each. */
