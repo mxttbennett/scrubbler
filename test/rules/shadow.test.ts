@@ -10,9 +10,9 @@ function rules(title: string, field: 'track' | 'album', enabled = ENABLED): stri
 
 describe('shadowVerdicts', () => {
   it('reports what a disabled rule would have done', () => {
-    const v = shadowVerdicts('all apologies - live', 'track', ENABLED);
+    const v = shadowVerdicts('all apologies (Live)', 'track', ENABLED);
 
-    expect(v).toEqual([{ rule: 'live-track', wouldBe: 'all apologies' }]);
+    expect(v).toEqual([{ rule: 'live-track', wouldBe: 'all apologies - Live' }]);
   });
 
   it('says nothing for a title no rule touches', () => {
@@ -29,11 +29,14 @@ describe('shadowVerdicts', () => {
   });
 
   it('does report when a disabled rule would go further than the stable one', () => {
-    const v = shadowVerdicts('Nevermind (Deluxe Edition) - Live', 'track', ENABLED);
+    const v = shadowVerdicts('Nevermind (Deluxe Edition) (Live)', 'track', ENABLED);
 
-    // The edition group already gets one segment; live-track would take the other too.
+    // Only the trailing segment is ever examined, so reformatting it leaves the earlier one in
+    // place — the live label is content now, and the edition marker is no longer trailing.
     expect(v.map((x) => x.rule)).toContain('live-track');
-    expect(v.find((x) => x.rule === 'live-track')?.wouldBe).not.toContain('Live');
+    expect(v.find((x) => x.rule === 'live-track')?.wouldBe).toBe(
+      'Nevermind (Deluxe Edition) - Live',
+    );
   });
 
   it('never reports a rule that does not apply to the field', () => {
@@ -47,11 +50,11 @@ describe('shadowVerdicts', () => {
   it('never reports a rule that is already enabled', () => {
     const withLive = new Set<GroupName>([...DEFAULT_ENABLED, 'live-track']);
 
-    expect(rules('all apologies - live', 'track', ENABLED)).toContain('live-track');
-    expect(rules('all apologies - live', 'track', withLive)).not.toContain('live-track');
+    expect(rules('all apologies (Live)', 'track', ENABLED)).toContain('live-track');
+    expect(rules('all apologies (Live)', 'track', withLive)).not.toContain('live-track');
   });
 
-  it('respects the anchoring rule, so a segment that merely starts with Live is untouched', () => {
+  it('leaves a title alone when Live is not a bracketed trailing segment', () => {
     for (const [title, field] of [
       ['The King of Limbs: Live from the Basement', 'album'],
       ['Live at Leeds', 'album'],
@@ -62,13 +65,13 @@ describe('shadowVerdicts', () => {
     }
   });
 
-  it('reports each rule separately when two disabled ones would both fire', () => {
-    const v = shadowVerdicts('Song (feat. Someone) - Live', 'track', ENABLED);
+  it("gives each verdict that rule's own partial result", () => {
+    const v = shadowVerdicts('Song (feat. Someone) (Live)', 'track', ENABLED);
     const byRule = new Map(v.map((x) => [x.rule, x.wouldBe]));
 
     // Single-rule by construction: each verdict is that rule's own partial result, because
-    // cleanTitle can only strip what its enabled set contains.
-    expect(byRule.get('live-track')).toBe('Song (feat. Someone)');
+    // cleanTitle can only act on what its enabled set contains.
+    expect(byRule.get('live-track')).toBe('Song (feat. Someone) - Live');
     expect([...byRule.keys()]).toContain('live-track');
   });
 
@@ -80,7 +83,7 @@ describe('shadowVerdicts', () => {
 
   it('consults a custom override, so a rule cannot claim a title the user renamed', () => {
     const lookup = () => 'Renamed';
-    const v = shadowVerdicts('all apologies - live', 'track', ENABLED, {
+    const v = shadowVerdicts('all apologies (Live)', 'track', ENABLED, {
       artist: 'Nirvana',
       lookup,
     });

@@ -117,6 +117,30 @@ queued edit without a decision. Clear the queue before deploying the old build:
 Skipping step 2 does not corrupt anything, but it applies edits you never approved — and Last.fm
 edits are irreversible.
 
+## Changing what a rule *means*
+
+Changing a rule's tier is one thing; changing the edit a rule produces is another. Outstanding
+proposals carry the edit computed under the **old** rule — `Approvals.approve()` rebuilds from the
+ledger row, and its `stillThere` check confirms the entity is unchanged, not that the rule still
+gives the same answer. Nor does waiting help: `expire()` returns the rows to `planned` and
+`carryOver` re-proposes them from the same stored values, so the old edit is re-posted indefinitely.
+
+So a rule-semantics change needs the stale proposals dropped, **with the service stopped** — a card
+is clickable until it is gone:
+
+```sh
+ssh ubuntu@<host> 'sudo systemctl stop scrubbler'          # drains in-flight work
+# snapshot (see Every deploy)
+ssh ubuntu@<host> 'cd /opt/scrubbler && node deploy/repropose-stale.mjs live-track'           # dry run
+ssh ubuntu@<host> 'cd /opt/scrubbler && node deploy/repropose-stale.mjs live-track --apply'
+# deploy the new build, then start
+```
+
+The script deletes the `approvals`, `approval_edits` and `applied_edits` rows together, so nothing
+carries the old target forward and the next full sweep re-resolves the entity. It cannot retire the
+Discord cards (no token), so the orphaned messages are cleared by hand. If shadow rows exist for the
+rule, `/scrub shadow-clear <rule>` drops their stale verdicts.
+
 ## Changing a rule's tier
 
 Tiers are read once at startup, so any change needs a restart. `/scrub pause` is the live stop.

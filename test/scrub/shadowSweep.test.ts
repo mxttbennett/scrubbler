@@ -32,7 +32,7 @@ describe('shadow hits during discovery', () => {
   it('reports an entity it does NOT nominate as a candidate', async () => {
     const { hits, onShadow } = collect();
     const planner = new Planner(
-      fakeApi([], [{ name: 'all apologies - live', artist: 'Nirvana' }]),
+      fakeApi([], [{ name: 'all apologies (Live)', artist: 'Nirvana' }]),
       'u',
       ENABLED,
       undefined,
@@ -50,8 +50,8 @@ describe('shadow hits during discovery', () => {
         rule: 'live-track',
         kind: 'track',
         artist: 'Nirvana',
-        title: 'all apologies - live',
-        wouldBe: 'all apologies',
+        title: 'all apologies (Live)',
+        wouldBe: 'all apologies - Live',
       },
     ]);
   });
@@ -130,7 +130,7 @@ describe('shadow hits during discovery', () => {
       fakeApi(
         [],
         [],
-        [{ artist: 'Nirvana', track: 'all apologies - live', album: 'Unplugged', uts: 100 }],
+        [{ artist: 'Nirvana', track: 'all apologies (Live)', album: 'Unplugged', uts: 100 }],
       ),
       'u',
       ENABLED,
@@ -142,12 +142,12 @@ describe('shadow hits during discovery', () => {
 
     await planner.sweepIncremental(0);
 
-    expect(hits.map((h) => h.title)).toEqual(['all apologies - live']);
+    expect(hits.map((h) => h.title)).toEqual(['all apologies (Live)']);
   });
 
   it('stays silent when no hook is registered, so shadow mode off costs nothing', async () => {
     const planner = new Planner(
-      fakeApi([], [{ name: 'all apologies - live', artist: 'Nirvana' }]),
+      fakeApi([], [{ name: 'all apologies (Live)', artist: 'Nirvana' }]),
       'u',
       ENABLED,
       undefined,

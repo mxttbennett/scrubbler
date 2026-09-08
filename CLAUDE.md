@@ -24,6 +24,11 @@ These are the things a newcomer gets wrong. Each one was found the hard way.
   full-segment anchoring distinguishes `(Live)` from `(Live in Rotterdam 1984)`. The upstream
   userscript's `detectSuffixPatterns` heuristic is the anti-pattern: it works only because a human
   ticks each box.
+- **That rule governs *stripping*. A lossless rewrite is a separate operation.** `DASH_NORMALIZED`
+  reformats a track's `(Live …)` into `- Live …`, matching on a leading marker rather than the whole
+  segment — legitimate because every character of the qualifier survives, which is the reason the
+  anchoring rule exists. A group listed there never strips, so the two operations cannot blur. The
+  library already held both shapes of the same gig, and the dash form is the one nothing touches.
 - **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
   canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
   stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.

@@ -1,4 +1,4 @@
-import { type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
+import { DASH_NORMALIZED, type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
 
 export interface CleanResult {
   clean: string;
@@ -25,6 +25,8 @@ const DELIMITERS = [
 interface Tail {
   head: string;
   segment: string;
+  /** Which delimiter opened this tail: a dash tail is already the normalized form. */
+  open: string;
 }
 
 /** A dash inside brackets is not a tail: "[2011 - Remaster]" would otherwise split at the dash. */
@@ -58,7 +60,7 @@ function splitTail(title: string): Tail | null {
     if (!balanced(segment)) continue;
 
     bestIndex = index;
-    best = { head: title.slice(0, index), segment };
+    best = { head: title.slice(0, index), segment, open };
   }
 
   return best;
@@ -71,6 +73,7 @@ function hasAlphanumeric(value: string): boolean {
 function matchOne(segment: string, field: Field, enabled: ReadonlySet<GroupName>): GroupName | null {
   for (const [name, group] of Object.entries(MARKER_GROUPS) as [GroupName, typeof MARKER_GROUPS[GroupName]][]) {
     if (!enabled.has(name) || !group.appliesTo.includes(field)) continue;
+    if (DASH_NORMALIZED[name] !== undefined) continue;
     if (group.patterns.some((pattern) => pattern.test(segment))) return name;
   }
   return null;
@@ -117,6 +120,31 @@ function matchGroup(
   return found;
 }
 
+/**
+ * The group that would reformat this segment into a dash suffix, or null.
+ *
+ * A compound is excluded deliberately: rewriting "Live; 2001 Remaster" would preserve the remaster
+ * label the compound rule exists to remove, so such a segment is left alone instead.
+ */
+function normalizingGroup(
+  segment: string,
+  field: Field,
+  enabled: ReadonlySet<GroupName>,
+): GroupName | null {
+  if (COMPOUND_SEPARATOR.test(segment)) return null;
+  for (const name of Object.keys(DASH_NORMALIZED) as GroupName[]) {
+    if (!enabled.has(name) || !MARKER_GROUPS[name].appliesTo.includes(field)) continue;
+    if (DASH_NORMALIZED[name]!.marker.test(segment.trim())) return name;
+  }
+  return null;
+}
+
+/** The segment with its leading marker re-cased to the canonical spelling. */
+function normalized(segment: string, group: GroupName): string {
+  const { marker, canonical } = DASH_NORMALIZED[group]!;
+  return segment.trim().replace(marker, canonical);
+}
+
 /** Returns null when the title should be left untouched; never returns a casing-only change. */
 export function cleanTitle(
   title: string,
@@ -141,16 +169,28 @@ export function cleanTitle(
     if (!tail) break;
 
     const matched = matchGroup(tail.segment, field, enabled);
+    const normalizing = matched === null ? normalizingGroup(tail.segment, field, enabled) : null;
     // A head that also ends in a year makes this a range ("The Beatles 1967 - 1970"), not cruft.
     const isContinuation =
       matched === null &&
+      normalizing === null &&
       passes > 0 &&
       BARE_YEAR.test(tail.segment) &&
       !ENDS_IN_YEAR.test(tail.head);
-    if (matched === null && !isContinuation) break;
+    if (matched === null && normalizing === null && !isContinuation) break;
 
     const head = tail.head.trimEnd();
     if (Array.from(head).length < 2 || !hasAlphanumeric(head)) break;
+
+    if (normalizing !== null) {
+      // Already the dash form: rewriting is a no-op, and recording it would mistag an earlier strip.
+      if (tail.open === ' - ') break;
+      current = `${head} - ${normalized(tail.segment, normalizing)}`;
+      passes += 1;
+      if (!groups.includes(normalizing)) groups.push(normalizing);
+      // Terminal: the result still ends in a Live-prefixed segment and would re-match itself.
+      break;
+    }
 
     current = head;
     passes += 1;

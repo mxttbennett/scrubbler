@@ -137,7 +137,7 @@ they are deprecated and log a notice at startup; they cannot be combined with `R
 | `feat-track` | `off` | track | `(feat. X)` on a *track* title — **deletes a real credit** |
 | `ep-single` | `off` | album | `- EP`, `- Single` |
 | `live-album` | `off` | album | `(Live)` on a release that only exists live — 14 in this library |
-| `live-track` | `off` | track | `- Live` — **merges with the studio take you also own** |
+| `live-track` | `off` | track | `(live)`, `(Live at …)` → `- Live …` — **standardises the label rather than removing it** |
 | `version` | `off` | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
 | `mono-stereo` | `off` | track, album | `(Mono)`, `(Stereo)` |
 
@@ -270,15 +270,16 @@ sweep reports what each **disabled** rule would have changed, in a violet card, 
 ```
 Would correct — live-track
 Nirvana ↗
-  track name   all apologies - live ↗
-               all apologies
-  rule         `live-track` is off — set RULES_EXPERIMENTAL_ENABLED to turn it on
+  track name   all apologies (Live) ↗
+               all apologies - Live
+  rule         `live-track` is off — set it to `gated` or `auto` in RULES to turn it on
   nothing was changed · 137 more recorded, see /scrub shadow
 ```
 
-Measured against a real library, which is the point: `live-track` would touch **138 tracks** whose
-studio takes are also in the library, `feat-track` **272**, `feat-album` **20**. Those numbers are
-the argument for looking first.
+Measured against a real library, which is the point: `feat-track` would touch **272** tracks,
+`feat-album` **20**. `live-track` no longer removes anything — it rewrites a bracketed live label
+into the dash form the library already uses elsewhere — so its hits are renames, not merges. Those
+numbers are the argument for looking first.
 
 - One card per hit, **capped per sweep** (`SHADOW_MAX_PER_SWEEP`, 50). Everything is recorded either
   way; the cap only delays announcements, and the rest go out on the next cycle.
