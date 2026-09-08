@@ -41,6 +41,36 @@ function group(
   };
 }
 
+/**
+ * The words a label builds an edition name from. Each is only ever matched as part of a *whole*
+ * trailing segment, which is why "Love Deluxe" and the album simply called "Deluxe" are untouched —
+ * they have no trailing segment at all.
+ */
+const EDITION_WORDS = [
+  String.raw`(?:super\s+)?deluxe`,
+  String.raw`expanded`,
+  String.raw`legacy`,
+  String.raw`special`,
+  String.raw`definitive`,
+  String.raw`collector'?s`,
+  String.raw`japanese`,
+  String.raw`remastered`,
+  String.raw`reissue`,
+  String.raw`anniversary`,
+] as const;
+
+/**
+ * An optional ordinal anniversary, then one or more edition words in any order, then an optional
+ * "edition"/"version". Covers "Deluxe", "Expanded Deluxe Edition", "30th Anniversary Super Deluxe"
+ * and combinations no label has shipped yet.
+ */
+function editionOrders(): string {
+  const word = `(?:${EDITION_WORDS.join('|')})`;
+  // A bare ordinal prefix, so "50th Anniversary" stands alone as one part of a compound.
+  const ordinal = String.raw`(?:\d+(?:st|nd|rd|th)\s+)?`;
+  return `${ordinal}${word}(?:\\s+${word})*(?:\\s+(?:edition|version))?`;
+}
+
 /** Qualifiers that appear in front of a remaster claim; each is store cruft on its own too. */
 const REMASTER_QUALIFIERS = ['digital', 'hd', 'expanded', 'deluxe', 'super deluxe'] as const;
 
@@ -85,20 +115,11 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`remastered\s+original\s+album`,
   ]),
 
+  // Generated for the same reason as remaster: the words combine freely ("Expanded Deluxe Edition",
+  // "30th Anniversary Super Deluxe") and hand-listing the combinations kept missing one.
   edition: group(['track', 'album'], false, [
-    String.raw`deluxe(?:\s+(?:edition|version))?`,
-    String.raw`super\s+deluxe(?:\s+(?:edition|version))?`,
-    String.raw`expanded(?:\s+(?:edition|version))?`,
-    String.raw`collector'?s\s+edition`,
-    String.raw`special\s+edition`,
-    String.raw`legacy\s+edition`,
-    String.raw`definitive\s+edition`,
-    String.raw`anniversary\s+edition`,
-    String.raw`\d+(?:st|nd|rd|th)\s+anniversary(?:\s+deluxe)?(?:\s+(?:edition|version))?`,
+    editionOrders(),
     String.raw`bonus\s+tracks?\s+version`,
-    String.raw`japanese\s+edition`,
-    String.raw`reissue`,
-    String.raw`remastered\s+deluxe\s+edition`,
     String.raw`expanded\s+${YEAR}`,
     String.raw`deluxe\s+${YEAR}`,
   ]),

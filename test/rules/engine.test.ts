@@ -463,3 +463,48 @@ describe('compound segments — every part must be a known marker', () => {
     expect(cleanTitle('Album (Deluxe Edition Sampler)', 'album', DEFAULT_ON)).toBeNull();
   });
 });
+
+describe('edition word orders', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['In Utero (30th Anniversary Super Deluxe)', 'album'],
+    ['Hex Enduction Hour (Expanded Deluxe Edition)', 'album'],
+    ['Purple Rain (Deluxe Expanded Edition)', 'album'],
+    ['Cosmic Thing (30th Anniversary Expanded Edition)', 'album'],
+    ["I Should Coco (20th Anniversary Collector's Edition)", 'album'],
+    ['Raw Power (50th Anniversary Legacy Edition)', 'album'],
+    ['Whatever And Ever Amen (Remastered Edition)', 'album'],
+    ['Cave World (Deluxe)', 'album'],
+    ['My Generation (50th Anniversary / Super Deluxe)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  /**
+   * The edition words are common in real album titles, so the whole-segment anchoring is doing all
+   * the work here: none of these has a trailing segment for the pattern to be the whole of.
+   */
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Love Deluxe', 'album'],
+    ['Deluxe', 'album'],
+    ['Deadringer: Deluxe', 'album'],
+    ['Special', 'album'],
+    ['The Definitive Collection', 'album'],
+    ["1989 (Taylor's Version)", 'album'],
+    ['Album (Expanded Reissue Sampler)', 'album'],
+    ['Album (2nd Sight)', 'album'],
+    ['Saturday Night Fever (The Original Movie Soundtrack)', 'album'],
+    ['Shine On You Crazy Diamond - Pt. II', 'track'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+
+  it('accepts a bare ordinal so an anniversary stands alone in a compound', () => {
+    expect(cleanTitle('Album (45th Anniversary / Super Deluxe)', 'album', DEFAULT_ON)?.clean).toBe(
+      'Album',
+    );
+  });
+});
