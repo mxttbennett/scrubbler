@@ -170,6 +170,8 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // mode to see what either would do before enabling it.
   'live-album': group(['album'], 'off', [String.raw`live`]),
 
+  // The pattern is not consulted while this group is in DASH_NORMALIZED, which reformats instead of
+  // stripping; it stays as the marker's definition and as what would apply if that ever changed.
   'live-track': group(['track'], 'off', [String.raw`live`]),
 
   // These name *which recording* it is, so merging them loses information: off by default.
@@ -183,6 +185,15 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`mono(?:\s+version)?`,
     String.raw`stereo(?:\s+version)?`,
   ]),
+};
+
+/**
+ * Groups that *reformat* a trailing segment rather than removing it, keyed by the leading marker
+ * they recognise. A group listed here never strips: the whole-segment catalogue governs stripping,
+ * and a lossless rewrite is a separate operation that keeps every character of the qualifier.
+ */
+export const DASH_NORMALIZED: Partial<Record<GroupName, RegExp>> = {
+  'live-track': /^live\b/iu,
 };
 
 export const ALL_GROUPS = Object.keys(MARKER_GROUPS) as GroupName[];

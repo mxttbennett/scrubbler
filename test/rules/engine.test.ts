@@ -61,7 +61,7 @@ describe('cleanTitle — precision (must never touch)', () => {
   });
 
   it('never strips a marker that is not the whole trailing segment', () => {
-    expect(cleanTitle('Song (Live in Tokyo)', 'track', EVERYTHING)).toBeNull();
+    // `live-track` normalizes rather than strips, so its qualified form has its own tests below.
     expect(cleanTitle('Song (Remastered at Abbey Road)', 'track', EVERYTHING)).toBeNull();
     expect(cleanTitle('Album (Deluxe Edition Sampler)', 'album', EVERYTHING)).toBeNull();
   });
@@ -161,9 +161,6 @@ describe('cleanTitle — group toggles', () => {
   });
 
   it('strips them when their group is enabled', () => {
-    expect(cleanTitle('all apologies - live', 'track', new Set(['live-track']))?.clean).toBe(
-      'all apologies',
-    );
     expect(cleanTitle('Midnight City - EP', 'album', new Set(['ep-single']))?.clean).toBe(
       'Midnight City',
     );
@@ -285,6 +282,27 @@ describe('cleanTitle — real library corpus', () => {
     }
   });
 
+  /**
+   * live-track is not in DEFAULT_ON, so the snapshots below would not move for it at all. This is
+   * the regression net for normalization: every real live label the rule rewrites, pinned.
+   */
+  it('matches a recorded verdict for every live-track normalization', () => {
+    const enabled = new Set<GroupName>(['live-track']);
+    const verdict = tracks
+      .map((t) => [t.name, cleanTitle(t.name, 'track', enabled)?.clean] as const)
+      .filter((row): row is readonly [string, string] => row[1] !== undefined)
+      .sort((x, y) => x[0].localeCompare(y[0]))
+      .map(([from, to]) => `${from}  ->  ${to}`);
+
+    expect(verdict).toMatchSnapshot();
+  });
+
+  /** The control group: normalizing tracks must not move a single album verdict. */
+  it('leaves every album untouched when only live-track is on', () => {
+    const enabled = new Set<GroupName>(['live-track']);
+    for (const { name } of albums) expect(cleanTitle(name, 'album', enabled)).toBeNull();
+  });
+
   it('matches a recorded verdict for every default-on album hit', () => {
     const verdict = albums
       .map((a) => [a.name, cleanTitle(a.name, 'album', DEFAULT_ON)?.clean] as const)
@@ -345,11 +363,80 @@ describe('live is split by field, and both are off by default', () => {
     expect(cleanTitle('Stop Making Sense (Live)', 'album', DEFAULT_ON)).toBeNull();
   });
 
-  it('strips a bare Live from a track once enabled', () => {
-    expect(cleanTitle('all apologies - live', 'track', TRACK_ONLY)?.clean).toBe('all apologies');
-    expect(cleanTitle('White Light/White Heat - Live', 'track', TRACK_ONLY)?.clean).toBe(
-      'White Light/White Heat',
+  /**
+   * A track's live label is standardised, not deleted: the library already carries both shapes of
+   * the same gig ("Sister Ray - Live in Rotterdam 1984" beside "Preaching the Blues (Live in
+   * Rotterdam 1984)"), and the dash form is the one nothing touches.
+   */
+  it('rewrites a bracketed live label into the dash form', () => {
+    expect(cleanTitle('Song (Live)', 'track', TRACK_ONLY)?.clean).toBe('Song - Live');
+    expect(cleanTitle('Song (Live in Tokyo)', 'track', TRACK_ONLY)?.clean).toBe(
+      'Song - Live in Tokyo',
     );
+    expect(cleanTitle('Song [Live at Leeds]', 'track', TRACK_ONLY)?.clean).toBe(
+      'Song - Live at Leeds',
+    );
+  });
+
+  it('keeps the qualifier verbatim, since it is real content', () => {
+    expect(cleanTitle('Song (Live In Berkeley And Boston)', 'track', TRACK_ONLY)?.clean).toBe(
+      'Song - Live In Berkeley And Boston',
+    );
+  });
+
+  it('reports live-track, not a strip', () => {
+    expect(cleanTitle('Song (Live)', 'track', TRACK_ONLY)?.groups).toEqual(['live-track']);
+  });
+
+  it('leaves a title that is already the dash form alone', () => {
+    for (const title of [
+      'Song - Live',
+      'Song - Live at the Apollo',
+      'Sister Ray - Live in Rotterdam 1984',
+      'White Light/White Heat - Live',
+    ]) {
+      expect(cleanTitle(title, 'track', TRACK_ONLY)).toBeNull();
+    }
+  });
+
+  /** Normalizing this would be a casing-only edit, which Last.fm silently rejects. */
+  it('does not re-case an already-dashed live label', () => {
+    expect(cleanTitle('all apologies - live', 'track', TRACK_ONLY)).toBeNull();
+  });
+
+  it('strips an outer marker first, then normalizes, and stops', () => {
+    const r = cleanTitle('Song (Live) [Remastered]', 'track', new Set(['live-track', 'remaster']));
+    expect(r?.clean).toBe('Song - Live');
+    expect(r?.passes).toBe(2);
+    expect(r?.groups).toEqual(['live-track', 'remaster']);
+  });
+
+  /** The only change came from the remaster, so tagging it live-track would misreport it. */
+  it('does not claim live-track when the dash form needed no rewrite', () => {
+    const r = cleanTitle('Song - Live [Remastered]', 'track', new Set(['live-track', 'remaster']));
+    expect(r?.clean).toBe('Song - Live');
+    expect(r?.groups).toEqual(['remaster']);
+  });
+
+  /**
+   * A knock-on of treating the label as content: it becomes the trailing segment, and the engine
+   * only ever examines the trailing segment — so a marker sitting *before* it is out of reach. This
+   * used to strip to "Nevermind"; reaching past the live label would be the non-trailing matching
+   * the catalogue exists to forbid.
+   */
+  it('leaves a marker that sits before the live label alone', () => {
+    const both = new Set<GroupName>(['live-track', 'edition']);
+    expect(cleanTitle('Nevermind (Deluxe Edition) (Live)', 'track', both)?.clean).toBe(
+      'Nevermind (Deluxe Edition) - Live',
+    );
+    expect(cleanTitle('Nevermind (Deluxe Edition) - Live', 'track', both)).toBeNull();
+  });
+
+  /** Rewriting this would keep the remaster label the compound rule exists to remove. */
+  it('leaves a compound that pairs Live with another marker alone', () => {
+    expect(
+      cleanTitle('Song (Live; 2001 Remaster)', 'track', new Set(['live-track', 'remaster'])),
+    ).toBeNull();
   });
 
   it('never touches an album title, even when enabled', () => {
@@ -357,12 +444,11 @@ describe('live is split by field, and both are off by default', () => {
     expect(cleanTitle('Yessongs (Live)', 'album', TRACK_ONLY)).toBeNull();
   });
 
-  it('never touches a segment that merely starts with Live', () => {
+  it('never touches a title whose Live is not a trailing segment at all', () => {
     for (const [title, field] of [
       ['The King of Limbs: Live from the Basement', 'album'],
       ['Live at Leeds', 'album'],
       ['Live Through This', 'album'],
-      ['Song (Live in Tokyo)', 'track'],
       ['Sister Ray - Live in Rotterdam 1984', 'track'],
       ['Song - Live at the Apollo', 'track'],
     ] as [string, 'album' | 'track'][]) {
@@ -557,7 +643,6 @@ describe('a delimiter needs no leading space', () => {
     'Ph(enomena)',
     'Alive(2007)',
     'Untitled(1)',
-    'Song(Live in Tokyo)',
     'Album(Remastered at Abbey Road)',
     'Album(Deluxe Edition Sampler)',
     "1989(Taylor's Version)",
@@ -571,6 +656,13 @@ describe('a delimiter needs no leading space', () => {
   it.each(KEPT)('leaves %s alone in either field', (title) => {
     expect(cleanTitle(title, 'album', EVERYTHING)).toBeNull();
     expect(cleanTitle(title, 'track', EVERYTHING)).toBeNull();
+  });
+
+  /** The missing space must not stop a live label being normalized either. */
+  it('normalizes a live label that has no space before the bracket', () => {
+    expect(cleanTitle('Song(Live in Tokyo)', 'track', new Set(['live-track']))?.clean).toBe(
+      'Song - Live in Tokyo',
+    );
   });
 
   /** The one real-library population the bracket half reaches: chained brackets, no marker in either. */

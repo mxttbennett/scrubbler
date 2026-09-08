@@ -7,6 +7,24 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.2.0] - 2026-09-08
+
+- `live-track` now **standardises** a live label instead of removing it: `Song (Live)` becomes
+  `Song - Live`, and `Song (Live at Rotterdam 1984)` becomes `Song - Live at Rotterdam 1984`. The
+  qualifier is kept verbatim, so nothing is lost — which is what makes matching a segment that only
+  *starts* with Live legitimate where stripping one never was. The library already held both shapes
+  of the same gig; this converges them on the form nothing touches.
+- A title already in the dash form is left alone, including one that differs only in case
+  (`all apologies - live`), because Last.fm rejects casing-only edits.
+- A compound such as `(Live; 2001 Remaster)` is left alone rather than rewritten, since rewriting it
+  would preserve the remaster label. A marker sitting *before* a live label is also left in place —
+  once the label is content, what precedes it is no longer the trailing segment.
+- `live-album` is unchanged: it still strips a bare `(Live)`, because a release that only exists
+  live has a redundant label, and no album in the library uses the dash form at all.
+- New `deploy/repropose-stale.mjs` drops the outstanding proposals for a rule whose meaning changed,
+  so they are re-resolved rather than applying the edit the old rule computed. See
+  `deploy/README.md`.
+
 ## [1.1.4] - 2026-09-08
 
 - Play counts are gone from the rule-engine test corpus, along with the scrobble totals in its
