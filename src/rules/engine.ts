@@ -76,8 +76,10 @@ function matchOne(segment: string, field: Field, enabled: ReadonlySet<GroupName>
   return null;
 }
 
-// Labels join two claims inside one segment: "40th Anniversary Deluxe Edition; 2016 Remaster".
-const COMPOUND_SEPARATOR = /[;/]/;
+// Labels join two claims inside one segment: "40th Anniversary Deluxe Edition; 2016 Remaster",
+// "40th anniversary: remaster". Only ever applied *inside* an already-split trailing segment, so a
+// colon in a title ("Deadringer: Deluxe", "Vol. 3: Hollywood Sportatorium") is never reached.
+const COMPOUND_SEPARATOR = /[;/:]/;
 
 /**
  * A segment matches when it matches whole, or when **every** part of a compound matches. Requiring
