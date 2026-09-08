@@ -1,6 +1,13 @@
 import { LastfmError } from './errors.js';
 import { RateLimiter } from './rateLimiter.js';
-import { type RecentTracks, type TopAlbums, type TopTracks, toInt } from './types.js';
+import {
+  type AlbumInfo,
+  type RecentTracks,
+  type TopAlbums,
+  type TopTracks,
+  bestImageUrl,
+  toInt,
+} from './types.js';
 
 export interface LastfmApiOptions {
   baseUrl?: string;
@@ -83,6 +90,30 @@ export class LastfmApi {
       limit: String(limit),
       page: String(page),
     });
+  }
+
+  private readonly artCache = new Map<string, string | undefined>();
+
+  /**
+   * Art for the POST-edit album name — the point is to show what it will be. Cached per run so an
+   * album's many tracks cost one lookup, and silent on failure since missing art is cosmetic.
+   */
+  async albumArt(artist: string, album: string): Promise<string | undefined> {
+    if (album === '' || artist === '') return undefined;
+    const key = `${artist}\u0000${album}`;
+    const cached = this.artCache.get(key);
+    if (cached !== undefined || this.artCache.has(key)) return cached;
+
+    let url: string | undefined;
+    try {
+      const data = await this.request<AlbumInfo>('album.getinfo', { artist, album });
+      url = bestImageUrl(data.album?.image);
+    } catch {
+      // no art is a cosmetic loss; never let it fail a correction
+      url = undefined;
+    }
+    this.artCache.set(key, url);
+    return url;
   }
 
   getRecentTracks(user: string, fromUts: number, page = 1, limit = PAGE_SIZE): Promise<RecentTracks> {

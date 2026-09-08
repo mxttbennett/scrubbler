@@ -46,3 +46,24 @@ export interface RecentTrack {
 export interface RecentTracks {
   recenttracks: { track: RecentTrack[]; '@attr': PagedAttr };
 }
+
+export interface LastfmImage {
+  size: 'small' | 'medium' | 'large' | 'extralarge' | 'mega' | '';
+  '#text': string;
+}
+
+export interface AlbumInfo {
+  album?: { name: string; artist: string; image?: LastfmImage[] };
+}
+
+const SIZE_PREFERENCE = ['extralarge', 'large', 'medium'] as const;
+
+/** Largest available art, or undefined — obscure releases legitimately have none. */
+export function bestImageUrl(images: LastfmImage[] | undefined): string | undefined {
+  if (images === undefined) return undefined;
+  for (const size of SIZE_PREFERENCE) {
+    const hit = images.find((i) => i.size === size && i['#text'] !== '');
+    if (hit) return hit['#text'];
+  }
+  return undefined;
+}

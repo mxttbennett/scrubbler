@@ -23,6 +23,7 @@ export interface DiscordEmbed {
   description?: string;
   fields?: DiscordEmbedField[];
   footer?: { text: string };
+  thumbnail?: { url: string };
 }
 
 export interface DiscordOptions {
@@ -112,6 +113,7 @@ export function clampEmbed(embed: DiscordEmbed): DiscordEmbed {
     }));
   }
   if (embed.footer !== undefined) out.footer = { text: embed.footer.text.slice(0, 2048) };
+  if (embed.thumbnail !== undefined) out.thumbnail = embed.thumbnail;
   return out;
 }
 

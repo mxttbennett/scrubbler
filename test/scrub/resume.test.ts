@@ -40,7 +40,7 @@ function edit(): PlannedEdit {
 }
 
 function executor(d: ReturnType<typeof db>) {
-  return new Executor(d, {} as never, silentReporter, {
+  return new Executor(d, {} as never, {} as never, silentReporter, {
     dryRun: false,
     maxEditsPerRun: 100,
     writeDelayMs: 0,
@@ -67,13 +67,16 @@ describe('resolution checkpointing', () => {
 
     const carried = e.resumable('fresh-token');
     expect(carried).toHaveLength(1);
-    expect(carried[0]!.csrfToken).toBe('fresh-token');
-    expect(carried[0]!.original.track_name).toBe('Disorder - 2019 Digital Master');
-    expect(carried[0]!.next.track_name).toBe('Disorder');
-    expect(carried[0]!.groups).toEqual(['remaster']);
+    expect(carried[0]!.kind).toBe('track');
+    const first = carried[0]!;
+    if (first.kind !== 'track') throw new Error('expected a track edit');
+    expect(first.edit.csrfToken).toBe('fresh-token');
+    expect(first.edit.original.track_name).toBe('Disorder - 2019 Digital Master');
+    expect(first.edit.next.track_name).toBe('Disorder');
+    expect(first.edit.groups).toEqual(['remaster']);
     // verification re-reads this path; the write endpoint has no chartlist and can never confirm
-    expect(carried[0]!.refererPath).toBe('/user/u/library/music/+noredirect/Joy+Division/_/Disorder');
-    expect(carried[0]!.refererPath).not.toContain('edit-track');
+    expect(first.edit.refererPath).toBe('/user/u/library/music/+noredirect/Joy+Division/_/Disorder');
+    expect(first.edit.refererPath).not.toContain('edit-track');
   });
 
   it('does not resume a tuple that already succeeded', () => {
@@ -128,6 +131,7 @@ describe('streaming writes during resolution', () => {
           return 'verified' as const;
         },
       } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );
@@ -150,6 +154,7 @@ describe('streaming writes during resolution', () => {
     const e = new Executor(
       d,
       { apply: async () => { calls++; return 'verified' as const; } } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 2, writeDelayMs: 0, digestEvery: 1 },
     );
@@ -171,6 +176,7 @@ describe('streaming writes during resolution', () => {
     const e = new Executor(
       d,
       { apply: async () => { calls++; return 'verified' as const; } } as never,
+      {} as never,
       silentReporter,
       { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
     );

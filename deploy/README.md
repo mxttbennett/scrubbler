@@ -65,3 +65,40 @@ Two caveats:
   `backups/`. Excluded from the deploy rsync.
 - A dead session reports to the Discord webhook and the service keeps retrying on the next sweep. If
   the password changes, update `.env` and restart.
+
+## Deploying a build that adds a dependency
+
+`discord.js` is a runtime dependency, so the deploy is not just a file swap:
+
+1. `systemctl stop scrubbler` and wait for it to exit — the unit allows 90s so an in-flight edit
+   and its verification finish. Killing it between the Last.fm POST and the ledger row that
+   records it is the one thing to avoid.
+2. rsync the build, then `npm ci --omit=dev` on the box. A stale `node_modules` fails at import.
+3. `systemctl start scrubbler` and check `journalctl -u scrubbler -n 30` for the startup line,
+   which names the mode.
+
+## Rolling back past the approval gate — read this first
+
+Rollback is **unsafe by default**. `Executor.run` skips only `verified` and `applied`, so a build
+from before the approval gate does not recognise `awaiting_approval` and would happily write every
+queued edit without a decision. Clear the queue before deploying the old build:
+
+1. `systemctl stop scrubbler`
+2. ```sql
+   UPDATE applied_edits
+      SET status = 'skipped', last_error = 'rolled back before approval'
+    WHERE status = 'awaiting_approval';
+   ```
+   Run it against `.data/scrubbler.sqlite` with `sqlite3`. Take a copy of the file first.
+3. Deploy the old build and start it.
+
+Skipping step 2 does not corrupt anything, but it applies edits you never approved — and Last.fm
+edits are irreversible.
+
+## Turning approval mode on or off
+
+The mode is read once at startup, so both directions need a restart. Switching it **off** is safe
+with proposals outstanding: the next cycle drains them through the ordinary path and retires their
+cards, because incremental discovery only sees new scrobbles and would otherwise leave those
+entities waiting for the weekly full sweep. Use `/scrub pause` for a live stop that needs no
+restart.

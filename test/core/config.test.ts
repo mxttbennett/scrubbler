@@ -66,3 +66,46 @@ describe('loadConfig', () => {
     expect(loadConfig({ ...BASE, DRY_RUN: 'ON' }).dryRun).toBe(true);
   });
 });
+
+describe('loadConfig — approval mode', () => {
+  const DISCORD = {
+    DISCORD_BOT_TOKEN: 't',
+    DISCORD_CHANNEL_ID: 'c',
+    DISCORD_OWNER_ID: 'o',
+    DISCORD_GUILD_ID: 'g',
+  };
+
+  it('is off unless asked for, so an existing deploy keeps behaving the same', () => {
+    expect(loadConfig({ ...BASE }).approvalMode).toBe(false);
+  });
+
+  it('turns on with the full discord set', () => {
+    const config = loadConfig({ ...BASE, ...DISCORD, APPROVAL_MODE: 'true' });
+    expect(config.approvalMode).toBe(true);
+    expect(config.discordOwnerId).toBe('o');
+    expect(config.discordGuildId).toBe('g');
+  });
+
+  it('refuses to start when a proposal could not be clicked', () => {
+    expect(() => loadConfig({ ...BASE, APPROVAL_MODE: 'true' })).toThrow(
+      /requires DISCORD_BOT_TOKEN, DISCORD_CHANNEL_ID, DISCORD_OWNER_ID, DISCORD_GUILD_ID/,
+    );
+  });
+
+  it('names only what is actually missing', () => {
+    expect(() =>
+      loadConfig({ ...BASE, ...DISCORD, DISCORD_OWNER_ID: '', APPROVAL_MODE: 'true' }),
+    ).toThrow(/requires DISCORD_OWNER_ID$/);
+  });
+
+  it('does not require the discord set when the mode is off', () => {
+    expect(() => loadConfig({ ...BASE, APPROVAL_MODE: 'false' })).not.toThrow();
+  });
+
+  it('defaults the expiry to a week and the gateway alert to a quarter hour', () => {
+    const config = loadConfig({ ...BASE });
+    expect(config.approvalTtlHours).toBe(168);
+    expect(config.gatewayAlertMinutes).toBe(15);
+  });
+});
+
