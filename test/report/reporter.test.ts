@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConsoleAndDiscordReporter, describeCorrection, escapeMd } from '../../src/report/reporter.js';
+import { ConsoleAndDiscordReporter, describeCorrection, escapeMd, libraryLinks } from '../../src/report/reporter.js';
 import { Discord, type DiscordEmbed } from '../../src/report/discord.js';
 
 function spy() {
@@ -357,5 +357,107 @@ describe('the run summary counts albums and tracks apart', () => {
     });
 
     expect(sent[0]!.fields?.some((f) => f.name === 'Albums')).toBe(false);
+  });
+});
+
+describe('library links in embeds', () => {
+  const links = libraryLinks('dankjankem');
+
+  function linked() {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+      links,
+    );
+    return { sent, reporter };
+  }
+
+  const albumCorrection = {
+    artist: 'Mdou Moctar',
+    kind: 'album' as const,
+    track: '(whole album)',
+    album: 'Afrique Victime (Deluxe Edition)',
+    changes: [
+      {
+        field: 'album_name',
+        from: 'Afrique Victime (Deluxe Edition)',
+        to: 'Afrique Victime',
+      },
+    ],
+    groups: ['edition'],
+    outcome: 'verified' as const,
+    scrobbledTracks: ['Tala Tannam'],
+  };
+
+  const TOTALS = { planned: 1, applied: 1, verified: 1, unverified: 0, failed: 0 };
+
+  it('puts a small glyph beside the artist rather than linking the name', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([albumCorrection], TOTALS);
+
+    expect(sent[0]!.description).toBe(
+      '**Mdou Moctar** [↗](https://www.last.fm/user/dankjankem/library/music/Mdou+Moctar)',
+    );
+  });
+
+  it('links the NEW album name, since the old page is empty once renamed', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([albumCorrection], TOTALS);
+
+    const value = sent[0]!.fields?.find((f) => f.name === 'album name')?.value ?? '';
+    expect(value).toContain('/library/music/Mdou+Moctar/Afrique+Victime)');
+    expect(value).not.toContain('Deluxe+Edition%29)');
+  });
+
+  it('links each scrobbled track', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([albumCorrection], TOTALS);
+
+    const value = sent[0]!.fields?.find((f) => f.name === 'scrobbled tracks (1)')?.value ?? '';
+    expect(value).toBe(
+      '• Tala Tannam [↗](https://www.last.fm/user/dankjankem/library/music/Mdou+Moctar/_/Tala+Tannam)',
+    );
+  });
+
+  it('links a renamed track by its new name', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections(
+      [
+        {
+          artist: 'Wire',
+          kind: 'track',
+          track: 'Brazil - 2006 Remastered Version',
+          album: 'Pink Flag',
+          changes: [
+            { field: 'track_name', from: 'Brazil - 2006 Remastered Version', to: 'Brazil' },
+          ],
+          groups: ['remaster'],
+          outcome: 'verified',
+        },
+      ],
+      TOTALS,
+    );
+
+    const track = sent[0]!.fields?.find((f) => f.name === 'track')?.value ?? '';
+    // The label keeps the old name — that is which row this was — while the link goes to the new one.
+    expect(track).toContain('Brazil \\- 2006 Remastered Version');
+    expect(track).toContain('/library/music/Wire/_/Brazil)');
+    expect(track).not.toContain('_/Brazil+-+2006');
+  });
+
+  it('renders no links at all when no username is configured', async () => {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+    );
+
+    await reporter.corrections([albumCorrection], TOTALS);
+
+    expect(sent[0]!.description).toBe('**Mdou Moctar**');
+    expect(JSON.stringify(sent[0]!)).not.toContain('last.fm');
   });
 });
