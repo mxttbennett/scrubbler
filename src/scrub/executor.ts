@@ -3,6 +3,7 @@ import type { Db } from '../db/index.js';
 import type { WriteLock } from '../core/writeLock.js';
 import { schema } from '../db/index.js';
 import type { AlbumEditor, PlannedAlbumEdit } from '../lastfm/albumEditor.js';
+import type { AlbumDetails as AlbumSummary } from '../lastfm/types.js';
 import type { Editor } from '../lastfm/editor.js';
 import { EditRejectedError } from '../lastfm/errors.js';
 import type { Reporter } from '../report/reporter.js';
@@ -21,6 +22,11 @@ export interface ExecutorOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Post-edit album art, looked up per album and cached by the API client. */
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
+  /**
+   * The release track list and the user's scrobble count. Must be read for the ORIGINAL title and
+   * BEFORE the write: afterwards the old name has no scrobbles left to count.
+   */
+  albumDetails?: (artist: string, album: string) => Promise<AlbumSummary>;
   /**
    * Shared across every executor in the process. Omitted only in tests that write nothing
    * concurrently; production must pass one or the worker, an approval and a command can interleave.
@@ -43,7 +49,10 @@ export interface ExecutionSummary {
   alsoHasRule: number;
   capped: boolean;
   /** Counted where the write happens, so an album rename cannot be tallied as a track edit. */
-  byKind: Record<'track' | 'album', { applied: number; failed: number; tracksCovered: number }>;
+  byKind: Record<
+    'track' | 'album',
+    { applied: number; failed: number; tracksCovered: number; scrobblesCovered: number }
+  >;
 }
 
 export type ResumableStatus = 'planned' | 'awaiting_approval';
@@ -184,11 +193,18 @@ export class Executor {
     }
     if (this.stopRequested) return;
 
+    // Before the write: the original title keeps no scrobbles once it has been renamed. Swallowed
+    // because this is reporting only — a missing count must never stop a correction.
+    const before = await this.opts
+      .albumDetails?.(edit.artist, edit.from)
+      .catch(() => undefined);
+
     try {
       const outcome = await this.locked(() => this.albumEditor.apply(edit));
       summary.applied++;
       summary.byKind.album.applied++;
-      summary.byKind.album.tracksCovered += edit.trackNames?.length ?? 0;
+      summary.byKind.album.tracksCovered += before?.trackNames.length ?? 0;
+      summary.byKind.album.scrobblesCovered += before?.scrobbles ?? 0;
       const imageUrl = await this.opts.albumArt?.(edit.artist, edit.to);
       if (outcome === 'verified') summary.verified++;
       else if (outcome === 'unverified') summary.unverified++;
@@ -209,7 +225,10 @@ export class Executor {
             groups: edit.groups,
             outcome: outcome === 'applied' ? 'applied' : outcome,
             ...(imageUrl === undefined ? {} : { imageUrl }),
-            ...(edit.trackNames === undefined ? {} : { trackNames: edit.trackNames }),
+            ...(before === undefined || before.trackNames.length === 0
+              ? {}
+              : { trackNames: before.trackNames }),
+            ...(before?.scrobbles === undefined ? {} : { scrobbles: before.scrobbles }),
           },
         ],
         this.totalsOf(summary),
@@ -535,8 +554,8 @@ function blankSummary(): ExecutionSummary {
     alsoHasRule: 0,
     capped: false,
     byKind: {
-      track: { applied: 0, failed: 0, tracksCovered: 0 },
-      album: { applied: 0, failed: 0, tracksCovered: 0 },
+      track: { applied: 0, failed: 0, tracksCovered: 0, scrobblesCovered: 0 },
+      album: { applied: 0, failed: 0, tracksCovered: 0, scrobblesCovered: 0 },
     },
   };
 }

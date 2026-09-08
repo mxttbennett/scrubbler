@@ -1,6 +1,7 @@
 import { LastfmError } from './errors.js';
 import { RateLimiter } from './rateLimiter.js';
 import {
+  type AlbumDetails,
   type AlbumInfo,
   type RecentTracks,
   type TopAlbums,
@@ -10,6 +11,8 @@ import {
 } from './types.js';
 
 export interface LastfmApiOptions {
+  /** Needed for userplaycount, which album.getinfo omits unless the request names a user. */
+  username?: string;
   baseUrl?: string;
   /** minimum spacing between requests; default 250ms (~4 req/s) */
   minIntervalMs?: number;
@@ -28,6 +31,7 @@ export class LastfmApi {
   private readonly fetchImpl: typeof fetch;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly limiter: RateLimiter;
+  private readonly username: string | undefined;
 
   constructor(
     private readonly apiKey: string,
@@ -39,6 +43,7 @@ export class LastfmApi {
     this.fetchImpl = opts.fetchImpl ?? fetch;
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.limiter = new RateLimiter(opts.minIntervalMs ?? 250, { sleep: this.sleep });
+    this.username = opts.username;
   }
 
   private async request<T>(method: string, params: Record<string, string>): Promise<T> {
@@ -92,28 +97,52 @@ export class LastfmApi {
     });
   }
 
-  private readonly artCache = new Map<string, string | undefined>();
+  private readonly albumCache = new Map<string, AlbumDetails>();
+
+  private static readonly NO_DETAILS: AlbumDetails = {
+    imageUrl: undefined,
+    trackNames: [],
+    scrobbles: undefined,
+  };
 
   /**
-   * Art for the POST-edit album name — the point is to show what it will be. Cached per run so an
-   * album's many tracks cost one lookup, and silent on failure since missing art is cosmetic.
+   * One album.getinfo carries the art, the release track list and the user's play count, so the
+   * report can name what a whole-album rename covered — the album's own library page renders its
+   * track list client-side and has none of it. Cached per run so an album's many tracks cost one
+   * lookup, and silent on failure because none of this may fail a correction.
    */
-  async albumArt(artist: string, album: string): Promise<string | undefined> {
-    if (album === '' || artist === '') return undefined;
+  async albumDetails(artist: string, album: string): Promise<AlbumDetails> {
+    if (album === '' || artist === '') return LastfmApi.NO_DETAILS;
     const key = `${artist}\u0000${album}`;
-    const cached = this.artCache.get(key);
-    if (cached !== undefined || this.artCache.has(key)) return cached;
+    const cached = this.albumCache.get(key);
+    if (cached !== undefined) return cached;
 
-    let url: string | undefined;
+    let details = LastfmApi.NO_DETAILS;
     try {
-      const data = await this.request<AlbumInfo>('album.getinfo', { artist, album });
-      url = bestImageUrl(data.album?.image);
+      // username is what makes userplaycount appear at all.
+      const data = await this.request<AlbumInfo>('album.getinfo', {
+        artist,
+        album,
+        ...(this.username === undefined ? {} : { username: this.username }),
+      });
+      const raw = data.album?.tracks?.track;
+      const list = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
+      const plays = Number(data.album?.userplaycount ?? NaN);
+      details = {
+        imageUrl: bestImageUrl(data.album?.image),
+        trackNames: list.map((t) => t.name).filter((n) => n !== ''),
+        scrobbles: Number.isFinite(plays) ? plays : undefined,
+      };
     } catch {
-      // no art is a cosmetic loss; never let it fail a correction
-      url = undefined;
+      details = LastfmApi.NO_DETAILS;
     }
-    this.artCache.set(key, url);
-    return url;
+    this.albumCache.set(key, details);
+    return details;
+  }
+
+  /** Art for the POST-edit album name — the point is to show what it will be. */
+  async albumArt(artist: string, album: string): Promise<string | undefined> {
+    return (await this.albumDetails(artist, album)).imageUrl;
   }
 
   getRecentTracks(user: string, fromUts: number, page = 1, limit = PAGE_SIZE): Promise<RecentTracks> {

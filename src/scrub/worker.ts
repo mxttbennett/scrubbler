@@ -11,6 +11,7 @@ import { Executor } from './executor.js';
 import type { Planner } from './planner.js';
 import type { Resolver } from './resolver.js';
 import type { WriteLock } from '../core/writeLock.js';
+import type { AlbumDetails } from '../lastfm/types.js';
 import type { Approvals } from './approvals.js';
 import type { Candidate } from './types.js';
 
@@ -24,6 +25,7 @@ export interface WorkerDeps {
   albumEditor: AlbumEditor;
   reporter: Reporter;
   albumArt: (artist: string, album: string) => Promise<string | undefined>;
+  albumDetails?: (artist: string, album: string) => Promise<AlbumDetails>;
   /** Always present: the unattended path needs it to drain a queue left by an earlier mode. */
   approvals: Approvals;
   writeLock?: WriteLock;
@@ -44,6 +46,9 @@ export class ScrubWorker {
   private readonly albumEditor: AlbumEditor;
   private readonly reporter: Reporter;
   private readonly albumArt: (artist: string, album: string) => Promise<string | undefined>;
+  private readonly albumDetails:
+    | ((artist: string, album: string) => Promise<AlbumDetails>)
+    | undefined;
   private readonly approvals: Approvals;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
@@ -58,6 +63,7 @@ export class ScrubWorker {
     this.albumEditor = deps.albumEditor;
     this.reporter = deps.reporter;
     this.albumArt = deps.albumArt;
+    this.albumDetails = deps.albumDetails;
     this.approvals = deps.approvals;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
@@ -116,6 +122,7 @@ export class ScrubWorker {
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
       albumArt: this.albumArt,
+      ...(this.albumDetails === undefined ? {} : { albumDetails: this.albumDetails }),
       ...(this.writeLock === undefined ? {} : { writeLock: this.writeLock }),
     });
     this.executor = executor;
@@ -222,7 +229,10 @@ export class ScrubWorker {
         `candidates      ${candidates.length}`,
         `albums          ${summary.byKind.album.applied} renamed` +
           (summary.byKind.album.tracksCovered > 0
-            ? `, covering ${summary.byKind.album.tracksCovered} tracks`
+            ? `, covering ${summary.byKind.album.tracksCovered} tracks` +
+              (summary.byKind.album.scrobblesCovered > 0
+                ? ` and ${summary.byKind.album.scrobblesCovered} scrobbles`
+                : '')
             : '') +
           (summary.byKind.album.failed > 0 ? ` (${summary.byKind.album.failed} failed)` : ''),
         `tracks          ${summary.byKind.track.applied} edited` +

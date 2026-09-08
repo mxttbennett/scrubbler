@@ -141,7 +141,6 @@ export class Resolver {
     );
     if (!cleaned) return { reason: 'album title is already clean on the library page' };
 
-    const trackNames = [...new Set(extractScrobbleRows(html).map((r) => r.track_name))];
     const edit: PlannedAlbumEdit = {
       artist: form.album_artist_name,
       from: form.album_name,
@@ -150,7 +149,6 @@ export class Resolver {
       action: form.action,
       refererPath: path,
       groups: cleaned.groups,
-      ...(trackNames.length === 0 ? {} : { trackNames }),
     };
     return { edit, reason: '' };
   }

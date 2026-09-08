@@ -53,7 +53,21 @@ export interface LastfmImage {
 }
 
 export interface AlbumInfo {
-  album?: { name: string; artist: string; image?: LastfmImage[] };
+  album?: {
+    name: string;
+    artist: string;
+    image?: LastfmImage[];
+    /** Present only when the request names a username; a string, like every numeric API field. */
+    userplaycount?: string | number;
+    tracks?: { track?: { name: string }[] | { name: string } };
+  };
+}
+
+/** What one album.getinfo call yields: art, the release track list, and the user's play count. */
+export interface AlbumDetails {
+  imageUrl: string | undefined;
+  trackNames: string[];
+  scrobbles: number | undefined;
 }
 
 const SIZE_PREFERENCE = ['extralarge', 'large', 'medium'] as const;
