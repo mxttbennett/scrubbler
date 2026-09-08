@@ -14,8 +14,12 @@ person running the service rather than for the diff.
   qualifier is kept verbatim, so nothing is lost — which is what makes matching a segment that only
   *starts* with Live legitimate where stripping one never was. The library already held both shapes
   of the same gig; this converges them on the form nothing touches.
-- A title already in the dash form is left alone, including one that differs only in case
-  (`all apologies - live`), because Last.fm rejects casing-only edits.
+- The marker is standardised to `Live` whatever case it arrived in, so `(live)` and `(LIVE)` both
+  become `- Live`. Only the marker is re-cased — the qualifier is content, and title-casing it would
+  mangle `WCOZ`, `BBC` and `5/22/77`.
+- A title already in the dash form is left alone, including one whose marker is mis-cased
+  (`all apologies - live`): fixing the case alone is an edit Last.fm silently rejects, so there is
+  nothing to send.
 - A compound such as `(Live; 2001 Remaster)` is left alone rather than rewritten, since rewriting it
   would preserve the remaster label. A marker sitting *before* a live label is also left in place —
   once the label is content, what precedes it is no longer the trailing segment.

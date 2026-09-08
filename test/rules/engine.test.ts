@@ -378,7 +378,17 @@ describe('live is split by field, and both are off by default', () => {
     );
   });
 
-  it('keeps the qualifier verbatim, since it is real content', () => {
+  it('standardises the marker to `Live` whatever case it arrived in', () => {
+    for (const title of ['Song (live)', 'Song (LIVE)', 'Song (Live)']) {
+      expect(cleanTitle(title, 'track', TRACK_ONLY)?.clean).toBe('Song - Live');
+    }
+  });
+
+  /** The qualifier is content: title-casing it would mangle "WCOZ", "BBC" and "5/22/77". */
+  it('re-cases only the marker, never the qualifier', () => {
+    expect(cleanTitle('Song (live in tokyo)', 'track', TRACK_ONLY)?.clean).toBe(
+      'Song - Live in tokyo',
+    );
     expect(cleanTitle('Song (Live In Berkeley And Boston)', 'track', TRACK_ONLY)?.clean).toBe(
       'Song - Live In Berkeley And Boston',
     );
@@ -399,9 +409,13 @@ describe('live is split by field, and both are off by default', () => {
     }
   });
 
-  /** Normalizing this would be a casing-only edit, which Last.fm silently rejects. */
-  it('does not re-case an already-dashed live label', () => {
+  /**
+   * The one place the marker is left mis-cased: `all apologies - Live` differs from the original
+   * only in case, and Last.fm silently rejects such an edit, so there is nothing to send.
+   */
+  it('cannot re-case an already-dashed live label', () => {
     expect(cleanTitle('all apologies - live', 'track', TRACK_ONLY)).toBeNull();
+    expect(cleanTitle('Song - live', 'track', TRACK_ONLY)).toBeNull();
   });
 
   it('strips an outer marker first, then normalizes, and stops', () => {

@@ -188,12 +188,16 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 };
 
 /**
- * Groups that *reformat* a trailing segment rather than removing it, keyed by the leading marker
- * they recognise. A group listed here never strips: the whole-segment catalogue governs stripping,
- * and a lossless rewrite is a separate operation that keeps every character of the qualifier.
+ * Groups that *reformat* a trailing segment rather than removing it. A group listed here never
+ * strips: the whole-segment catalogue governs stripping, and a lossless rewrite is a separate
+ * operation.
+ *
+ * `marker` matches the leading word and `canonical` is the spelling it is standardised to. Only the
+ * marker is re-cased — the qualifier is content, and title-casing it would mangle "WCOZ", "BBC" and
+ * "5/22/77".
  */
-export const DASH_NORMALIZED: Partial<Record<GroupName, RegExp>> = {
-  'live-track': /^live\b/iu,
+export const DASH_NORMALIZED: Partial<Record<GroupName, { marker: RegExp; canonical: string }>> = {
+  'live-track': { marker: /^live\b/iu, canonical: 'Live' },
 };
 
 export const ALL_GROUPS = Object.keys(MARKER_GROUPS) as GroupName[];

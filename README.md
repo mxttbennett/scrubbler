@@ -137,7 +137,7 @@ they are deprecated and log a notice at startup; they cannot be combined with `R
 | `feat-track` | `off` | track | `(feat. X)` on a *track* title — **deletes a real credit** |
 | `ep-single` | `off` | album | `- EP`, `- Single` |
 | `live-album` | `off` | album | `(Live)` on a release that only exists live — 14 in this library |
-| `live-track` | `off` | track | `(Live)` and `(Live at …)` → `- Live …` — **standardises the label rather than removing it** |
+| `live-track` | `off` | track | `(live)`, `(Live at …)` → `- Live …` — **standardises the label rather than removing it** |
 | `version` | `off` | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
 | `mono-stereo` | `off` | track, album | `(Mono)`, `(Stereo)` |
 

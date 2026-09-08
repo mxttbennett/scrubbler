@@ -132,11 +132,17 @@ function normalizingGroup(
   enabled: ReadonlySet<GroupName>,
 ): GroupName | null {
   if (COMPOUND_SEPARATOR.test(segment)) return null;
-  for (const [name, pattern] of Object.entries(DASH_NORMALIZED) as [GroupName, RegExp][]) {
+  for (const name of Object.keys(DASH_NORMALIZED) as GroupName[]) {
     if (!enabled.has(name) || !MARKER_GROUPS[name].appliesTo.includes(field)) continue;
-    if (pattern.test(segment.trim())) return name;
+    if (DASH_NORMALIZED[name]!.marker.test(segment.trim())) return name;
   }
   return null;
+}
+
+/** The segment with its leading marker re-cased to the canonical spelling. */
+function normalized(segment: string, group: GroupName): string {
+  const { marker, canonical } = DASH_NORMALIZED[group]!;
+  return segment.trim().replace(marker, canonical);
 }
 
 /** Returns null when the title should be left untouched; never returns a casing-only change. */
@@ -179,7 +185,7 @@ export function cleanTitle(
     if (normalizing !== null) {
       // Already the dash form: rewriting is a no-op, and recording it would mistag an earlier strip.
       if (tail.open === ' - ') break;
-      current = `${head} - ${tail.segment.trim()}`;
+      current = `${head} - ${normalized(tail.segment, normalizing)}`;
       passes += 1;
       if (!groups.includes(normalizing)) groups.push(normalizing);
       // Terminal: the result still ends in a Live-prefixed segment and would re-match itself.
