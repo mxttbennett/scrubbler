@@ -109,6 +109,45 @@ The cost property is preserved: the calls still only happen when the group is on
 cycle instead of once at boot. The `clusterRan` stamping comment at `worker.ts:188` already
 anticipates a group being turned on later and needs no change.
 
+### The `gated -> off` hazard, and a tier-aware drain
+
+`ScrubWorker` (`worker.ts:150`) branches on whether anything is gated. The `else` branch, reached
+when `gatedGroups.size === 0`, calls `Approvals.drainOnModeOff()` — and that method
+(`approvals.ts:313`) does not cancel outstanding proposals, it **applies** them: each
+`awaiting_approval` row is flipped to `planned` and written to Last.fm immediately.
+
+Today that is defensible. Emptying `gatedGroups` requires editing `.env` and restarting, a
+deliberate deployment-level act, and "supervision is off, apply the backlog" is a fair reading of it.
+
+Live tiers break that reasoning. The same drain becomes reachable in two clicks: set the last
+`gated` group to **off**, meaning *stop doing this*, and at the next cycle boundary the worker sees
+an empty set and applies the entire pending backlog against real scrobble history. The production
+ledger currently carries several hundred pending proposals. Last.fm edits are not reversible.
+
+The defect is that mode-level state cannot express *why* the set emptied:
+
+| Transition | Set empties | Correct behaviour |
+|---|---|---|
+| `gated -> auto` | yes | apply the backlog — the operator asked for it to happen unsupervised |
+| `gated -> off`  | yes | retire the backlog — the operator asked for it *not* to happen |
+
+So `drainOnModeOff` is replaced by a tier-aware `drainOnTierChange(effective)`, which partitions
+pending proposals by the *current* tier of the groups that produced them:
+
+- groups now `auto` — applied, exactly as today.
+- groups now `off` — retired as `superseded` with `decidedBy: 'system'`, **never written**. The
+  ledger rows return to a non-pending status so they do not occupy the `*_original` tuple a later
+  correction needs.
+- groups still `gated` — untouched, still awaiting a decision.
+
+This preserves the `CLAUDE.md` invariant that `awaiting_approval` is never auto-applied *against the
+operator's intent*, and it removes the empty-set trigger entirely: the drain is now driven by the
+tier map, which is the thing that actually changed.
+
+The panel must also warn before the destructive half. Selecting `Off` for a group with outstanding
+proposals re-renders with a confirmation step naming the count ("live-track has 41 proposals
+pending; turning it off will discard them") rather than applying the change on the first click.
+
 ### `src/report/configPanel.ts` (new)
 
 Pure functions, no `discord.js` import — a renderer and a `customId` codec, mirroring how
@@ -172,6 +211,10 @@ A cycle can therefore be internally mixed. This is the accepted trade: "off" mea
 worth more than a coherent cycle, and the alternative (staging until idle) would leave an urgent
 stop waiting up to six hours behind `SWEEP_INTERVAL_MS`.
 
+Turning a group **off** additionally retires its outstanding proposals at the next cycle boundary,
+via the tier-aware drain above. Turning one from `gated` to `auto` applies them instead. Neither
+transition may write an edit the operator has just asked to stop.
+
 ## Testing
 
 TDD; behaviour change, so a failing test precedes each piece. No network, seams
@@ -186,6 +229,12 @@ constructor-injected as elsewhere.
 - `test/scrub/tierLiveness.test.ts` — a `Planner` built once nominates differently after
   `TierStore.set` flips a group, with no reconstruction. This is the test that would fail if
   someone reverted a getter to a captured value.
+- `test/scrub/approvals.test.ts` — the tier-aware drain: a pending proposal whose group is now
+  `off` is retired and **no edit is written** (asserted against a spy editor, since this is the
+  irreversible case); one whose group is now `auto` is applied; one still `gated` is untouched. A
+  test that the old empty-set trigger is gone.
+- `test/report/configPanel.test.ts` — selecting `Off` for a group with pending proposals renders
+  the confirmation step and does not persist on the first click.
 - `test/scrub/worker.test.ts` — the punctuation cluster scan runs when the group is enabled at
   cycle time and is skipped when it is not, with `findClusters` always injected.
 
