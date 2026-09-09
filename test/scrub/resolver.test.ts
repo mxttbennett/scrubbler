@@ -39,7 +39,7 @@ describe('Resolver — tuple merging', () => {
       timestamp: '1772659220',
     });
     const { pages } = fakePages({ [path]: html, [albumPath]: html });
-    const resolver = new Resolver(pages, 'u', ENABLED);
+    const resolver = new Resolver(pages, 'u', () => ENABLED);
 
     const { edits } = await resolver.resolve([
       { kind: 'track', artist: 'Fleetwood Mac', title: 'Silver Springs - 2004 Remaster' },
@@ -65,7 +65,7 @@ describe('Resolver — tuple merging', () => {
         timestamp: '1',
       }),
     });
-    const { edits } = await new Resolver(pages, 'u', ENABLED).resolve([
+    const { edits } = await new Resolver(pages, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'A', title: 'Song - Remastered' },
     ]);
     expect(edits[0]!.action).toContain('/library/edit-track');
@@ -91,7 +91,7 @@ describe('Resolver — tuple merging', () => {
         timestamp: '2',
       });
     const { pages } = fakePages({ [path]: two });
-    const { edits } = await new Resolver(pages, 'u', ENABLED).resolve([
+    const { edits } = await new Resolver(pages, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'A', title: 'Song - Remastered' },
     ]);
     expect(edits).toHaveLength(2);
@@ -113,7 +113,7 @@ describe('Resolver — tuple merging', () => {
         timestamp: '1',
       }),
     });
-    const { edits } = await new Resolver(pages, 'u', ENABLED).resolve([
+    const { edits } = await new Resolver(pages, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'A', title: 'Song - Remastered' },
     ]);
     expect(edits).toEqual([]);
@@ -121,7 +121,7 @@ describe('Resolver — tuple merging', () => {
 
   it('records a skip when the library page yields no rows', async () => {
     const { pages } = fakePages({});
-    const { edits, skips } = await new Resolver(pages, 'u', ENABLED).resolve([
+    const { edits, skips } = await new Resolver(pages, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'A', title: 'Gone - Remastered' },
     ]);
     expect(edits).toEqual([]);
@@ -141,7 +141,7 @@ describe('Resolver — tuple merging', () => {
         timestamp: '1',
       }),
     });
-    await new Resolver(pages, 'u', ENABLED).resolve([
+    await new Resolver(pages, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'A', title: 'Song - Remastered' },
       { kind: 'track', artist: 'A', title: 'Song - Remastered' },
     ]);

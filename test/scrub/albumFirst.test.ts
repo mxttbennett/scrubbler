@@ -41,7 +41,7 @@ describe('album renames are one request and never recurse', () => {
 
   it('produces a single album edit from the album page alone', async () => {
     const { pages: p, fetched } = pages({ [albumPath]: ALBUM_FORM });
-    const { albumEdits, edits } = await new Resolver(p, 'u', ENABLED).resolve([
+    const { albumEdits, edits } = await new Resolver(p, 'u', () => ENABLED).resolve([
       { kind: 'album', artist: 'The Replacements', title: 'Let It Be (Expanded)' },
     ]);
 
@@ -57,7 +57,7 @@ describe('album renames are one request and never recurse', () => {
   it('re-derives from the page value and drops an album the page says is clean', async () => {
     const clean = ALBUM_FORM.replace(/Let It Be \(Expanded\)/g, 'Let It Be');
     const { pages: p } = pages({ [albumPath]: clean });
-    const { albumEdits, skips } = await new Resolver(p, 'u', ENABLED).resolve([
+    const { albumEdits, skips } = await new Resolver(p, 'u', () => ENABLED).resolve([
       { kind: 'album', artist: 'The Replacements', title: 'Let It Be (Expanded)' },
     ]);
     expect(albumEdits).toEqual([]);
@@ -66,13 +66,13 @@ describe('album renames are one request and never recurse', () => {
 
   it('distinguishes a vanished album from changed markup', async () => {
     const { pages: p } = pages({});
-    const gone = await new Resolver(p, 'u', ENABLED).resolve([
+    const gone = await new Resolver(p, 'u', () => ENABLED).resolve([
       { kind: 'album', artist: 'The Replacements', title: 'Let It Be (Expanded)' },
     ]);
     expect(gone.skips[0]!.reason).toMatch(/no longer in library/);
 
     const { pages: q } = pages({ [albumPath]: '<table class="chartlist"></table>' });
-    const nomarkup = await new Resolver(q, 'u', ENABLED).resolve([
+    const nomarkup = await new Resolver(q, 'u', () => ENABLED).resolve([
       { kind: 'album', artist: 'The Replacements', title: 'Let It Be (Expanded)' },
     ]);
     expect(nomarkup.skips[0]!.reason).toMatch(/no edit form/);
@@ -81,7 +81,7 @@ describe('album renames are one request and never recurse', () => {
   it('still uses edit-track for a track whose own title carries a marker', async () => {
     const trackPath = '/user/u/library/music/+noredirect/The+Replacements/_/Unsatisfied+-+Remastered';
     const { pages: p } = pages({ [trackPath]: TRACK_FORM });
-    const { edits, albumEdits } = await new Resolver(p, 'u', ENABLED).resolve([
+    const { edits, albumEdits } = await new Resolver(p, 'u', () => ENABLED).resolve([
       { kind: 'track', artist: 'The Replacements', title: 'Unsatisfied - Remastered' },
     ]);
 
@@ -106,7 +106,7 @@ describe('sweep order', () => {
       },
     } as unknown as LastfmApi;
 
-    const candidates = await new Planner(api, 'u', ENABLED).sweep();
+    const candidates = await new Planner(api, 'u', () => ENABLED).sweep();
     expect(candidates).toHaveLength(3);
     // Album renames must land before track pages are read, or a track edit's album_name_original
     // goes stale and the write silently no-ops. This ordering is load-bearing.
@@ -128,7 +128,7 @@ describe('sweep order', () => {
     } as unknown as LastfmApi;
 
     // Deliberately handed over in the wrong order: the sweep must not trust the caller's ordering.
-    const candidates = await new Planner(api, 'u', ENABLED).sweep(undefined, [
+    const candidates = await new Planner(api, 'u', () => ENABLED).sweep(undefined, [
       { kind: 'track', artist: 'Drexciya', title: 'You Don’t Know' },
       { kind: 'artist', artist: 'Jim O’Rourke', title: 'Jim O’Rourke' },
       { kind: 'album', artist: 'Deerhoof', title: 'Apple O’' },

@@ -69,6 +69,7 @@ export interface Config {
   dryRun: boolean;
   /** Every group's tier. `enabledGroups` and `gatedGroups` are views of this. */
   tiers: Record<GroupName, Tier>;
+  explicitTiers: Partial<Record<GroupName, Tier>>;
   /** auto ∪ gated — what the rule engine may fire. */
   enabledGroups: Set<GroupName>;
   /** Firing, but a candidate must be approved in Discord before it is written. */
@@ -171,8 +172,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   let tiers: Record<GroupName, Tier>;
+  let explicitTiers: Partial<Record<GroupName, Tier>> = {};
   if (rulesSet) {
-    tiers = { ...DEFAULT_TIERS, ...parseTiers(e.RULES) };
+    explicitTiers = parseTiers(e.RULES);
+    tiers = { ...DEFAULT_TIERS, ...explicitTiers };
   } else if (legacy.length > 0) {
     const enabled = new Set<GroupName>([
       ...parseGroups(e.RULES_ENABLED, 'RULES_ENABLED', false),
@@ -234,6 +237,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     digestEvery: parsePositiveInt(e.DIGEST_EVERY, 'DIGEST_EVERY'),
     dryRun: parseBool(e.DRY_RUN, 'DRY_RUN'),
     tiers,
+    explicitTiers,
     enabledGroups,
     gatedGroups,
     configWarnings,

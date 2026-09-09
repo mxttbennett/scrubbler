@@ -45,7 +45,7 @@ export class Resolver {
   constructor(
     private readonly pages: LibraryPages,
     private readonly username: string,
-    private readonly enabled: ReadonlySet<GroupName>,
+    private readonly enabled: () => ReadonlySet<GroupName>,
     /** The same lookup the planner uses: consulted here too, or the edit would read as already clean. */
     private readonly overrides?: CustomRuleLookup,
   ) {}
@@ -146,7 +146,7 @@ export class Resolver {
     const cleaned = cleanTitle(
       form.album_name,
       'album',
-      this.enabled,
+      this.enabled(),
       this.override(form.album_artist_name),
     );
     if (!cleaned) return { reason: 'album title is already clean on the library page' };
@@ -201,14 +201,14 @@ export class Resolver {
     const track =
       trackTarget !== undefined
         ? null
-        : cleanTitle(row.track_name, 'track', this.enabled, this.override(row.artist_name));
+        : cleanTitle(row.track_name, 'track', this.enabled(), this.override(row.artist_name));
     const album =
       row.album_name === '' || albumTarget !== undefined
         ? null
         : cleanTitle(
             row.album_name,
             'album',
-            this.enabled,
+            this.enabled(),
             this.override(row.album_artist_name || row.artist_name),
           );
 

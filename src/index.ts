@@ -9,6 +9,7 @@ import { Editor } from './lastfm/editor.js';
 import { LibraryPages } from './lastfm/pages.js';
 import { Session, sessionStatePath } from './lastfm/session.js';
 import { Commands } from './report/commands.js';
+import { ConfigPanel } from './report/configPanel.js';
 import { Discord } from './report/discord.js';
 import { Gateway } from './report/gateway.js';
 import { Proposals } from './report/proposals.js';
@@ -21,6 +22,8 @@ import { Planner } from './scrub/planner.js';
 import { Resolver } from './scrub/resolver.js';
 import { ScrubWorker } from './scrub/worker.js';
 import { findClusters } from './scrub/clusters.js';
+import { TierStore } from './rules/tierStore.js';
+import { ALL_GROUPS } from './rules/markers.js';
 
 async function main() {
   const config = loadConfig();
@@ -49,16 +52,26 @@ async function main() {
   const api = new LastfmApi(config.apiKey, { username: config.username });
   const customRules = new CustomRules(db);
   const shadowStore = new ShadowStore(db);
+  const discordConfigured =
+    config.discordBotToken !== undefined &&
+    config.discordChannelId !== undefined &&
+    config.discordOwnerId !== undefined &&
+    config.discordGuildId !== undefined;
+  const tierStore = new TierStore(db, config.tiers, {
+    approvalMode: config.approvalMode,
+    discordConfigured,
+    explicitTiers: config.explicitTiers,
+  });
   const planner = new Planner(
     api,
     config.username,
-    config.enabledGroups,
+    () => tierStore.enabled(),
     db,
     config.deadCandidateAttempts,
     customRules.lookup,
     config.shadowMode ? (hit) => void shadowStore.record(hit) : undefined,
   );
-  const resolver = new Resolver(pages, config.username, config.enabledGroups, customRules.lookup);
+  const resolver = new Resolver(pages, config.username, () => tierStore.enabled(), customRules.lookup);
   const editor = new Editor(session, pages, {
     verify: config.verifyEdits,
     verifyDelayMs: config.verifyDelayMs,
@@ -107,9 +120,11 @@ async function main() {
     },
     albumArt,
     ttlHours: config.approvalTtlHours,
-    enabledGroups: config.enabledGroups,
+    enabledGroups: () => tierStore.enabled(),
+    tiers: () => tierStore.effective(),
     overrides: customRules.lookup,
   });
+  const configPanel = new ConfigPanel({ db, tiers: tierStore, approvalMode: config.approvalMode });
 
   const worker = new ScrubWorker({
     config,
@@ -124,22 +139,24 @@ async function main() {
     albumDetails,
     trackScrobbles,
     approvals,
+    tiers: () => tierStore.effective(),
+    enabledGroups: () => tierStore.enabled(),
+    gatedGroups: () => tierStore.gated(),
     ...(config.shadowMode ? { shadowStore } : {}),
-    ...(config.enabledGroups.has('punctuation')
-      ? { findClusters: () => findClusters(api, config.username) }
-      : {}),
+    findClusters: () => findClusters(api, config.username),
     writeLock,
   });
 
   for (const warning of config.configWarnings) console.warn(`config: ${warning}`);
 
   console.log(
-    `scrubbler ${readPackageVersion()} starting | user ${config.username}` +
+      `scrubbler ${readPackageVersion()} starting | user ${config.username}` +
       ` | dryRun ${String(config.dryRun)}` +
-      ` | groups ${[...config.enabledGroups].sort().join(',')}` +
-      (config.gatedGroups.size > 0 ? ` | gated ${[...config.gatedGroups].sort().join(',')}` : '') +
+      ` | groups ${[...tierStore.enabled()].sort().join(',')}` +
+      (tierStore.gated().size > 0 ? ` | gated ${[...tierStore.gated()].sort().join(',')}` : '') +
+      ` | overrides ${ALL_GROUPS.filter((g) => tierStore.sourceOf(g) === 'override').sort().join(',') || 'none'}` +
       ` | discord ${discord.enabled ? 'on' : 'off'}` +
-      ` | mode ${config.gatedGroups.size > 0 ? 'approval' : 'unattended'}`,
+      ` | mode ${tierStore.gated().size > 0 ? 'approval' : 'unattended'}`,
   );
 
   // Reset flags: the slash-command equivalents arrive with the gateway client.
@@ -190,8 +207,8 @@ async function main() {
     const candidate = { kind: rule.kind, artist: rule.artist, title: rule.fromTitle };
     const { skips } = await resolver.resolve([candidate], {
       onGroup: async (group) => {
-        await executor.applyGroup(group, new Set());
-      },
+          await executor.applyGroup(group, new Set());
+        },
     });
     if (skips.length > 0) return `Not applied yet: ${skips[0]!.reason}`;
 
@@ -223,15 +240,17 @@ async function main() {
         approvals,
         customRules,
         applyNow: (rule) => applyOneEntity(rule),
-        gatedRules: config.gatedGroups,
+        gatedRules: () => tierStore.gated(),
         dryRun: config.dryRun,
         shadowStore,
         shadowMode: config.shadowMode,
-        enabledRules: config.enabledGroups,
+        enabledRules: () => tierStore.enabled(),
+        configPanel,
         channelId: config.discordChannelId,
         guildId: config.discordGuildId,
       }),
       decisions: approvals,
+      configPanel,
       alert: (error, context) => reporter.report(error, context),
       alertAfterMinutes: config.gatewayAlertMinutes,
     });

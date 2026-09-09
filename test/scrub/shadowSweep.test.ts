@@ -34,7 +34,7 @@ describe('shadow hits during discovery', () => {
     const planner = new Planner(
       fakeApi([], [{ name: 'all apologies (Live)', artist: 'Nirvana' }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       undefined,
@@ -61,7 +61,7 @@ describe('shadow hits during discovery', () => {
     const planner = new Planner(
       fakeApi([{ name: 'Rumours (Deluxe Edition)', artist: 'Fleetwood Mac' }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       undefined,
@@ -78,7 +78,7 @@ describe('shadow hits during discovery', () => {
       // ep-single is album-only and disabled, so this is an album hit and not a candidate.
       fakeApi([{ name: 'Midnight City - EP', artist: 'M83' }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       undefined,
@@ -112,7 +112,7 @@ describe('shadow hits during discovery', () => {
         [{ artist: 'Yes', track: 'Roundabout', album: 'Yessongs (Live)', uts: 100 }],
       ),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       undefined,
@@ -133,7 +133,7 @@ describe('shadow hits during discovery', () => {
         [{ artist: 'Nirvana', track: 'all apologies (Live)', album: 'Unplugged', uts: 100 }],
       ),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       undefined,
@@ -149,7 +149,7 @@ describe('shadow hits during discovery', () => {
     const planner = new Planner(
       fakeApi([], [{ name: 'all apologies (Live)', artist: 'Nirvana' }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
     );

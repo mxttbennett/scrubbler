@@ -30,7 +30,7 @@ describe('incremental discovery', () => {
         { track: 'Kiss Me on the Bus', artist: 'The Replacements', album: 'Tim (Deluxe Edition)', uts: 200 },
       ]),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
     const r = await p.sweepIncremental(0);
     expect(r.candidates.map((c) => `${c.kind}:${c.title}`)).toEqual([
@@ -46,7 +46,7 @@ describe('incremental discovery', () => {
         { track: 'Clean Track', artist: 'X', album: 'Dirty (Deluxe Edition)', uts: 20 },
       ]),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
     expect((await p.sweepIncremental(0)).candidates.map((c) => c.kind)).toEqual(['album', 'track']);
   });
@@ -58,7 +58,7 @@ describe('incremental discovery', () => {
         { track: 'Sixteen Blue - Remastered', artist: 'X', album: '', uts: 900 },
       ]),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
     expect((await p.sweepIncremental(100)).newestUts).toBe(900);
   });
@@ -71,7 +71,7 @@ describe('incremental discovery', () => {
         { track: 'three', artist: 'X', album: 'Same (Remastered)', uts: 3 },
       ]),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
     expect((await p.sweepIncremental(0)).candidates).toHaveLength(1);
   });
@@ -80,7 +80,7 @@ describe('incremental discovery', () => {
     const p = new Planner(
       api([{ track: 'Clean', artist: 'X', album: 'Also Clean', uts: 5 }]),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
     const r = await p.sweepIncremental(0);
     expect(r.candidates).toEqual([]);
@@ -94,7 +94,7 @@ describe('dead-candidate memory', () => {
   it('filters a candidate only once it has hit the attempt threshold', async () => {
     const d = db();
     const scrobbles = [{ track: 'x', artist: 'Joy Division', album: "Closer (Collector's Edition)", uts: 1 }];
-    const p = new Planner(api(scrobbles), 'u', ENABLED, d, 3);
+    const p = new Planner(api(scrobbles), 'u', () => ENABLED, d, 3);
 
     p.recordDead(cand, 'album no longer in library under that title');
     expect((await p.sweepIncremental(0)).candidates).toHaveLength(1);
@@ -106,7 +106,7 @@ describe('dead-candidate memory', () => {
 
   it('counts attempts rather than inserting duplicates', () => {
     const d = db();
-    const p = new Planner(api([]), 'u', ENABLED, d, 3);
+    const p = new Planner(api([]), 'u', () => ENABLED, d, 3);
     p.recordDead(cand, 'a');
     p.recordDead(cand, 'b');
     const rows = d.select().from(schema.deadCandidates).all();
@@ -118,7 +118,7 @@ describe('dead-candidate memory', () => {
   it('forgets a candidate that resolves after all', async () => {
     const d = db();
     const scrobbles = [{ track: 'x', artist: 'Joy Division', album: "Closer (Collector's Edition)", uts: 1 }];
-    const p = new Planner(api(scrobbles), 'u', ENABLED, d, 1);
+    const p = new Planner(api(scrobbles), 'u', () => ENABLED, d, 1);
     p.recordDead(cand, 'empty');
     expect((await p.sweepIncremental(0)).candidates).toEqual([]);
 
@@ -127,7 +127,7 @@ describe('dead-candidate memory', () => {
   });
 
   it('does nothing when no database is wired, so the planner stays usable standalone', () => {
-    const p = new Planner(api([]), 'u', ENABLED);
+    const p = new Planner(api([]), 'u', () => ENABLED);
     expect(() => p.recordDead(cand, 'x')).not.toThrow();
     expect(() => p.clearDead(cand)).not.toThrow();
   });

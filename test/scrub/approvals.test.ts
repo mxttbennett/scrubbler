@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupName } from '../../src/rules/markers.js';
+import { DEFAULT_TIERS, type GroupName } from '../../src/rules/markers.js';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
 import { Approvals, buttonsFor } from '../../src/scrub/approvals.js';
 import { Executor } from '../../src/scrub/executor.js';
@@ -105,7 +105,8 @@ function harness(
       return 'token' in opts ? opts.token : 'fresh-token';
     },
     ttlHours: opts.ttlHours ?? 168,
-    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
     log: () => {},
   });
   return { d, executor, approvals, state, ...t };
@@ -238,7 +239,8 @@ describe('Approvals.approve', () => {
       stillThere: async (item) =>
         item.kind === 'track' && item.edit.original.track_name !== 'Left of the Dial',
       ttlHours: 168,
-      enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
+      enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
+      tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
       log: () => {},
     });
 
@@ -276,7 +278,7 @@ describe('Approvals.ignore', () => {
     expect(ignored[0]!.artist).toBe('The Replacements');
     expect(ignored[0]!.title).toBe('Bastards of Young');
 
-    const planner = new Planner({} as never, 'u', new Set(['edition']), h.d, 3);
+    const planner = new Planner({} as never, 'u', () => new Set(['edition']), h.d, 3);
     const kept = planner.filterLive([
       { kind: 'track', artist: 'The Replacements', title: 'Bastards of Young' },
       { kind: 'track', artist: 'The Replacements', title: 'Left of the Dial' },
@@ -350,23 +352,54 @@ describe('Approvals.expire', () => {
   });
 });
 
-describe('Approvals.drainOnModeOff', () => {
-  it('applies pending proposals by the normal path and marks them superseded', async () => {
+describe('Approvals.drainOnTierChange', () => {
+  it('applies pending proposals whose groups are now auto', async () => {
     const h = harness();
     await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
 
-    const drained = await h.approvals.drainOnModeOff();
+    const drained = await h.approvals.drainOnTierChange({ ...DEFAULT_TIERS, edition: 'auto' });
 
-    expect(drained).toBe(1);
+    expect(drained).toEqual({ applied: 1, retired: 0, kept: 0 });
     expect(h.state.applied).toEqual(['track Bastards of Young (fresh-token)']);
     expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('superseded');
-    // The card is retired, so no dead buttons are left behind.
     expect(h.edits.map((e) => e.embed.title)).toEqual(['Applied by the unattended sweep']);
+  });
+
+  it('retires pending proposals whose groups are now off and releases their ledger tuples', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+
+    const drained = await h.approvals.drainOnTierChange({ ...DEFAULT_TIERS, edition: 'off' });
+
+    expect(drained).toEqual({ applied: 0, retired: 1, kept: 0 });
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('superseded');
+    expect(h.d.select().from(schema.approvalEdits).all()).toHaveLength(0);
+    expect(h.d.select().from(schema.appliedEdits).all()).toHaveLength(0);
+
+    h.executor.checkpoint(trackEdit('Bastards of Young'));
+    expect(h.d.select().from(schema.appliedEdits).all()).toHaveLength(1);
+  });
+
+  it('leaves pending proposals whose groups are still gated', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+
+    const drained = await h.approvals.drainOnTierChange({ ...DEFAULT_TIERS, edition: 'gated' });
+
+    expect(drained).toEqual({ applied: 0, retired: 0, kept: 1 });
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('pending');
+    expect(h.d.select().from(schema.appliedEdits).all()[0]!.status).toBe('awaiting_approval');
   });
 
   it('does nothing when there is nothing pending', async () => {
     const h = harness();
-    expect(await h.approvals.drainOnModeOff()).toBe(0);
+    expect(await h.approvals.drainOnTierChange({ ...DEFAULT_TIERS })).toEqual({
+      applied: 0,
+      retired: 0,
+      kept: 0,
+    });
     expect(h.state.tokens).toBe(0);
   });
 });
@@ -406,7 +439,8 @@ describe('reported corrections', () => {
       proposals: t.transport,
       freshToken: async () => 'fresh-token',
       ttlHours: 168,
-      enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
+      enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
+      tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
       log: () => {},
     });
 
@@ -519,6 +553,29 @@ describe('Approvals.strip', () => {
     const description = JSON.stringify(h.edits.at(-1)?.embed);
     expect(description).toContain('All Apologies');
     expect(description).not.toContain('All Apologies - Live');
+  });
+
+  it('retires an off-tier proposal instead of recomputing a no-op strip', async () => {
+    const h = harness();
+    const approvals = new Approvals({
+      db: h.d,
+      executor: h.executor,
+      proposals: h.transport,
+      freshToken: async () => 'fresh-token',
+      ttlHours: 168,
+      enabledGroups: () => new Set<GroupName>(['remaster', 'edition']),
+      tiers: () => ({ ...DEFAULT_TIERS, 'live-track': 'off' }),
+      log: () => {},
+    });
+    await approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
+
+    const result = await approvals.strip(1, OWNER);
+
+    expect(result.outcome).toBe('discarded');
+    expect(result.detail).toContain('switched off');
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('superseded');
+    expect(h.d.select().from(schema.appliedEdits).all()).toHaveLength(0);
   });
 });
 

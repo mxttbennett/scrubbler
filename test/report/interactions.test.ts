@@ -14,6 +14,8 @@ interface Calls {
   followUps: string[];
   deferred: number;
   order: string[];
+  config: string[];
+  updates: string[];
 }
 
 function harness(opts: { outcome?: string; throws?: boolean } = {}) {
@@ -26,6 +28,8 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
     followUps: [],
     deferred: 0,
     order: [],
+    config: [],
+    updates: [],
   };
 
   const gateway = new Gateway({
@@ -53,6 +57,12 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
         return { approved: 3, failed: 0 };
       },
     },
+    configPanel: {
+      handle: (customId) => {
+        calls.config.push(customId);
+        return { content: 'panel', components: [] };
+      },
+    },
     alert: async () => {},
     alertAfterMinutes: 15,
     log: () => {},
@@ -73,6 +83,20 @@ function buttonInteraction(customId: string, userId: string, calls: Calls) {
       calls.order.push('defer');
       calls.deferred++;
     },
+    update: async (payload: { content: string }) => void calls.updates.push(payload.content),
+  } as never;
+}
+
+function selectInteraction(customId: string, userId: string, values: string[], calls: Calls) {
+  return {
+    isChatInputCommand: () => false,
+    isButton: () => false,
+    isStringSelectMenu: () => true,
+    customId,
+    values,
+    user: { id: userId },
+    reply: async (payload: { content: string }) => void calls.replies.push(payload.content),
+    update: async (payload: { content: string }) => void calls.updates.push(payload.content),
   } as never;
 }
 
@@ -145,6 +169,40 @@ describe('Gateway interactions', () => {
 
     expect(calls.approveAll).toEqual([OWNER]);
     expect(calls.followUps[0]).toContain('Applied 3');
+  });
+
+  it('routes cfg buttons to the config panel before approval parsing', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction('cfg:pause', OWNER, calls));
+
+    expect(calls.config).toEqual(['cfg:pause']);
+    expect(calls.updates).toEqual(['panel']);
+    expect(calls.deferred).toBe(0);
+    expect(calls.approve).toEqual([]);
+  });
+
+  it('routes cfg selects to the config panel', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(selectInteraction('cfg:pick', OWNER, ['edition'], calls));
+
+    expect(calls.config).toEqual(['cfg:pick:edition']);
+    expect(calls.updates).toEqual(['panel']);
+  });
+
+  it('owner-gates cfg interactions', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction('cfg:pause', STRANGER, calls));
+
+    expect(calls.replies).toEqual([NOT_OWNER]);
+    expect(calls.config).toEqual([]);
+  });
+
+  it('ignores unknown cfg actions without throwing', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction('cfg:nope', OWNER, calls));
+
+    expect(calls.config).toEqual([]);
+    expect(calls.updates).toEqual([]);
   });
 });
 

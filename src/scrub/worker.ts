@@ -13,11 +13,13 @@ import type { Resolver } from './resolver.js';
 import type { WriteLock } from '../core/writeLock.js';
 import type { AlbumDetails } from '../lastfm/types.js';
 import { CARRY_OVER_TOKEN } from './approvals.js';
-import { isGated, splitByTier } from './tiers.js';
+import { isGated, partitionByTier } from './tiers.js';
 import type { Approvals } from './approvals.js';
 import type { ShadowStore } from './shadowStore.js';
-import type { Candidate } from './types.js';
+import type { Candidate, EditGroup } from './types.js';
+import type { SkipRecord } from './resolver.js';
 import type { ClusterLookup, ClusterPlan } from './clusters.js';
+import type { GroupName, Tier } from '../rules/markers.js';
 
 export interface WorkerDeps {
   config: Config;
@@ -35,10 +37,32 @@ export interface WorkerDeps {
   approvals: Approvals;
   /** Present only when shadow mode is on; its absence is what keeps discovery silent. */
   shadowStore?: ShadowStore;
-  /** Absent when the punctuation group is off, which is what keeps the extra ~280 API calls unspent. */
+  /** Present when the capability exists; the live enabled tier decides whether it runs. */
   findClusters?: () => Promise<ClusterPlan>;
+  tiers: () => Readonly<Record<GroupName, Tier>>;
+  enabledGroups: () => ReadonlySet<GroupName>;
+  gatedGroups: () => ReadonlySet<GroupName>;
   writeLock?: WriteLock;
   sleep?: (ms: number) => Promise<void>;
+}
+
+function groupSkips(group: EditGroup): SkipRecord[] {
+  if (group.kind === 'album') {
+    return [
+      {
+        candidate: { kind: 'album', artist: group.album.artist, title: group.album.from },
+        reason: `rule tier is off: ${group.album.groups.join(',')}`,
+      },
+    ];
+  }
+  return group.edits.map((edit) => ({
+    candidate: {
+      kind: 'track' as const,
+      artist: edit.original.artist_name,
+      title: edit.original.track_name,
+    },
+    reason: `rule tier is off: ${edit.groups.join(',')}`,
+  }));
 }
 
 export class ScrubWorker {
@@ -64,6 +88,9 @@ export class ScrubWorker {
   private readonly approvals: Approvals;
   private readonly shadowStore: ShadowStore | undefined;
   private readonly findClusters: (() => Promise<ClusterPlan>) | undefined;
+  private readonly tiers: () => Readonly<Record<GroupName, Tier>>;
+  private readonly enabledGroups: () => ReadonlySet<GroupName>;
+  private readonly gatedGroups: () => ReadonlySet<GroupName>;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
 
@@ -82,6 +109,9 @@ export class ScrubWorker {
     this.approvals = deps.approvals;
     this.shadowStore = deps.shadowStore;
     this.findClusters = deps.findClusters;
+    this.tiers = deps.tiers;
+    this.enabledGroups = deps.enabledGroups;
+    this.gatedGroups = deps.gatedGroups;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
@@ -145,25 +175,23 @@ export class ScrubWorker {
     });
     this.executor = executor;
 
-    const gatedGroups = this.config.gatedGroups;
-
     // The sentinel, not a real token: demanding one would drop gated rows whenever it failed.
-    if (gatedGroups.size > 0) {
+    if (this.gatedGroups().size > 0) {
       const expired = await this.approvals.expire();
       if (expired > 0) console.log(`expired ${expired} unanswered proposal(s)`);
       const gatedRows = executor
         .resumable(CARRY_OVER_TOKEN)
-        .filter((row) => isGated(row.edit.groups, gatedGroups));
+        .filter((row) => isGated(row.edit.groups, this.gatedGroups()));
       if (gatedRows.length > 0) {
         const carried = await this.approvals.carryOver(gatedRows);
         console.log(
           `carried over: ${carried.proposed} proposed, ${carried.duplicate} already pending, ${carried.failed} failed to post`,
         );
       }
-    } else {
-      // Nothing is gated any more, and incremental sweeps would never revisit outstanding cards.
-      const drained = await this.approvals.drainOnModeOff();
-      if (drained > 0) console.log(`drained ${drained} pending proposal(s) into the normal path`);
+    }
+    const drained = await this.approvals.drainOnTierChange(this.tiers());
+    if (drained.applied > 0 || drained.retired > 0) {
+      console.log(`drained proposals: ${drained.applied} applied, ${drained.retired} retired`);
     }
 
     // resumable() selects only `planned`, and proposing moved the gated rows off it — hence no filter.
@@ -189,7 +217,12 @@ export class ScrubWorker {
     // group is off, and stamping then would suppress the scan for a week after it is turned on.
     let clusterRan = false;
     const clusterElapsed = Date.now() - lastCluster;
-    if (fullDue && finder !== undefined && clusterElapsed >= this.config.fullSweepIntervalMs) {
+    if (
+      fullDue &&
+      finder !== undefined &&
+      this.enabledGroups().has('punctuation') &&
+      clusterElapsed >= this.config.fullSweepIntervalMs
+    ) {
       console.log('scanning the library for punctuation clusters');
       const plan = await finder();
       clustered = plan.candidates;
@@ -223,11 +256,12 @@ export class ScrubWorker {
       shouldStop: () => this.stopped || this.isPaused(),
       // One candidate can span both tiers, and its tuples are independent, so each side goes alone.
       onGroup: async (group) => {
-        const split = splitByTier(group, gatedGroups);
+        const split = partitionByTier(group, this.tiers());
         if (split.gated !== undefined) {
           if ((await this.approvals.propose(split.gated)) === 'proposed') proposed++;
         }
         if (split.auto !== undefined) await executor.applyGroup(split.auto, rules.keys);
+        if (split.off !== undefined) executor.recordSkips(groupSkips(split.off));
       },
       onProgress: (doneCount, total, edits, candidate) => {
         const s = executor.streamedSummary;
@@ -238,7 +272,7 @@ export class ScrubWorker {
             `${s.byKind.album.applied} albums · ${s.byKind.track.applied} tracks · ` +
             `${edits} tuples · ${s.verified} verified · ${s.unverified} unverified · ` +
             `${s.failed} failed` +
-            (gatedGroups.size > 0 ? ` · ${proposed} proposed` : ''),
+            (this.gatedGroups().size > 0 ? ` · ${proposed} proposed` : ''),
         );
       },
     },
@@ -286,7 +320,7 @@ export class ScrubWorker {
             : '') +
           (summary.byKind.track.failed > 0 ? ` (${summary.byKind.track.failed} failed)` : ''),
         `distinct tuples ${summary.planned}`,
-        ...(gatedGroups.size > 0 ? [`proposed        ${proposed} awaiting approval`] : []),
+        ...(this.gatedGroups().size > 0 ? [`proposed        ${proposed} awaiting approval`] : []),
         `already done    ${summary.skippedByLedger}`,
         `also had a rule ${summary.alsoHasRule}`,
         `skipped         ${skips.length}`,

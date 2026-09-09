@@ -7,6 +7,8 @@ import { ALL_GROUPS, type Field } from '../rules/markers.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
 import { readPackageVersion } from '../core/version.js';
 
+type RuleSet = ReadonlySet<string> | (() => ReadonlySet<string>);
+
 export interface CommandDeps {
   db: Db;
   approvals: Approvals;
@@ -17,18 +19,20 @@ export interface CommandDeps {
    */
   applyNow: (rule: { kind: Field; artist: string; fromTitle: string }) => Promise<string>;
   /** Any rule at the `gated` tier — a proposal can exist without the legacy global. */
-  gatedRules: ReadonlySet<string>;
+  gatedRules: RuleSet;
   dryRun: boolean;
   shadowStore: ShadowStore;
   shadowMode: boolean;
   /** So an already-enabled rule is answered honestly rather than shown as an empty list. */
-  enabledRules: ReadonlySet<string>;
+  enabledRules: RuleSet;
+  configPanel?: { handle(customId?: string): { content: string; components: unknown[] } };
   channelId: string | undefined;
   guildId: string | undefined;
 }
 
 export interface CommandReply {
   text: string;
+  components?: unknown[];
   /** Set when the command needs a yes before it does anything irreversible. */
   confirm?: { customId: string; label: string };
 }
@@ -42,6 +46,7 @@ export const COMMAND_DEFINITION = {
   options: [
     { type: 1, name: 'status', description: 'Mode, phase, progress and pending count' },
     { type: 1, name: 'stats', description: 'All-time corrections, by kind' },
+    { type: 1, name: 'config', description: 'Rule tiers and pause state' },
     { type: 1, name: 'pending', description: 'Proposals awaiting a decision' },
     { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
     {
@@ -140,6 +145,16 @@ const PAGE_SIZE = 15;
 export class Commands {
   constructor(private readonly deps: CommandDeps) {}
 
+  private enabledRules(): ReadonlySet<string> {
+    return typeof this.deps.enabledRules === 'function'
+      ? this.deps.enabledRules()
+      : this.deps.enabledRules;
+  }
+
+  private gatedRules(): ReadonlySet<string> {
+    return typeof this.deps.gatedRules === 'function' ? this.deps.gatedRules() : this.deps.gatedRules;
+  }
+
   async handle(
     sub: string,
     args: Record<string, string | number> = {},
@@ -149,6 +164,8 @@ export class Commands {
         return { text: this.status() };
       case 'stats':
         return { text: this.stats() };
+      case 'config':
+        return this.configPanel();
       case 'pending':
       case 'approve-all': {
         const off = this.requireApprovalMode();
@@ -188,8 +205,9 @@ export class Commands {
    */
   /** Groups by tier, so the answer to "why is this not being corrected?" is on the status card. */
   private tierLine(): string {
-    const gated = [...this.deps.gatedRules].sort();
-    const auto = [...this.deps.enabledRules].filter((r) => !this.deps.gatedRules.has(r)).sort();
+    const gatedRules = this.gatedRules();
+    const gated = [...gatedRules].sort();
+    const auto = [...this.enabledRules()].filter((r) => !gatedRules.has(r)).sort();
     return (
       `${auto.length} auto${auto.length > 0 ? ` (${auto.join(', ')})` : ''}` +
       `, ${gated.length} gated${gated.length > 0 ? ` (${gated.join(', ')})` : ''}`
@@ -197,7 +215,7 @@ export class Commands {
   }
 
   private requireApprovalMode(): string | undefined {
-    if (this.deps.gatedRules.size > 0) return undefined;
+    if (this.gatedRules().size > 0) return undefined;
     const pending = this.deps.approvals.pending().length;
     return (
       'No rule is gated — corrections apply unattended, so there is nothing to approve.' +
@@ -205,6 +223,13 @@ export class Commands {
         ? ` ${pending} proposal(s) are still queued from an earlier run; the next sweep drains them.`
         : ' Set a rule to `gated` in RULES and restart to turn it on.')
     );
+  }
+
+  private configPanel(): CommandReply {
+    const panel = this.deps.configPanel;
+    if (panel === undefined) return { text: 'Config panel is not available.' };
+    const payload = panel.handle();
+    return { text: payload.content, components: payload.components };
   }
 
   private state() {
@@ -233,7 +258,7 @@ export class Commands {
     const pending = this.deps.approvals.pending().length;
     const lines = [
       `version     ${readPackageVersion()}`,
-      `mode        ${this.deps.gatedRules.size > 0 ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
+      `mode        ${this.gatedRules().size > 0 ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
       `rules       ${this.tierLine()}`,
       `phase       ${s?.phase ?? 'idle'}${s?.paused === true ? ' — PAUSED' : ''}`,
       `progress    ${s?.candidatesDone ?? 0}/${s?.candidatesTotal ?? 0} candidates`,
@@ -415,7 +440,7 @@ export class Commands {
     if (raw !== undefined && !ALL_GROUPS.includes(raw as never)) {
       return `\`${raw}\` is not a rule. Try: ${ALL_GROUPS.join(', ')}`;
     }
-    if (raw !== undefined && this.deps.enabledRules.has(raw)) {
+    if (raw !== undefined && this.enabledRules().has(raw)) {
       // Shadow rows only exist for rules that are off, so an empty list would read as "clean".
       return `\`${raw}\` is not off, so it corrects for real and records no shadow hits.`;
     }
