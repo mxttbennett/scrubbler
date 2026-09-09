@@ -19,6 +19,14 @@ person running the service rather than for the diff.
   tuples for future corrections.
 - The same panel controls pause/resume through the existing sweep-state flag. `APPROVAL_MODE`,
   `DRY_RUN`, shadow mode, pacing, and credentials remain startup/env configuration.
+## [1.4.1] - 2026-09-09
+
+- `/scrub pending` now takes a `page` argument, the same way `/scrub ignored` already did. It used to
+  show the first 15 proposals and the words `… N more`, with no way to reach the rest — on a backlog
+  of 378 that meant 363 of them were listed nowhere. Each row still carries its jump link to the
+  original card, so paging to a proposal and clicking its buttons works as it always did.
+- A page past the end now says so, and every page reports `page X/Y · N entries`, so the size of the
+  backlog is visible rather than implied.
 
 ## [1.4.0] - 2026-09-09
 
