@@ -1,3 +1,4 @@
+import { type GroupName, isGroupName } from '../rules/markers.js';
 import { type DiscordEmbed, clampEmbed } from './discord.js';
 
 const API = 'https://discord.com/api/v10';
@@ -38,10 +39,24 @@ export function stripId(approvalId: number): string {
   return `strip:${approvalId}`;
 }
 
-export function parseCustomId(
-  customId: string,
-): { action: 'approve' | 'ignore' | 'strip' | 'approve-all'; id: number } | undefined {
+export function reproposeId(rule: GroupName): string {
+  return `repropose:${rule}`;
+}
+
+/**
+ * The repropose button carries a rule name rather than a row id, so the result is a union. A group's
+ * position in the catalogue is deliberately not the wire value: reordering `MARKER_GROUPS` would
+ * silently change what an already-posted button does.
+ */
+export type ParsedCustomId =
+  | { action: 'approve' | 'ignore' | 'strip' | 'approve-all'; id: number }
+  | { action: 'repropose'; rule: GroupName };
+
+export function parseCustomId(customId: string): ParsedCustomId | undefined {
   const [action, raw] = customId.split(':');
+  if (action === 'repropose') {
+    return raw !== undefined && isGroupName(raw) ? { action, rule: raw } : undefined;
+  }
   if (
     action !== 'approve' &&
     action !== 'ignore' &&

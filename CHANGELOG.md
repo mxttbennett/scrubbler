@@ -7,6 +7,20 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.6.0] - 2026-09-09
+
+- New `/scrub repropose <rule>` — drops the pending proposals carrying one rule so a later sweep
+  re-resolves them under the rule as it stands now. Use it when a rule's meaning changed after its
+  cards were posted, so the cards show a target the rule would no longer choose.
+- It retires each card as it goes, editing the message and removing its buttons, so the channel is
+  not left with clickable proposals whose ledger rows are gone.
+- Confirmation first: the command answers with a count and a button, and nothing is dropped until
+  that button is pressed. Nothing is ever written to Last.fm.
+- Unlike `deploy/repropose-stale.mjs`, which reaches the same rows from outside the process, this is
+  safe to run against a live service — it supersedes each row in one transaction, so a click landing
+  afterwards fails its claim instead of applying a stale edit. The script stays for the case where
+  the service will not start.
+
 ## [1.5.0] - 2026-09-09
 
 - Rule tiers can now be changed from Discord with `/scrub config`. The panel shows each catalogue

@@ -2,6 +2,10 @@
 // scripts/ and `tsx` is a devDependency — `npm ci --omit=dev` leaves the box unable to run a .ts
 // file. better-sqlite3 is a production dependency, so plain node works.
 //
+// Prefer `/scrub repropose <rule>` — it does the same thing against a running service, and retires
+// each Discord card instead of leaving it clickable. This script is the fallback for when the
+// service will not start, and the only route that does not need Discord.
+//
 // Drops the outstanding proposals for one rule so the next full sweep re-resolves them under the
 // rule's current meaning. Deletion, not a status change: checkpoint() refuses to refresh a row that
 // is not `planned`, and a `planned` row is re-proposed straight from the ledger by carryOver before

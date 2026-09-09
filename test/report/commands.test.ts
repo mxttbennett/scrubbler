@@ -267,6 +267,46 @@ describe('/scrub pending', () => {
   });
 });
 
+describe('/scrub repropose', () => {
+  it('asks for a confirmation carrying the rule, rather than dropping straight away', async () => {
+    const h = harness();
+    await h.approvals.propose({
+      kind: 'album',
+      artist: 'HalfNoise',
+      album: {
+        artist: 'HalfNoise',
+        from: 'Flowerss - EP',
+        to: 'Flowerss',
+        csrfToken: 't',
+        action: '/library/edit-album',
+        refererPath: '/x',
+        groups: ['ep-single'],
+      },
+      shared: { field: 'album_name', from: 'Flowerss - EP', to: 'Flowerss' },
+    });
+
+    const reply = await h.commands.handle('repropose', { rule: 'ep-single' });
+
+    expect(reply.confirm?.customId).toBe('repropose:ep-single');
+    expect(reply.text).toContain('1 pending proposal');
+    expect(reply.text).toContain('Nothing is written to Last.fm');
+    // Still pending: the reply is a question, not the action.
+    expect(h.approvals.pending()).toHaveLength(1);
+  });
+
+  it('says so when no pending proposal carries the rule, and offers no button', async () => {
+    const reply = await harness().commands.handle('repropose', { rule: 'live-track' });
+    expect(reply.text).toBe('No pending proposal carries live-track.');
+    expect(reply.confirm).toBeUndefined();
+  });
+
+  it('rejects a rule outside the catalogue', async () => {
+    const reply = await harness().commands.handle('repropose', { rule: 'nonsense' });
+    expect(reply.text).toContain('Unknown rule');
+    expect(reply.confirm).toBeUndefined();
+  });
+});
+
 describe('/scrub approve-all', () => {
   it('asks for a confirmation rather than applying straight away', async () => {
     const h = harness();

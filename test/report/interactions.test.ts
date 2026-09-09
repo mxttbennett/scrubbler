@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Gateway, NOT_OWNER, UNKNOWN_ID } from '../../src/report/gateway.js';
-import { approveId, ignoreId, parseCustomId, stripId } from '../../src/report/proposals.js';
+import { approveId, ignoreId, parseCustomId, reproposeId, stripId } from '../../src/report/proposals.js';
 
 const OWNER = '1111';
 const STRANGER = '2222';
@@ -10,6 +10,7 @@ interface Calls {
   ignore: [number, string][];
   strip: [number, string][];
   approveAll: string[];
+  repropose: string[];
   replies: string[];
   followUps: string[];
   deferred: number;
@@ -24,6 +25,7 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
     ignore: [],
     strip: [],
     approveAll: [],
+    repropose: [],
     replies: [],
     followUps: [],
     deferred: 0,
@@ -55,6 +57,10 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
       approveAll: async (user) => {
         calls.approveAll.push(user);
         return { approved: 3, failed: 0 };
+      },
+      repropose: async (rule) => {
+        calls.repropose.push(rule);
+        return 2;
       },
     },
     configPanel: {
@@ -121,6 +127,15 @@ describe('Gateway interactions', () => {
     await gateway.onInteraction(buttonInteraction(approveId(5), OWNER, calls));
 
     expect(calls.approve).toEqual([[5, OWNER]]);
+    expect(calls.ignore).toEqual([]);
+  });
+
+  it('routes a repropose button by rule name, not by row id', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction(reproposeId('live-track'), OWNER, calls));
+
+    expect(calls.repropose).toEqual(['live-track']);
+    expect(calls.approve).toEqual([]);
     expect(calls.ignore).toEqual([]);
   });
 
@@ -218,6 +233,7 @@ describe('Gateway health', () => {
         ignore: async () => ({ outcome: 'ignored', detail: '' }),
         strip: async () => ({ outcome: 'approved', detail: 'stripped' }),
         approveAll: async () => ({ approved: 0, failed: 0 }),
+        repropose: async () => 0,
       },
       alert: async (_error, context) => void alerts.push(context),
       alertAfterMinutes: 15,

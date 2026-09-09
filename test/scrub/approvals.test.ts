@@ -352,6 +352,50 @@ describe('Approvals.expire', () => {
   });
 });
 
+describe('Approvals.repropose', () => {
+  it('drops a rule’s pending proposals, retires their cards and frees the ledger tuple', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+
+    const dropped = await h.approvals.repropose('edition');
+
+    expect(dropped).toBe(1);
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('superseded');
+    expect(h.d.select().from(schema.approvalEdits).all()).toHaveLength(0);
+    // Deleted, not re-statused: checkpoint refuses to refresh a row that is not `planned`, so a
+    // surviving row would re-post the target the card already showed.
+    expect(h.d.select().from(schema.appliedEdits).all()).toHaveLength(0);
+    expect(h.edits).toHaveLength(1);
+  });
+
+  it('leaves a proposal that does not carry the named rule', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+
+    expect(await h.approvals.repropose('mono-stereo')).toBe(0);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('pending');
+    expect(h.d.select().from(schema.appliedEdits).all()).toHaveLength(1);
+  });
+
+  it('counts without dropping, so a confirmation can name a number', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+
+    expect(h.approvals.reproposable('edition')).toHaveLength(1);
+    expect(h.approvals.reproposable('mono-stereo')).toHaveLength(0);
+    expect(h.d.select().from(schema.approvals).all()[0]!.status).toBe('pending');
+  });
+
+  it('writes nothing to Last.fm, so a decided proposal is untouched', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
+    await h.approvals.approve(1, 'someone');
+
+    expect(await h.approvals.repropose('edition')).toBe(0);
+  });
+});
+
 describe('Approvals.drainOnTierChange', () => {
   it('applies pending proposals whose groups are now auto', async () => {
     const h = harness();
