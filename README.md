@@ -267,7 +267,7 @@ Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** 
 |---|---|
 | `/scrub status` | mode, phase, candidate progress, verified/failed, pending count, cursor |
 | `/scrub stats` | all-time corrections, albums and tracks counted separately |
-| `/scrub pending` | the proposals awaiting a decision, with jump links |
+| `/scrub pending [page]` | the proposals awaiting a decision, with jump links |
 | `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
 | `/scrub ignored [page]` | the ignore list |
 | `/scrub unignore <artist> <title>` | remove an entry so it can be proposed again |
