@@ -13,6 +13,8 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 | `src/scrub/` | planner (sweep), clusters (punctuation twins), resolver (candidates → tuples), executor, worker loop |
 | `src/db/` | Drizzle schema; migrations in `drizzle/` applied at startup |
 | `src/report/` | journald logging, Discord reports, slash commands, gateway buttons and config panel |
+| `src/library/` | the API-only mirror of the whole library; no page reads, ever |
+| `src/web/` | localhost-only grid: `node:http` server, handlers, one hand-written `app.html` |
 
 ## Invariants
 
@@ -188,6 +190,28 @@ already has them.
   field, which is also why `resumable` must stay kind-aware.
 - `APPROVAL_MODE` is read once at startup. `sweep_state.paused` is the live flag; do not add a
   second live mode switch.
+
+## Web grid
+
+- **The mirror is API-only.** `LibraryMirror` cannot reach `LibraryPages` — it is not in its
+  constructor. Enumeration is `user.gettopalbums`/`gettoptracks` on the 250ms limiter, which measured
+  88s for 48k entities; the same mapping scraped from album pages would be ~40 hours and would spend
+  the one resource Last.fm actively throttles. Never "just fetch the page" here.
+- **A mirror row is never the source of an edit tuple.** The csrf token, the per-scrobble timestamp
+  and the form action cannot be cached, so every write still re-derives the tuple from a live page.
+  That is why an imperfect album mapping can misgroup a row in the UI but cannot produce a wrong edit
+  — and why the grid must never present a row as instantly writable.
+- **Three id spaces, never conflated.** `library.id` addresses a grid row, `applied_edits.id` a
+  ledger row, and `approvals.id` is what `Approvals.approve`/`ignore` take — hence
+  `/api/approvals/:approvalId/...` and `/api/rows/:libraryId/retry` as separate routes.
+- **`127.0.0.1` is a literal, not config.** The process holds a write-capable session cookie.
+- **The server is the fourth writer**, so it drains on shutdown like the worker: `close()` stops
+  accepting, then waits for in-flight requests before the process lock is released.
+- **The browser computes every replacement; the server never derives a pattern.** `/api/bulk` takes
+  explicit `{kind, artist, from, to}` pairs. This is the catalogue's whole-segment anchoring
+  discipline borrowed for the manual tool, and it is what lets the marker catalogue stay closed.
+- **The album crawl runs on `ScrubWorker`'s `onIdle` hook**, between cycles and never during one, so
+  it cannot compete with a sweep for the shared API limiter.
 
 ## Testing
 

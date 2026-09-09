@@ -22,6 +22,8 @@ import type { ClusterLookup, ClusterPlan } from './clusters.js';
 import type { GroupName, Tier } from '../rules/markers.js';
 
 export interface WorkerDeps {
+  /** Run between cycles, given the coming sleep as its budget. Absent means no background work. */
+  onIdle?: (budgetMs: number) => Promise<void>;
   config: Config;
   db: Db;
   session: Session;
@@ -93,6 +95,7 @@ export class ScrubWorker {
   private readonly gatedGroups: () => ReadonlySet<GroupName>;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
+  private readonly onIdle: ((budgetMs: number) => Promise<void>) | undefined;
 
   constructor(deps: WorkerDeps) {
     this.config = deps.config;
@@ -114,6 +117,7 @@ export class ScrubWorker {
     this.gatedGroups = deps.gatedGroups;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.onIdle = deps.onIdle;
   }
 
   start(): void {
@@ -374,6 +378,15 @@ export class ScrubWorker {
         await this.inFlight;
       } catch (error) {
         await this.reporter.report(error, 'sweep');
+      }
+      // Between cycles, never during one: background work must not compete with a sweep for the
+      // shared API limiter, and a failing hook must not take the loop down with it.
+      if (!this.stopped && this.onIdle !== undefined) {
+        try {
+          await this.onIdle(this.config.sweepIntervalMs);
+        } catch (error) {
+          await this.reporter.report(error, 'idle');
+        }
       }
       await this.sleep(this.config.sweepIntervalMs);
     }

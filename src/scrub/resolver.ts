@@ -2,7 +2,7 @@ import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.j
 import { LibraryPages, albumLibraryPath, artistLibraryPath, extractAggregateLinks, extractAlbumTrackNames, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { CustomRuleLookup } from '../rules/customRules.js';
-import type { GroupName } from '../rules/markers.js';
+import type { GroupName, RuleTag } from '../rules/markers.js';
 import type { ClusterLookup } from './clusters.js';
 import {
   type Candidate,
@@ -48,10 +48,16 @@ export class Resolver {
     private readonly enabled: () => ReadonlySet<GroupName>,
     /** The same lookup the planner uses: consulted here too, or the edit would read as already clean. */
     private readonly overrides?: CustomRuleLookup,
+    /** What an override hit is tagged in the ledger; the grid passes `manual`. */
+    private readonly overrideTag: RuleTag = 'custom',
   ) {}
 
-  private override(artist: string): { artist: string; lookup: CustomRuleLookup } | undefined {
-    return this.overrides === undefined ? undefined : { artist, lookup: this.overrides };
+  private override(
+    artist: string,
+  ): { artist: string; lookup: CustomRuleLookup; tag: RuleTag } | undefined {
+    return this.overrides === undefined
+      ? undefined
+      : { artist, lookup: this.overrides, tag: this.overrideTag };
   }
 
   /**

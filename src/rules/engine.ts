@@ -156,7 +156,7 @@ export function cleanTitle(
   title: string,
   field: Field,
   enabled: ReadonlySet<GroupName>,
-  override?: { artist: string; lookup: OverrideLookup },
+  override?: { artist: string; lookup: OverrideLookup; tag?: RuleTag },
   opts?: { normalizeAction?: NormalizeAction },
 ): CleanResult | null {
   // Checked before the loop, not inside it: a user's replacement is an arbitrary rename, so none of
@@ -164,7 +164,7 @@ export function cleanTitle(
   // never fed back through the catalogue, so what the user typed is what lands.
   const replacement = override?.lookup(field, override.artist, title);
   if (replacement !== undefined && replacement.toLowerCase() !== title.toLowerCase()) {
-    return { clean: replacement, groups: ['custom'], passes: 1 };
+    return { clean: replacement, groups: [override?.tag ?? 'custom'], passes: 1 };
   }
 
   const groups: GroupName[] = [];
