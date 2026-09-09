@@ -12,7 +12,7 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 | `src/lastfm/` | read API client, web session + cookie jar, page parsing, the edit writer |
 | `src/scrub/` | planner (sweep), clusters (punctuation twins), resolver (candidates → tuples), executor, worker loop |
 | `src/db/` | Drizzle schema; migrations in `drizzle/` applied at startup |
-| `src/report/` | journald logging + REST-only Discord bot (no gateway, so it shows offline) |
+| `src/report/` | journald logging, Discord reports, slash commands, gateway buttons and config panel |
 
 ## Invariants
 
@@ -160,6 +160,13 @@ only the track one paginates. See `src/lastfm/rules.ts`.
   suppress a card that was never sent.
 - **The diff is against the enabled result**, not the raw title — otherwise every catalogue hit would
   also report as a shadow hit for every disabled rule.
+
+## Runtime configuration
+
+- Rule tiers are live. `RULES` is the startup fallback, and `rule_tiers` stores only Discord panel
+  overrides; resetting a group deletes its override so the env/default layer applies again.
+- `APPROVAL_MODE` remains startup-only. It still coerces `auto` groups to `gated`, including panel
+  overrides, until the process restarts.
 
 ## Approvals
 

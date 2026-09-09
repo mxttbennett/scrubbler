@@ -56,7 +56,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
     const planner = new Planner(
       fakeApi([{ name: ODD, artist: ARTIST }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       rules.lookup,
@@ -72,7 +72,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
     const planner = new Planner(
       fakeApi([{ name: ODD, artist: ARTIST }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       rules.lookup,
@@ -86,7 +86,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
     rules.add({ kind: 'album', artist: ARTIST, fromTitle: ODD, toTitle: 'Wowee Zowee' });
 
     const path = albumLibraryPath('u', ARTIST, ODD);
-    const resolver = new Resolver(fakePages({ [path]: albumHtml(ODD) }), 'u', ENABLED, rules.lookup);
+    const resolver = new Resolver(fakePages({ [path]: albumHtml(ODD) }), 'u', () => ENABLED, rules.lookup);
 
     const { albumEdits } = await resolver.resolve([{ kind: 'album', artist: ARTIST, title: ODD }]);
 
@@ -102,7 +102,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
 
     const path = albumLibraryPath('u', ARTIST, ODD);
     // No lookup passed — this is the one-sided implementation the pair above exists to catch.
-    const resolver = new Resolver(fakePages({ [path]: albumHtml(ODD) }), 'u', ENABLED);
+    const resolver = new Resolver(fakePages({ [path]: albumHtml(ODD) }), 'u', () => ENABLED);
 
     const { albumEdits, skips } = await resolver.resolve([
       { kind: 'album', artist: ARTIST, title: ODD },
@@ -119,7 +119,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
     const planner = new Planner(
       fakeApi([{ name: ODD, artist: 'Someone Else' }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       undefined,
       3,
       rules.lookup,
@@ -134,7 +134,7 @@ describe('a custom rule must reach discovery AND resolution', () => {
     const planner = new Planner(
       fakeApi([{ name: ODD, artist: ARTIST }]),
       'u',
-      ENABLED,
+      () => ENABLED,
       d,
       3,
       rules.lookup,

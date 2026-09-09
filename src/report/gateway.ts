@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, MessageFlags } from 'discord.js';
-import type { ChatInputCommandInteraction, Interaction } from 'discord.js';
+import type { ButtonInteraction, ChatInputCommandInteraction, Interaction, StringSelectMenuInteraction } from 'discord.js';
 import { COMMAND_DEFINITION, COMMAND_NAME, type Commands } from './commands.js';
+import { parseConfigId } from './configPanel.js';
 import { parseCustomId } from './proposals.js';
 
 export interface DecisionHandler {
@@ -15,6 +16,7 @@ export interface GatewayDeps {
   ownerId: string;
   guildId?: string;
   commands?: Commands;
+  configPanel?: { handle(customId: string): { content: string; components: unknown[] } };
   decisions: DecisionHandler;
   /** Reached even when Discord is unreachable, which is the point of alerting through it. */
   alert: (error: unknown, context: string) => Promise<void>;
@@ -128,6 +130,18 @@ export class Gateway {
       await this.onCommand(interaction);
       return;
     }
+    const isSelect =
+      typeof interaction.isStringSelectMenu === 'function' && interaction.isStringSelectMenu();
+    if (interaction.isButton() || isSelect) {
+      const id =
+        isSelect && interaction.customId === 'cfg:pick'
+          ? `cfg:pick:${interaction.values[0] ?? ''}`
+          : interaction.customId;
+      if (id.startsWith('cfg:')) {
+        await this.onConfigInteraction(interaction, id);
+        return;
+      }
+    }
     if (!interaction.isButton()) return;
     const parsed = parseCustomId(interaction.customId);
     if (parsed === undefined) return;
@@ -174,6 +188,21 @@ export class Gateway {
     }
   }
 
+  private async onConfigInteraction(
+    interaction: ButtonInteraction | StringSelectMenuInteraction,
+    customId: string,
+  ): Promise<void> {
+    if (parseConfigId(customId) === undefined && !customId.startsWith('cfg:pick:')) return;
+    if (interaction.user.id !== this.deps.ownerId) {
+      await interaction.reply({ content: NOT_OWNER, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    const panel = this.deps.configPanel;
+    if (panel === undefined) return;
+    const payload = panel.handle(customId);
+    await interaction.update({ content: payload.content, components: payload.components as never });
+  }
+
   private async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     const { commands, ownerId } = this.deps;
     if (commands === undefined || interaction.commandName !== COMMAND_NAME) return;
@@ -195,25 +224,26 @@ export class Gateway {
 
     try {
       const reply = await commands.handle(sub, args);
+      const components =
+        reply.components ??
+        (reply.confirm === undefined
+          ? undefined
+          : [
+              {
+                type: 1,
+                components: [
+                  {
+                    type: 2,
+                    style: 4,
+                    label: reply.confirm.label,
+                    custom_id: reply.confirm.customId,
+                  },
+                ],
+              },
+            ]);
       await interaction.editReply({
         content: reply.text.slice(0, 1900),
-        ...(reply.confirm === undefined
-          ? {}
-          : {
-              components: [
-                {
-                  type: 1,
-                  components: [
-                    {
-                      type: 2,
-                      style: 4,
-                      label: reply.confirm.label,
-                      custom_id: reply.confirm.customId,
-                    },
-                  ],
-                },
-              ] as never,
-            }),
+        ...(components === undefined ? {} : { components: components as never }),
       });
     } catch (error) {
       this.log(`/${COMMAND_NAME} ${sub} failed: ${String(error)}`);

@@ -47,7 +47,7 @@ describe('Resolver — onGroup', () => {
         [b]: rows(['Left of the Dial'], 'Let It Be (Deluxe Edition)'),
       }),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
 
     const seen: EditGroup[] = [];
@@ -69,7 +69,7 @@ describe('Resolver — onGroup', () => {
     const resolver = new Resolver(
       fakePages({ [path]: rows(['Bastards of Young'], 'Let It Be (Deluxe Edition)') }),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
 
     let applied = 0;
@@ -88,7 +88,7 @@ describe('Resolver — onGroup', () => {
     const resolver = new Resolver(
       fakePages({ [path]: albumHtml('In Utero (Deluxe Edition)') }),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
 
     let applied = 0;
@@ -109,7 +109,7 @@ describe('Resolver — onGroup', () => {
     const resolver = new Resolver(
       fakePages({ [path]: rows(['Bastards of Young'], 'Let It Be (Deluxe Edition)') }),
       'u',
-      ENABLED,
+      () => ENABLED,
     );
 
     let applied = 0;

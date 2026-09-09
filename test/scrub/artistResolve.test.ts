@@ -47,7 +47,7 @@ describe('an artist candidate resolves through the ordinary scrobble rows', () =
   it('recurses from the artist page into the track page and renames the artist', async () => {
     const { pages: p, fetched } = pages({ [ARTIST_PATH]: ARTIST_PAGE, [TRACK_PATH]: TRACK_PAGE });
 
-    const { edits } = await new Resolver(p, 'u', ENABLED).resolve(
+    const { edits } = await new Resolver(p, 'u', () => ENABLED).resolve(
       [{ kind: 'artist', artist: CURLY, title: CURLY }],
       {},
       lookup,
@@ -64,7 +64,7 @@ describe('an artist candidate resolves through the ordinary scrobble rows', () =
   /** The album artist is the same entity, so it moves with the artist rather than being left behind. */
   it('renames the album artist alongside the artist', async () => {
     const { pages: p } = pages({ [ARTIST_PATH]: ARTIST_PAGE, [TRACK_PATH]: TRACK_PAGE });
-    const { edits } = await new Resolver(p, 'u', ENABLED).resolve(
+    const { edits } = await new Resolver(p, 'u', () => ENABLED).resolve(
       [{ kind: 'artist', artist: CURLY, title: CURLY }],
       {},
       lookup,
@@ -75,7 +75,7 @@ describe('an artist candidate resolves through the ordinary scrobble rows', () =
   /** Without the tag the tier system cannot hold it: isGated only gates a real GroupName. */
   it('tags the edit punctuation so it can be gated', async () => {
     const { pages: p } = pages({ [ARTIST_PATH]: ARTIST_PAGE, [TRACK_PATH]: TRACK_PAGE });
-    const { edits } = await new Resolver(p, 'u', ENABLED).resolve(
+    const { edits } = await new Resolver(p, 'u', () => ENABLED).resolve(
       [{ kind: 'artist', artist: CURLY, title: CURLY }],
       {},
       lookup,
@@ -89,7 +89,7 @@ describe('an artist candidate resolves through the ordinary scrobble rows', () =
    */
   it('finds nothing when the lookup is withheld', async () => {
     const { pages: p } = pages({ [ARTIST_PATH]: ARTIST_PAGE, [TRACK_PATH]: TRACK_PAGE });
-    const { edits } = await new Resolver(p, 'u', ENABLED).resolve([
+    const { edits } = await new Resolver(p, 'u', () => ENABLED).resolve([
       { kind: 'artist', artist: CURLY, title: CURLY },
     ]);
     expect(edits).toEqual([]);
@@ -97,7 +97,7 @@ describe('an artist candidate resolves through the ordinary scrobble rows', () =
 
   it('records a skip when the artist is no longer in the library', async () => {
     const { pages: p } = pages({});
-    const { skips } = await new Resolver(p, 'u', ENABLED).resolve(
+    const { skips } = await new Resolver(p, 'u', () => ENABLED).resolve(
       [{ kind: 'artist', artist: CURLY, title: CURLY }],
       {},
       lookup,
@@ -129,7 +129,7 @@ describe('a cluster target beats the catalogue for the same field', () => {
     const clusters: ClusterLookup = (kind, _artist, title) =>
       kind === 'track' && title === DIRTY_TITLE ? "Don't Lie to Me (Remastered)" : undefined;
 
-    const { edits } = await new Resolver(p, 'u', ENABLED).resolve(
+    const { edits } = await new Resolver(p, 'u', () => ENABLED).resolve(
       [{ kind: 'track', artist: 'Big Star', title: DIRTY_TITLE }],
       {},
       clusters,

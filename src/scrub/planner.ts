@@ -18,7 +18,7 @@ export class Planner {
   constructor(
     private readonly api: LastfmApi,
     private readonly username: string,
-    private readonly enabled: ReadonlySet<GroupName>,
+    private readonly enabled: () => ReadonlySet<GroupName>,
     private readonly db?: Db,
     private readonly deadAfterAttempts = 3,
     /** Consulted during discovery too: a rule the planner cannot see nominates no candidate. */
@@ -32,7 +32,7 @@ export class Planner {
 
   private shadow(kind: 'track' | 'album', artist: string, title: string): void {
     if (this.onShadow === undefined) return;
-    for (const v of shadowVerdicts(title, kind, this.enabled, this.override(artist))) {
+    for (const v of shadowVerdicts(title, kind, this.enabled(), this.override(artist))) {
       this.onShadow({ ...v, kind, artist, title });
     }
   }
@@ -103,11 +103,11 @@ export class Planner {
         candidates.push(c);
       };
 
-      if (s.album !== '' && cleanTitle(s.album, 'album', this.enabled, this.override(s.artist))) {
+      if (s.album !== '' && cleanTitle(s.album, 'album', this.enabled(), this.override(s.artist))) {
         // artist here is the TRACK artist; the resolver reads the real album artist off the page.
         push({ kind: 'album', artist: s.artist, title: s.album });
       }
-      if (cleanTitle(s.track, 'track', this.enabled, this.override(s.artist))) {
+      if (cleanTitle(s.track, 'track', this.enabled(), this.override(s.artist))) {
         push({ kind: 'track', artist: s.artist, title: s.track });
       }
       // Tracks only: an album shadowed here would be filed under the track artist and would not
@@ -130,7 +130,7 @@ export class Planner {
 
     for await (const album of this.api.iterateTopAlbums(this.username)) {
       seen++;
-      if (cleanTitle(album.name, 'album', this.enabled, this.override(album.artist))) {
+      if (cleanTitle(album.name, 'album', this.enabled(), this.override(album.artist))) {
         candidates.push({ kind: 'album', artist: album.artist, title: album.name });
       }
       this.shadow('album', album.artist, album.name);
@@ -139,7 +139,7 @@ export class Planner {
 
     for await (const track of this.api.iterateTopTracks(this.username)) {
       seen++;
-      if (cleanTitle(track.name, 'track', this.enabled, this.override(track.artist))) {
+      if (cleanTitle(track.name, 'track', this.enabled(), this.override(track.artist))) {
         candidates.push({ kind: 'track', artist: track.artist, title: track.name });
       }
       this.shadow('track', track.artist, track.name);

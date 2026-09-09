@@ -5,7 +5,7 @@ import { Executor } from '../../src/scrub/executor.js';
 import { isGated } from '../../src/scrub/tiers.js';
 import type { PlannedEdit } from '../../src/scrub/types.js';
 import type { PlannedAlbumEdit } from '../../src/lastfm/albumEditor.js';
-import type { GroupName } from '../../src/rules/markers.js';
+import { ALL_GROUPS, type GroupName, type Tier } from '../../src/rules/markers.js';
 import type { Reporter } from '../../src/report/reporter.js';
 import type { ProposalTransport } from '../../src/report/proposals.js';
 
@@ -18,6 +18,10 @@ const silent: Reporter = {
 };
 
 const GATED = new Set<GroupName>(['live-album']);
+
+const TIERS = Object.fromEntries(
+  ALL_GROUPS.map((g) => [g, GATED.has(g) ? 'gated' : 'auto']),
+) as Record<GroupName, Tier>;
 
 function edit(track: string, groups: string[]): PlannedEdit {
   const original = {
@@ -67,7 +71,8 @@ function harness() {
     proposals: transport,
     freshToken: async () => 'fresh',
     ttlHours: 168,
-    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    tiers: () => TIERS,
     log: () => {},
   });
   return { executor, approvals, applied, posted: () => posted };

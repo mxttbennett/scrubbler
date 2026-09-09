@@ -16,7 +16,7 @@ import { type CorrectionGroup, type Links, groupEmbed } from '../report/reporter
 import type { Executor, ResumableEdit } from './executor.js';
 import { type NormalizeAction, cleanTitle } from '../rules/engine.js';
 import type { CustomRuleLookup } from '../rules/customRules.js';
-import { DASH_NORMALIZED, type GroupName, isGroupName } from '../rules/markers.js';
+import { DASH_NORMALIZED, type GroupName, type Tier, isGroupName } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, changedFields, tupleKey } from './types.js';
 
 export interface ApprovalDeps {
@@ -37,7 +37,8 @@ export interface ApprovalDeps {
   stillThere?: (item: ResumableEdit) => Promise<boolean>;
   ttlHours: number;
   /** Needed to re-derive an edit when a decision asks for a different answer than the one proposed. */
-  enabledGroups: ReadonlySet<GroupName>;
+  enabledGroups: () => ReadonlySet<GroupName>;
+  tiers: () => Readonly<Record<GroupName, Tier>>;
   overrides?: CustomRuleLookup;
   log?: (msg: string) => void;
 }
@@ -45,7 +46,7 @@ export interface ApprovalDeps {
 export type Decision = 'approved' | 'ignored';
 
 export interface DecisionResult {
-  outcome: Decision | 'gone' | 'already-decided' | 'stale' | 'no-op';
+  outcome: Decision | 'gone' | 'already-decided' | 'stale' | 'no-op' | 'discarded';
   detail: string;
 }
 
@@ -182,6 +183,14 @@ export class Approvals {
     const claimed = this.claim(approvalId, 'approved', userId);
     if (claimed.outcome !== 'ok') return claimed;
 
+    if (action === 'strip' && this.proposalTier(approvalId) === 'off') {
+      await this.releaseAndRetire(approvalId);
+      return {
+        outcome: 'discarded',
+        detail: 'that rule is switched off; the proposal has been discarded',
+      };
+    }
+
     const token = await freshToken();
     if (token === undefined) {
       db.update(schema.approvals)
@@ -306,23 +315,33 @@ export class Approvals {
     return count;
   }
 
-  /**
-   * Incremental discovery only sees new scrobbles, so pending entities would otherwise wait for the
-   * weekly full sweep after the mode is switched off. Corrects them by the ordinary path instead.
-   */
-  async drainOnModeOff(): Promise<number> {
+  async drainOnTierChange(
+    tiers: Readonly<Record<GroupName, Tier>>,
+  ): Promise<{ applied: number; retired: number; kept: number }> {
     const { db, executor, freshToken } = this.deps;
     const pending = this.pending();
-    if (pending.length === 0) return 0;
+    const out = { applied: 0, retired: 0, kept: 0 };
+    if (pending.length === 0) return out;
 
-    const token = await freshToken();
-    if (token === undefined) {
-      this.log(`approval mode is off but no token was available to drain ${pending.length}`);
-      return 0;
-    }
+    let token: string | undefined;
 
-    let drained = 0;
     for (const row of pending) {
+      const tier = this.proposalTier(row.id, tiers);
+      if (tier === 'gated') {
+        out.kept++;
+        continue;
+      }
+      if (tier === 'off') {
+        await this.releaseAndRetire(row.id);
+        out.retired++;
+        continue;
+      }
+      token ??= await freshToken();
+      if (token === undefined) {
+        this.log(`could not drain pending proposal ${row.id}: no Last.fm token was available`);
+        out.kept++;
+        continue;
+      }
       for (const item of this.editsFor(row.id, token)) {
         db.update(schema.appliedEdits)
           .set({ status: 'planned' })
@@ -336,9 +355,9 @@ export class Approvals {
         .where(eq(schema.approvals.id, row.id))
         .run();
       await this.retire(row.id, 'superseded');
-      drained++;
+      out.applied++;
     }
-    return drained;
+    return out;
   }
 
   /** Expired entities are re-proposed later, never ignored: an unread week must not discard work. */
@@ -435,7 +454,7 @@ export class Approvals {
         const album = cleanTitle(
           item.edit.from,
           'album',
-          enabledGroups,
+          enabledGroups(),
           lookup(item.edit.artist),
           opts,
         );
@@ -448,7 +467,7 @@ export class Approvals {
       const track = cleanTitle(
         original.track_name,
         'track',
-        enabledGroups,
+        enabledGroups(),
         lookup(original.artist_name),
         opts,
       );
@@ -458,7 +477,7 @@ export class Approvals {
           : cleanTitle(
               original.album_name,
               'album',
-              enabledGroups,
+              enabledGroups(),
               lookup(original.album_artist_name || original.artist_name),
               opts,
             );
@@ -500,6 +519,49 @@ export class Approvals {
     return this.deps.executor
       .resumable(token, 'awaiting_approval')
       .filter((item) => ids.has(item.id));
+  }
+
+  private proposalTier(
+    approvalId: number,
+    tiers: Readonly<Record<GroupName, Tier>> = this.deps.tiers(),
+  ): Tier {
+    const groups = this.groupsFor(approvalId);
+    if (groups.some((group) => tiers[group] === 'off')) return 'off';
+    if (groups.some((group) => tiers[group] === 'gated')) return 'gated';
+    return 'auto';
+  }
+
+  private groupsFor(approvalId: number): GroupName[] {
+    const ids = this.editIdsFor(approvalId);
+    if (ids.length === 0) return [];
+    const rows = this.deps.db
+      .select({ groups: schema.appliedEdits.groups })
+      .from(schema.appliedEdits)
+      .where(inArray(schema.appliedEdits.id, ids))
+      .all();
+    const groups = new Set<GroupName>();
+    for (const row of rows) {
+      for (const group of row.groups.split(',')) if (isGroupName(group)) groups.add(group);
+    }
+    return [...groups];
+  }
+
+  private async releaseAndRetire(approvalId: number): Promise<void> {
+    const { db } = this.deps;
+    const ids = this.editIdsFor(approvalId);
+    db.transaction((tx) => {
+      tx.update(schema.approvals)
+        .set({ status: 'superseded', decidedAt: new Date(), decidedBy: 'system' })
+        .where(eq(schema.approvals.id, approvalId))
+        .run();
+      tx.delete(schema.approvalEdits)
+        .where(eq(schema.approvalEdits.approvalId, approvalId))
+        .run();
+      if (ids.length > 0) {
+        tx.delete(schema.appliedEdits).where(inArray(schema.appliedEdits.id, ids)).run();
+      }
+    });
+    await this.retire(approvalId, 'superseded', 'discarded');
   }
 
   private entitiesFor(
@@ -626,6 +688,7 @@ export function buttonsFor(approvalId: number, groups: readonly string[] = []): 
 /** A decision that applied something other than what the card proposed still retires as approved. */
 const EXTRA_RETIRED_WORD = {
   stripped: 'Applied — label removed',
+  discarded: 'Discarded — rule switched off',
 } as const;
 
 const RETIRED_WORD = {

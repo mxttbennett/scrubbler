@@ -35,6 +35,7 @@ function harness(
     applyNow?: () => Promise<string>;
     shadowMode?: boolean;
     enabledRules?: ReadonlySet<string>;
+    configPanel?: { handle(customId: string): { content: string; components: unknown[] } };
   } = {},
 ) {
   const d = createDb(':memory:');
@@ -52,7 +53,8 @@ function harness(
     proposals: transport,
     freshToken: async () => 'fresh',
     ttlHours: 168,
-    enabledGroups: new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
+    tiers: () => ({ remaster: 'auto', edition: 'auto', bonus: 'auto' }) as never,
     log: () => {},
   });
   const customRules = new CustomRules(d);
@@ -71,6 +73,7 @@ function harness(
     shadowStore,
     shadowMode: opts.shadowMode ?? true,
     enabledRules: opts.enabledRules ?? new Set<string>(),
+    ...(opts.configPanel === undefined ? {} : { configPanel: opts.configPanel }),
     channelId: 'chan',
     guildId: 'guild',
   });
@@ -165,6 +168,19 @@ describe('/scrub stats', () => {
 
   it('reads zero cleanly on an empty ledger', async () => {
     expect((await harness().commands.handle('stats')).text).toContain('total corrected 0');
+  });
+});
+
+describe('/scrub config', () => {
+  it('opens the config panel', async () => {
+    const h = harness({
+      configPanel: { handle: () => ({ content: 'Rule configuration', components: [] }) },
+    });
+
+    const reply = await h.commands.handle('config');
+
+    expect(reply.text).toContain('Rule configuration');
+    expect(reply.components).toEqual([]);
   });
 });
 
@@ -289,7 +305,7 @@ describe('/scrub ignored and unignore', () => {
 
     expect((await h.commands.handle('ignored')).text).toContain('Slint');
 
-    const planner = new Planner({} as never, 'u', new Set(['remaster']), h.d, 3);
+    const planner = new Planner({} as never, 'u', () => new Set(['remaster']), h.d, 3);
     const candidate = { kind: 'track' as const, artist: 'Slint', title: 'Good Morning, Captain' };
     expect(planner.filterLive([candidate])).toEqual([]);
 

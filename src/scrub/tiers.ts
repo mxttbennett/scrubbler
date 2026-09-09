@@ -1,4 +1,4 @@
-import { type GroupName, isGroupName } from '../rules/markers.js';
+import { type GroupName, type Tier, isGroupName } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, toGroup } from './types.js';
 
 /**
@@ -16,6 +16,7 @@ export function isGated(groups: readonly string[], gated: ReadonlySet<GroupName>
 }
 
 export interface TierSplit {
+  off: EditGroup | undefined;
   gated: EditGroup | undefined;
   auto: EditGroup | undefined;
 }
@@ -27,20 +28,39 @@ export interface TierSplit {
  * so `shared` is re-derived per side rather than inherited. An album group holds a single edit and
  * therefore goes one way whole.
  */
-export function splitByTier(group: EditGroup, gated: ReadonlySet<GroupName>): TierSplit {
+export function partitionByTier(group: EditGroup, tiers: Readonly<Record<GroupName, Tier>>): TierSplit {
   if (group.kind === 'album') {
-    const isAlbumGated = isGated(group.album.groups, gated);
-    return { gated: isAlbumGated ? group : undefined, auto: isAlbumGated ? undefined : group };
+    const tier = tierOf(group.album.groups, tiers);
+    return {
+      off: tier === 'off' ? group : undefined,
+      gated: tier === 'gated' ? group : undefined,
+      auto: tier === 'auto' ? group : undefined,
+    };
   }
 
+  const offEdits: PlannedEdit[] = [];
   const gatedEdits: PlannedEdit[] = [];
   const autoEdits: PlannedEdit[] = [];
   for (const edit of group.edits) {
-    (isGated(edit.groups, gated) ? gatedEdits : autoEdits).push(edit);
+    const tier = tierOf(edit.groups, tiers);
+    if (tier === 'off') offEdits.push(edit);
+    else if (tier === 'gated') gatedEdits.push(edit);
+    else autoEdits.push(edit);
   }
 
   return {
+    off: offEdits.length === 0 ? undefined : toGroup(group.artist, offEdits),
     gated: gatedEdits.length === 0 ? undefined : toGroup(group.artist, gatedEdits),
     auto: autoEdits.length === 0 ? undefined : toGroup(group.artist, autoEdits),
   };
+}
+
+function tierOf(groups: readonly string[], tiers: Readonly<Record<GroupName, Tier>>): Tier {
+  let tier: Tier = 'auto';
+  for (const group of groups) {
+    if (!isGroupName(group)) continue;
+    if (tiers[group] === 'off') return 'off';
+    if (tiers[group] === 'gated') tier = 'gated';
+  }
+  return tier;
 }

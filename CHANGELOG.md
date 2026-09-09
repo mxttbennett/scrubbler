@@ -7,6 +7,18 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.5.0] - 2026-09-09
+
+- Rule tiers can now be changed from Discord with `/scrub config`. The panel shows each catalogue
+  group, whether its tier came from the default, `RULES`, or a Discord override, and can reset an
+  override back to the env/default layer.
+- Turning a group `off` takes effect before the next write decision, even mid-cycle. A tuple tagged
+  with an off group is skipped whole rather than partially applied through another enabled tag.
+- Pending proposals are drained by the current tier: `auto` applies them through the normal write
+  path, `gated` leaves them pending, and `off` discards them without writing and frees their ledger
+  tuples for future corrections.
+- The same panel controls pause/resume through the existing sweep-state flag. `APPROVAL_MODE`,
+  `DRY_RUN`, shadow mode, pacing, and credentials remain startup/env configuration.
 ## [1.4.1] - 2026-09-09
 
 - `/scrub pending` now takes a `page` argument, the same way `/scrub ignored` already did. It used to

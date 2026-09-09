@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupName } from '../../src/rules/markers.js';
-import { isGated, splitByTier } from '../../src/scrub/tiers.js';
+import type { GroupName, Tier } from '../../src/rules/markers.js';
+import { isGated, partitionByTier } from '../../src/scrub/tiers.js';
 import { toAlbumGroup, toGroup } from '../../src/scrub/types.js';
 import type { PlannedAlbumEdit } from '../../src/lastfm/albumEditor.js';
 import type { PlannedEdit } from '../../src/scrub/types.js';
 
 const GATED = new Set<GroupName>(['live-album', 'feat-track']);
+const TIERS: Record<GroupName, Tier> = {
+  remaster: 'auto',
+  edition: 'auto',
+  bonus: 'auto',
+  'feat-album': 'off',
+  'feat-track': 'gated',
+  'ep-single': 'off',
+  'live-album': 'gated',
+  'live-track': 'off',
+  version: 'off',
+  'mono-stereo': 'off',
+  punctuation: 'off',
+};
 
 function trackEdit(track: string, groups: string[], album = 'Unknown Pleasures'): PlannedEdit {
   const original = {
@@ -73,22 +86,44 @@ describe('isGated', () => {
   });
 });
 
-describe('splitByTier — track groups', () => {
+describe('partitionByTier — track groups', () => {
   it('sends an all-auto candidate to the auto side only', () => {
     const g = toGroup('Joy Division', [trackEdit('Disorder', ['remaster'])]);
-    const split = splitByTier(g, GATED);
+    const split = partitionByTier(g, TIERS);
 
     expect(split.gated).toBeUndefined();
+    expect(split.off).toBeUndefined();
     expect(split.auto?.kind).toBe('track');
     expect(split.auto?.kind === 'track' && split.auto.edits).toHaveLength(1);
   });
 
   it('sends an all-gated candidate to the gated side only', () => {
     const g = toGroup('Joy Division', [trackEdit('Disorder', ['feat-track'])]);
-    const split = splitByTier(g, GATED);
+    const split = partitionByTier(g, TIERS);
 
     expect(split.auto).toBeUndefined();
+    expect(split.off).toBeUndefined();
     expect(split.gated?.kind === 'track' && split.gated.edits).toHaveLength(1);
+  });
+
+  it('suppresses the whole tuple when any tag is off, even with another auto tag', () => {
+    const g = toGroup('Joy Division', [trackEdit('Disorder', ['remaster', 'live-track'])]);
+    const split = partitionByTier(g, TIERS);
+
+    expect(split.off?.kind === 'track' && split.off.edits.map((e) => e.next.track_name)).toEqual([
+      'Disorder',
+    ]);
+    expect(split.auto).toBeUndefined();
+    expect(split.gated).toBeUndefined();
+  });
+
+  it('lets off beat gated on the same tuple', () => {
+    const g = toGroup('Joy Division', [trackEdit('Disorder', ['feat-track', 'live-track'])]);
+    const split = partitionByTier(g, TIERS);
+
+    expect(split.off?.kind).toBe('track');
+    expect(split.gated).toBeUndefined();
+    expect(split.auto).toBeUndefined();
   });
 
   /** The case that does not exist today: one candidate spanning both tiers. */
@@ -99,16 +134,18 @@ describe('splitByTier — track groups', () => {
       trackEdit('Candidate', ['edition']),
       trackEdit('Interzone', ['remaster', 'live-album']),
     ];
-    const split = splitByTier(toGroup('Joy Division', edits), GATED);
+    const split = partitionByTier(toGroup('Joy Division', edits), TIERS);
 
     const gatedNames =
       split.gated?.kind === 'track' ? split.gated.edits.map((e) => e.next.track_name) : [];
     const autoNames =
       split.auto?.kind === 'track' ? split.auto.edits.map((e) => e.next.track_name) : [];
+    const offNames = split.off?.kind === 'track' ? split.off.edits.map((e) => e.next.track_name) : [];
 
     expect(gatedNames).toEqual(['Insight', 'Interzone']);
     expect(autoNames).toEqual(['Disorder', 'Candidate']);
-    expect([...gatedNames, ...autoNames]).toHaveLength(edits.length);
+    expect(offNames).toEqual([]);
+    expect([...gatedNames, ...autoNames, ...offNames]).toHaveLength(edits.length);
   });
 
   it('re-derives shared per side rather than inheriting the whole group’s', () => {
@@ -127,9 +164,9 @@ describe('splitByTier — track groups', () => {
         groups: groups as PlannedEdit['groups'],
       };
     };
-    const split = splitByTier(
+    const split = partitionByTier(
       toGroup('A', [shared('Dirty', ['edition']), shared('Dirty', ['edition']), trackEdit('X', ['feat-track'])]),
-      GATED,
+      TIERS,
     );
 
     expect(split.auto?.shared).toEqual({ field: 'album_name', from: 'Dirty', to: 'Clean' });
@@ -141,22 +178,32 @@ describe('splitByTier — track groups', () => {
   });
 });
 
-describe('splitByTier — album groups go whole', () => {
+describe('partitionByTier — album groups go whole', () => {
   it('gates the whole album group', () => {
-    const split = splitByTier(toAlbumGroup(albumEdit(['live-album'])), GATED);
+    const split = partitionByTier(toAlbumGroup(albumEdit(['live-album'])), TIERS);
     expect(split.gated?.kind).toBe('album');
     expect(split.auto).toBeUndefined();
+    expect(split.off).toBeUndefined();
   });
 
   it('auto-applies the whole album group', () => {
-    const split = splitByTier(toAlbumGroup(albumEdit(['edition'])), GATED);
+    const split = partitionByTier(toAlbumGroup(albumEdit(['edition'])), TIERS);
     expect(split.auto?.kind).toBe('album');
     expect(split.gated).toBeUndefined();
+    expect(split.off).toBeUndefined();
   });
 
   it('gates an album whose tags mix tiers, since it cannot be split', () => {
-    const split = splitByTier(toAlbumGroup(albumEdit(['edition', 'live-album'])), GATED);
+    const split = partitionByTier(toAlbumGroup(albumEdit(['edition', 'live-album'])), TIERS);
     expect(split.gated?.kind).toBe('album');
+    expect(split.auto).toBeUndefined();
+    expect(split.off).toBeUndefined();
+  });
+
+  it('suppresses an album group whole when any tag is off', () => {
+    const split = partitionByTier(toAlbumGroup(albumEdit(['edition', 'live-track'])), TIERS);
+    expect(split.off?.kind).toBe('album');
+    expect(split.gated).toBeUndefined();
     expect(split.auto).toBeUndefined();
   });
 });

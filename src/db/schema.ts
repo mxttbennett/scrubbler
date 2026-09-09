@@ -229,3 +229,8 @@ export const shadowHits = sqliteTable(
   ],
 );
 
+export const ruleTiers = sqliteTable('rule_tiers', {
+  group: text('group').primaryKey(),
+  tier: text('tier', { enum: ['auto', 'gated', 'off'] }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});
