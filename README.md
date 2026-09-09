@@ -269,6 +269,7 @@ Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** 
 | `/scrub stats` | all-time corrections, albums and tracks counted separately |
 | `/scrub pending [page]` | the proposals awaiting a decision, with jump links |
 | `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
+| `/scrub repropose <rule>` | drop that rule's pending proposals so a later sweep re-resolves them |
 | `/scrub ignored [page]` | the ignore list |
 | `/scrub unignore <artist> <title>` | remove an entry so it can be proposed again |
 | `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |

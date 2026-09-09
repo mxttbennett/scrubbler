@@ -3,7 +3,8 @@ import type { Db } from '../db/index.js';
 import { schema } from '../db/index.js';
 import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
-import { ALL_GROUPS, type Field } from '../rules/markers.js';
+import { ALL_GROUPS, type Field, isGroupName } from '../rules/markers.js';
+import { reproposeId } from './proposals.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
 import { readPackageVersion } from '../core/version.js';
 
@@ -54,6 +55,20 @@ export const COMMAND_DEFINITION = {
       options: [{ type: 4, name: 'page', description: '1-based page', required: false }],
     },
     { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
+    {
+      type: 1,
+      name: 'repropose',
+      description: 'Drop one rule’s pending proposals so a later sweep re-resolves them',
+      options: [
+        {
+          type: 3,
+          name: 'rule',
+          description: 'The rule whose proposals are stale',
+          required: true,
+          choices: ALL_GROUPS.map((g) => ({ name: g, value: g })),
+        },
+      ],
+    },
     {
       type: 1,
       name: 'ignored',
@@ -179,6 +194,8 @@ export class Commands {
           ? { text: this.pendingList(Number(args['page'] ?? 1)) }
           : this.approveAll();
       }
+      case 'repropose':
+        return this.repropose(String(args['rule'] ?? ''));
       case 'ignored':
         return { text: this.ignoredList(Number(args['page'] ?? 1)) };
       case 'unignore':
@@ -330,6 +347,19 @@ export class Commands {
     const pages = Math.ceil(rows.length / PAGE_SIZE);
     // Not fenced, unlike the ignore list: a fence stops Discord linkifying the jump URLs.
     return [...lines, ``, `page ${Math.max(1, page)}/${pages} · ${rows.length} entries`].join('\n');
+  }
+
+  private repropose(rule: string): CommandReply {
+    if (!isGroupName(rule)) return { text: `Unknown rule: ${rule}` };
+    const n = this.deps.approvals.reproposable(rule).length;
+    if (n === 0) return { text: `No pending proposal carries ${rule}.` };
+    return {
+      text:
+        `Drop ${n} pending proposal(s) carrying ${rule}? Their cards are retired and the ledger ` +
+        `rows deleted, so a later sweep re-resolves them under the rule as it stands now. ` +
+        `Nothing is written to Last.fm.`,
+      confirm: { customId: reproposeId(rule), label: `Drop ${n}` },
+    };
   }
 
   private approveAll(): CommandReply {

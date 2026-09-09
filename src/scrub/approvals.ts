@@ -394,6 +394,27 @@ export class Approvals {
       .all();
   }
 
+  /** Pending proposals carrying `rule`, so a count can be shown before anything is dropped. */
+  reproposable(rule: GroupName): (typeof schema.approvals.$inferSelect)[] {
+    return this.pending().filter((row) => this.groupsFor(row.id).includes(rule));
+  }
+
+  /**
+   * Drops the outstanding proposals for one rule so a later sweep re-resolves them under the rule's
+   * current meaning. Deletes the ledger rows rather than re-statusing them: `checkpoint` refuses to
+   * refresh a row that is not `planned`, and a `planned` row is re-proposed straight from the ledger
+   * by `carryOver`, so either status would re-post the target the card already showed.
+   *
+   * Safe to run against a live service, unlike `deploy/repropose-stale.mjs` reaching the same rows
+   * from outside the process: `releaseAndRetire` supersedes each row in one synchronous transaction,
+   * and a click that arrives afterwards fails its `claim` instead of writing.
+   */
+  async repropose(rule: GroupName): Promise<number> {
+    const rows = this.reproposable(rule);
+    for (const row of rows) await this.releaseAndRetire(row.id);
+    return rows.length;
+  }
+
   async approveAll(userId: string): Promise<{ approved: number; failed: number }> {
     const out = { approved: 0, failed: 0 };
     for (const row of this.pending()) {

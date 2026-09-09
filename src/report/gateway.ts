@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, MessageFlags } from 'discord.js';
 import type { ButtonInteraction, ChatInputCommandInteraction, Interaction, StringSelectMenuInteraction } from 'discord.js';
 import { COMMAND_DEFINITION, COMMAND_NAME, type Commands } from './commands.js';
 import { parseConfigId } from './configPanel.js';
+import type { GroupName } from '../rules/markers.js';
 import { parseCustomId } from './proposals.js';
 
 export interface DecisionHandler {
@@ -9,6 +10,7 @@ export interface DecisionHandler {
   ignore(approvalId: number, userId: string): Promise<{ outcome: string; detail: string }>;
   strip(approvalId: number, userId: string): Promise<{ outcome: string; detail: string }>;
   approveAll(userId: string): Promise<{ approved: number; failed: number }>;
+  repropose(rule: GroupName): Promise<number>;
 }
 
 export interface GatewayDeps {
@@ -155,11 +157,22 @@ export class Gateway {
     await interaction.deferUpdate();
 
     const { decisions } = this.deps;
+    // Computed before the try: narrowing on `parsed` does not survive into the catch.
+    const label =
+      parsed.action === 'repropose' ? `repropose ${parsed.rule}` : `approval ${parsed.id}`;
     try {
       if (parsed.action === 'approve-all') {
         const result = await decisions.approveAll(interaction.user.id);
         await interaction.followUp({
           content: `Applied ${result.approved}, failed ${result.failed}.`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+      if (parsed.action === 'repropose') {
+        const dropped = await decisions.repropose(parsed.rule);
+        await interaction.followUp({
+          content: `Dropped ${dropped} proposal(s) carrying ${parsed.rule}; a later sweep re-resolves them.`,
           flags: MessageFlags.Ephemeral,
         });
         return;
@@ -179,9 +192,9 @@ export class Gateway {
         await interaction.followUp({ content: result.detail, flags: MessageFlags.Ephemeral });
         return;
       }
-      this.log(`approval ${parsed.id}: ${result.outcome} — ${result.detail}`);
+      this.log(`${label}: ${result.outcome} — ${result.detail}`);
     } catch (error) {
-      this.log(`approval ${parsed.id} failed: ${String(error)}`);
+      this.log(`${label} failed: ${String(error)}`);
       await interaction
         .followUp({ content: `That failed: ${String(error)}`, flags: MessageFlags.Ephemeral })
         .catch(() => undefined);

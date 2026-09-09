@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ProposalPostFailed, Proposals, stripId, parseCustomId } from '../../src/report/proposals.js';
+import {
+  ProposalPostFailed,
+  Proposals,
+  stripId,
+  parseCustomId,
+  reproposeId,
+} from '../../src/report/proposals.js';
 
 const EMBED = { title: 'Approve album', color: 1 };
 const BUTTONS = [
@@ -112,5 +118,23 @@ describe('stripId', () => {
 
   it('still rejects an action it does not know', () => {
     expect(parseCustomId('demolish:42')).toBeUndefined();
+  });
+});
+
+describe('reproposeId', () => {
+  it('round-trips a rule name rather than a row id', () => {
+    expect(parseCustomId(reproposeId('live-track'))).toEqual({
+      action: 'repropose',
+      rule: 'live-track',
+    });
+  });
+
+  it('rejects a rule that is not in the catalogue', () => {
+    expect(parseCustomId('repropose:not-a-rule')).toBeUndefined();
+    expect(parseCustomId('repropose:')).toBeUndefined();
+  });
+
+  it('does not read the rule as a numeric id', () => {
+    expect(parseCustomId('repropose:3')).toBeUndefined();
   });
 });
