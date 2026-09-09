@@ -7,6 +7,15 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.4.1] - 2026-09-09
+
+- `/scrub pending` now takes a `page` argument, the same way `/scrub ignored` already did. It used to
+  show the first 15 proposals and the words `… N more`, with no way to reach the rest — on a backlog
+  of 378 that meant 363 of them were listed nowhere. Each row still carries its jump link to the
+  original card, so paging to a proposal and clicking its buttons works as it always did.
+- A page past the end now says so, and every page reports `page X/Y · N entries`, so the size of the
+  backlog is visible rather than implied.
+
 ## [1.4.0] - 2026-09-09
 
 - New rule group **`punctuation`**, off by default. It merges library entries whose names differ only

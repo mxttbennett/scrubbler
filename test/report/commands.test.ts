@@ -196,6 +196,59 @@ describe('/scrub pending', () => {
     expect(text).toContain('In Utero (Deluxe Edition) -> In Utero');
     expect(text).toContain('https://discord.com/channels/guild/chan/m1');
   });
+
+  it('pages past the first screen, so a long backlog stays reachable', async () => {
+    const h = harness();
+    for (let i = 0; i < 17; i++) {
+      await h.approvals.propose({
+        kind: 'album',
+        artist: `Artist ${String(i).padStart(2, '0')}`,
+        album: {
+          artist: `Artist ${String(i).padStart(2, '0')}`,
+          from: `Album ${i} - EP`,
+          to: `Album ${i}`,
+          csrfToken: 't',
+          action: '/library/edit-album',
+          refererPath: '/x',
+          groups: ['ep-single'],
+        },
+        shared: { field: 'album_name', from: `Album ${i} - EP`, to: `Album ${i}` },
+      });
+    }
+
+    const first = (await h.commands.handle('pending')).text;
+    const second = (await h.commands.handle('pending', { page: 2 })).text;
+
+    expect(first).toContain('Artist 00');
+    expect(first).not.toContain('Artist 16');
+    expect(second).toContain('Artist 16');
+    expect(second).not.toContain('Artist 00');
+    expect(second).toContain('page 2/2');
+    expect(second).toContain('17 entries');
+  });
+
+  it('reports a page past the end rather than an empty list', async () => {
+    const h = harness();
+    await h.approvals.propose({
+      kind: 'album',
+      artist: 'Nirvana',
+      album: {
+        artist: 'Nirvana',
+        from: 'In Utero (Deluxe Edition)',
+        to: 'In Utero',
+        csrfToken: 't',
+        action: '/library/edit-album',
+        refererPath: '/x',
+        groups: ['edition'],
+      },
+      shared: { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
+    });
+
+    const text = (await h.commands.handle('pending', { page: 9 })).text;
+
+    expect(text).toContain('past the end');
+    expect(text).toContain('1 entr');
+  });
 });
 
 describe('/scrub approve-all', () => {

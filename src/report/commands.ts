@@ -42,7 +42,12 @@ export const COMMAND_DEFINITION = {
   options: [
     { type: 1, name: 'status', description: 'Mode, phase, progress and pending count' },
     { type: 1, name: 'stats', description: 'All-time corrections, by kind' },
-    { type: 1, name: 'pending', description: 'Proposals awaiting a decision' },
+    {
+      type: 1,
+      name: 'pending',
+      description: 'Proposals awaiting a decision',
+      options: [{ type: 4, name: 'page', description: '1-based page', required: false }],
+    },
     { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
     {
       type: 1,
@@ -153,7 +158,9 @@ export class Commands {
       case 'approve-all': {
         const off = this.requireApprovalMode();
         if (off !== undefined) return { text: off };
-        return sub === 'pending' ? { text: this.pendingList() } : this.approveAll();
+        return sub === 'pending'
+          ? { text: this.pendingList(Number(args['page'] ?? 1)) }
+          : this.approveAll();
       }
       case 'ignored':
         return { text: this.ignoredList(Number(args['page'] ?? 1)) };
@@ -278,10 +285,13 @@ export class Commands {
     return fence(lines);
   }
 
-  private pendingList(): string {
+  private pendingList(page: number): string {
     const rows = this.deps.approvals.pending();
     if (rows.length === 0) return 'Nothing awaiting approval.';
-    const lines = rows.slice(0, PAGE_SIZE).map((r) => {
+    const start = Math.max(0, (Math.max(1, page) - 1) * PAGE_SIZE);
+    const slice = rows.slice(start, start + PAGE_SIZE);
+    if (slice.length === 0) return `Page ${page} is past the end (${rows.length} entries).`;
+    const lines = slice.map((r) => {
       const change =
         r.sharedFrom !== null && r.sharedTo !== null
           ? `${r.sharedFrom} -> ${r.sharedTo}`
@@ -292,8 +302,9 @@ export class Commands {
           : '';
       return `#${r.id} ${r.kind} ${r.artist} — ${change}${jump}`;
     });
-    if (rows.length > PAGE_SIZE) lines.push(`… ${rows.length - PAGE_SIZE} more`);
-    return lines.join('\n');
+    const pages = Math.ceil(rows.length / PAGE_SIZE);
+    // Not fenced, unlike the ignore list: a fence stops Discord linkifying the jump URLs.
+    return [...lines, ``, `page ${Math.max(1, page)}/${pages} · ${rows.length} entries`].join('\n');
   }
 
   private approveAll(): CommandReply {
