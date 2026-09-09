@@ -63,8 +63,8 @@ export interface HandlerDeps {
   applyNow: (candidate: { kind: 'track' | 'album'; artist: string; title: string }) => Promise<string>;
   applyBulk: (items: BulkItem[]) => Promise<{ applied: number; detail: string }>;
   dryRun: boolean;
-  enabledRules: ReadonlySet<GroupName>;
-  gatedRules: ReadonlySet<GroupName>;
+  enabledRules: () => ReadonlySet<GroupName>;
+  gatedRules: () => ReadonlySet<GroupName>;
 }
 
 export class HttpError extends Error {
@@ -217,8 +217,8 @@ export class Handlers {
       candidatesTotal: sweep?.candidatesTotal ?? 0,
       lastFullSweepAt: sweep?.lastFullSweepAt?.getTime() ?? null,
       dryRun: this.deps.dryRun,
-      enabledRules: [...this.deps.enabledRules],
-      gatedRules: [...this.deps.gatedRules],
+      enabledRules: [...this.deps.enabledRules()],
+      gatedRules: [...this.deps.gatedRules()],
       mirror: this.deps.mirror.stats(),
       refresh: this.refresh,
     };

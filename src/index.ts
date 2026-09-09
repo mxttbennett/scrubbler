@@ -262,7 +262,7 @@ async function main() {
     const scoped = new Resolver(
       pages,
       config.username,
-      config.enabledGroups,
+      () => tierStore.enabled(),
       ephemeralLookup(items, customRules.lookup),
       'manual',
     );
@@ -326,8 +326,8 @@ async function main() {
         applyOneEntity({ kind: candidate.kind, artist: candidate.artist, fromTitle: candidate.title }),
       applyBulk,
       dryRun: config.dryRun,
-      enabledRules: config.enabledGroups,
-      gatedRules: config.gatedGroups,
+      enabledRules: () => tierStore.enabled(),
+      gatedRules: () => tierStore.gated(),
     });
     web = new WebServer({ port: config.webPort, handlers, log: (m) => { console.log(m); } });
     await web.listen();

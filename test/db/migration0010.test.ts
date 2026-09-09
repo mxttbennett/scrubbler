@@ -41,7 +41,7 @@ function tempDbFile(): string {
   return join(mkdtempSync(join(tmpdir(), 'scrubbler-db-')), 'ledger.sqlite');
 }
 
-describe('migration 0008 — library mirror', () => {
+describe('migration 0010 — library mirror', () => {
   it('carries every pre-existing row forward untouched', () => {
     const db = createDb(tempDbFile());
     runMigrations(db, migrationsUpTo(7));
