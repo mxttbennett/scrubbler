@@ -20,6 +20,7 @@ import { ShadowStore } from './scrub/shadowStore.js';
 import { Planner } from './scrub/planner.js';
 import { Resolver } from './scrub/resolver.js';
 import { ScrubWorker } from './scrub/worker.js';
+import { findClusters } from './scrub/clusters.js';
 
 async function main() {
   const config = loadConfig();
@@ -124,6 +125,9 @@ async function main() {
     trackScrobbles,
     approvals,
     ...(config.shadowMode ? { shadowStore } : {}),
+    ...(config.enabledGroups.has('punctuation')
+      ? { findClusters: () => findClusters(api, config.username) }
+      : {}),
     writeLock,
   });
 

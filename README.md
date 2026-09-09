@@ -140,6 +140,17 @@ they are deprecated and log a notice at startup; they cannot be combined with `R
 | `live-track` | `off` | track | `(live)`, `(Live at …)` → `- Live …` — **standardises the label rather than removing it** |
 | `version` | `off` | track, album | `- Radio Edit`, `- Single Version`, `- Album Version` |
 | `mono-stereo` | `off` | track, album | `(Mono)`, `(Stereo)` |
+| `punctuation` | `off` | artist, track, album | `Don’t Stop` → `Don't Stop`, `“Heroes”` → `"Heroes"`, `Onset – Beyond Clouds` → `Onset - Beyond Clouds` — **merges twins rather than stripping** |
+
+`punctuation` is the one group that is not a trailing-segment rule. It looks across the whole library
+for names that differ *only* by typographic punctuation and merges the smaller pile into the bigger
+one; the surviving spelling is whichever variant you have played most, with its punctuation
+canonicalised. Nothing moves unless a differently-punctuated twin actually exists, which is why a
+lone `Negative Space (1981–2014)` keeps its en dash. It is also the only group that touches **artist**
+names — `Jim O'Rourke` and `Jim O’Rourke` were two separate artists in this library, 476 plays
+against 1. It deliberately does not treat `Björk`/`Bjork`, `R&B`/`R and B` or `A / B`/`A & B` as the
+same name. The scan is API-only (~280 requests, about a minute) and runs on the weekly full sweep, so
+it reads none of the rate-limited library pages.
 
 `- Album Version` sits with `- Single Version` and `- Radio Edit` rather than with the bonus
 markers: all three name *which recording* it is, so stripping them merges takes that differ.

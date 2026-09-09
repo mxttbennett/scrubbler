@@ -33,6 +33,11 @@ export function trackLibraryPath(user: string, artist: string, track: string): s
   return `/user/${user}/library/music/+noredirect/${encodePathSegment(artist)}/_/${encodePathSegment(track)}`;
 }
 
+/** Every track the user has scrobbled under this artist; the rows themselves live one level down. */
+export function artistLibraryPath(user: string, artist: string): string {
+  return `/user/${user}/library/music/+noredirect/${encodePathSegment(artist)}`;
+}
+
 export function albumLibraryPath(user: string, artist: string, album: string): string {
   // Without +noredirect Last.fm 301s to a lowercased album name, and a casing-only difference
   // makes the *_original tuple stop matching.

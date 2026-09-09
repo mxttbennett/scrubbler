@@ -30,6 +30,15 @@ export interface TopTracks {
   toptracks: { track: TopTrack[]; '@attr': PagedAttr };
 }
 
+export interface TopArtist {
+  name: string;
+  playcount: string;
+}
+
+export interface TopArtists {
+  topartists: { artist: TopArtist[]; '@attr': PagedAttr };
+}
+
 export function toInt(value: string | number | undefined): number {
   if (value === undefined) return 0;
   const n = typeof value === 'number' ? value : Number.parseInt(value, 10);

@@ -57,6 +57,13 @@
       "when": 1788847822231,
       "tag": "0007_album_track_names",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788930104785,
+      "tag": "0008_cluster_sweep_stamp",
+      "breakpoints": true
     }
   ]
 }

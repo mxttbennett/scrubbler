@@ -7,6 +7,28 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.4.0] - 2026-09-09
+
+- New rule group **`punctuation`**, off by default. It merges library entries whose names differ only
+  by typographic punctuation — a curly apostrophe against a straight one, curly quotes, an en or em
+  dash, an ellipsis character, a doubled space — so `Don't Stop` and `Don’t Stop` stop being two
+  rows. Artists are covered as well as albums and tracks: `Jim O'Rourke` and `Jim O’Rourke` were two
+  separate artists in a real library, 476 plays against 1.
+- Nothing is touched unless a differently-punctuated twin actually exists. A lone
+  `Negative Space (1981–2014)` keeps its en dash; only names that already have a sibling move.
+- The surviving spelling is whichever variant you have played most, with its punctuation
+  canonicalised — so casing follows the popular version too, which is what makes
+  `She's Like Heroin to Me` and `She’s Like Heroin To Me` actually converge rather than merely
+  losing their curly quote.
+- It will **not** merge `Björk` with `Bjork`, `R&B` with `R and B`, or `A / B` with `A & B`. Those are
+  arguably different names and the merge cannot be undone.
+- The scan is API-only — about 280 requests, roughly a minute — and runs on the weekly full sweep
+  rather than every cycle. It reads no rate-limited library pages.
+- Turn it on with `RULES=punctuation:gated` to see each merge on a Discord card first. `off` (the
+  default) spends nothing, not even the scan.
+- An artist rename on a card now links to the artist's library page. It previously linked to a track
+  named after the artist, which never exists.
+
 ## [1.3.0] - 2026-09-08
 
 - A gated card for a rule that *rewrites* a label now carries a third button, **Strip**, which

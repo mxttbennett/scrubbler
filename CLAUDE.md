@@ -8,9 +8,9 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 | Path | What lives there |
 |---|---|
 | `src/core/` | zod-validated env config |
-| `src/rules/` | the marker catalogue and the **pure** title engine; no I/O |
+| `src/rules/` | the marker catalogue, the **pure** title engine, the punctuation fold; no I/O |
 | `src/lastfm/` | read API client, web session + cookie jar, page parsing, the edit writer |
-| `src/scrub/` | planner (sweep), resolver (candidates → tuples), executor, worker loop |
+| `src/scrub/` | planner (sweep), clusters (punctuation twins), resolver (candidates → tuples), executor, worker loop |
 | `src/db/` | Drizzle schema; migrations in `drizzle/` applied at startup |
 | `src/report/` | journald logging + REST-only Discord bot (no gateway, so it shows offline) |
 
@@ -106,6 +106,43 @@ only the track one paginates. See `src/lastfm/rules.ts`.
 - `custom` is a `RuleTag`, deliberately **not** a tenth `GroupName`: `MARKER_GROUPS` is keyed on
   `GroupName` and `RULES_ENABLED` validates against it, so a tenth group would be nameable in config
   and need a fake pattern entry.
+
+## Punctuation merging
+
+- **The twin requirement is the safety net, and everything else leans on it.** `foldPunctuation`
+  rewrites en dashes, em dashes and ellipses, which in isolation would mangle a year range
+  (`1981–2014`) or a compilation title (`I:Cube — Disco Cubizm`). It never does, because a name with
+  no differently-punctuated sibling in the library is never nominated. Loosen the twin rule and the
+  fold table becomes dangerous the same day.
+- **`punctuation` IS a `GroupName`, unlike `custom`** — the opposite call to the one above, for a
+  concrete reason: `isGated` only gates a tag that is a `GroupName`, and this feature is worthless
+  ungated. The "fake pattern entry" cost turns out to be nil, because `matchOne` tests
+  `patterns.some(...)` and `[].some()` is `false` — an empty pattern list is self-excluding, so no
+  side-table is needed. `appliesTo` on that entry is unread; the group never enters `cleanTitle`.
+- **Cluster changes are tagged in `Resolver.fold`, never through `cleanTitle`.** `cleanTitle` stamps
+  every override hit `['custom']`, and `custom` does not gate — routing cluster targets through the
+  override lookup would silently un-gate the whole feature.
+- **Bucket keys are artist-scoped, and the artist half is folded too.** Two artists can own the same
+  song name, so a title-only key would elect a winner across them. Folding the artist half is what
+  lets a track under `Jim O’Rourke` meet the same track under `Jim O'Rourke`.
+- **A cluster target beats the catalogue for the same field and is never stripped further** — one
+  rule, one answer, exactly as a custom replacement behaves.
+- **An artist merge is N ordinary track edits, not a new kind of edit.** `collectRows` recurses from
+  the artist page into the track pages behind its aggregate links and yields real scrobble rows, and
+  `Editor.buildBody` already posts `artist_name`/`artist_name_original` unconditionally. So there is
+  no artist editor, no `applied_edits.kind = 'artist'`, and no third `resumable` branch. `'artist'`
+  exists only on `Candidate`, to pick the library path and key `dead_candidates`.
+- **Sweep order is artist → album → track**, and `Planner.sweep` partitions rather than trusting the
+  caller. An artist rename changes a field every later tuple carries; an album rename changes one the
+  track edits carry. `test/scrub/albumFirst.test.ts` fails if either boundary moves.
+- **Only the minority variant is ever resolved**, which is what bounds the paced page cost — a
+  merge's page reads scale with the *loser's* track count, not the winner's.
+- **The scan gates on `sweep_state.last_cluster_sweep_at`, not on `fullDue`.** `fullDue` is
+  `cursor === null || …`, and nothing on the full-sweep path ever writes that cursor
+  (`Planner.sweep` produces no `newestUts`), so it is permanently due. Its own stamp is also only
+  written when the scan actually ran, so turning the group on does not wait a week.
+- **Artist-level ignore does not exist.** `entitiesFor` projects from the ledger row's kind, which is
+  `track` here, so Discord "Never" records the tracks and the cluster returns next sweep.
 
 ## Shadow mode
 
