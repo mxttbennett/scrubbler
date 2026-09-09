@@ -16,6 +16,10 @@ import { Proposals } from './report/proposals.js';
 import { ConsoleAndDiscordReporter, libraryLinks } from './report/reporter.js';
 import { Approvals } from './scrub/approvals.js';
 import { Executor } from './scrub/executor.js';
+import { LibraryMirror } from './library/mirror.js';
+import { Handlers } from './web/handlers.js';
+import { WebServer } from './web/server.js';
+import { type BulkItem, candidatesFor, ephemeralLookup } from './web/bulk.js';
 import { CustomRules } from './rules/customRules.js';
 import { ShadowStore } from './scrub/shadowStore.js';
 import { Planner } from './scrub/planner.js';
@@ -50,6 +54,7 @@ async function main() {
     jitterMs: config.pageDelayJitterMs,
   });
   const api = new LastfmApi(config.apiKey, { username: config.username });
+  const mirror = new LibraryMirror({ db, api, username: config.username, log: (m) => { console.log(m); } });
   const customRules = new CustomRules(db);
   const shadowStore = new ShadowStore(db);
   const discordConfigured =
@@ -126,6 +131,7 @@ async function main() {
   });
   const configPanel = new ConfigPanel({ db, tiers: tierStore, approvalMode: config.approvalMode });
 
+  let shuttingDown = false;
   const worker = new ScrubWorker({
     config,
     db,
@@ -144,6 +150,20 @@ async function main() {
     gatedGroups: () => tierStore.gated(),
     ...(config.shadowMode ? { shadowStore } : {}),
     findClusters: () => findClusters(api, config.username),
+    // Only when the grid is on: a deployment without it should not pay for the mirror.
+    ...(config.webEnabled
+      ? {
+          onIdle: async () => {
+            const { mapped, failed } = await mirror.crawlAlbums({
+              limit: 200,
+              signal: () => shuttingDown,
+            });
+            if (mapped + failed > 0) {
+              console.log(`mirror: mapped ${String(mapped)} album(s), ${String(failed)} failed`);
+            }
+          },
+        }
+      : {}),
     writeLock,
   });
 
@@ -223,6 +243,42 @@ async function main() {
   // unattended, and tying the whole surface to the gate left an unattended deploy with no commands.
   const { discordBotToken, discordOwnerId, discordGuildId } = config;
 
+  /**
+   * One request's worth of hand-typed replacements. The overrides live only for this call, so
+   * `custom_rules` is untouched unless the caller asked to save one, and the resolver re-derives the
+   * real tuple from the live page exactly as it does for a catalogue match.
+   */
+  const applyBulk = async (items: BulkItem[]): Promise<{ applied: number; detail: string }> => {
+    const executor = new Executor(db, editor, albumEditor, reporter, {
+      dryRun: config.dryRun,
+      maxEditsPerRun: config.maxEditsPerRun,
+      writeDelayMs: config.writeDelayMs,
+      digestEvery: config.digestEvery,
+      albumArt,
+      albumDetails,
+      trackScrobbles,
+      writeLock,
+    });
+    const scoped = new Resolver(
+      pages,
+      config.username,
+      config.enabledGroups,
+      ephemeralLookup(items, customRules.lookup),
+      'manual',
+    );
+    const { skips } = await scoped.resolve(candidatesFor(items), {
+      onGroup: async (group) => {
+        await executor.applyGroup(group, new Set());
+      },
+    });
+    const s = executor.streamedSummary;
+    const parts = [`applied ${String(s.applied)}`];
+    if (s.verified > 0) parts.push(`${String(s.verified)} verified`);
+    if (s.failed > 0) parts.push(`${String(s.failed)} failed`);
+    if (skips.length > 0) parts.push(`${String(skips.length)} skipped`);
+    return { applied: s.applied, detail: parts.join(', ') };
+  };
+
   // In approval mode this must come before the worker: a proposal posted before the client is
   // listening has live buttons nothing would answer.
   let gateway: Gateway | undefined;
@@ -259,16 +315,34 @@ async function main() {
 
   worker.start();
 
-  let shuttingDown = false;
+  let web: WebServer | undefined;
+  if (config.webEnabled) {
+    const handlers = new Handlers({
+      db,
+      approvals,
+      customRules,
+      mirror,
+      applyNow: (candidate) =>
+        applyOneEntity({ kind: candidate.kind, artist: candidate.artist, fromTitle: candidate.title }),
+      applyBulk,
+      dryRun: config.dryRun,
+      enabledRules: config.enabledGroups,
+      gatedRules: config.gatedGroups,
+    });
+    web = new WebServer({ port: config.webPort, handlers, log: (m) => { console.log(m); } });
+    await web.listen();
+  }
+
   const shutdown = async () => {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log('shutting down: finishing the in-flight edit');
-    const drained = worker.stop().then(() => true);
     const timedOut = new Promise<boolean>((r) =>
       setTimeout(() => r(false), config.shutdownGraceMs),
     );
-    const clean = await Promise.race([drained, timedOut]);
+    // The grid is a writer too, so its in-flight request drains before the lock is released.
+    const drainedAll = Promise.all([worker.stop(), web?.close()]).then(() => true);
+    const clean = await Promise.race([drainedAll, timedOut]);
     console.log(clean ? 'drained cleanly' : 'drain timed out; exiting anyway');
     await gateway?.stop();
     releaseLock();

@@ -137,3 +137,31 @@ describe('loadConfig — approval mode', () => {
     expect(() => loadConfig({ ...BASE, SHADOW_MODE: 'maybe' })).toThrow(/Invalid SHADOW_MODE/);
   });
 });
+
+describe('loadConfig — web grid', () => {
+  it('leaves the grid off by default, so an upgrade opens no port', () => {
+    const config = loadConfig({ ...BASE });
+    expect(config.webEnabled).toBe(false);
+    expect(config.webPort).toBe(8787);
+  });
+
+  it('accepts every boolean spelling the other flags accept', () => {
+    for (const value of ['true', '1', 'yes', 'on']) {
+      expect(loadConfig({ ...BASE, WEB_ENABLED: value }).webEnabled).toBe(true);
+    }
+    for (const value of ['false', '0', 'no', 'off']) {
+      expect(loadConfig({ ...BASE, WEB_ENABLED: value }).webEnabled).toBe(false);
+    }
+  });
+
+  it('refuses a WEB_ENABLED value that is neither', () => {
+    expect(() => loadConfig({ ...BASE, WEB_ENABLED: 'maybe' })).toThrow(/WEB_ENABLED/);
+  });
+
+  it('takes a port and refuses one that is not a whole positive number', () => {
+    expect(loadConfig({ ...BASE, WEB_PORT: '9000' }).webPort).toBe(9000);
+    for (const value of ['-1', '80.5', 'http']) {
+      expect(() => loadConfig({ ...BASE, WEB_PORT: value })).toThrow(/WEB_PORT/);
+    }
+  });
+});
