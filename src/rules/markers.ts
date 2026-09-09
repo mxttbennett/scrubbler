@@ -10,7 +10,8 @@ export type GroupName =
   | 'live-album'
   | 'live-track'
   | 'version'
-  | 'mono-stereo';
+  | 'mono-stereo'
+  | 'punctuation';
 
 /**
  * A custom replacement is not a catalogue group: it has no pattern, applies to one artist's title,
@@ -185,6 +186,12 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
     String.raw`mono(?:\s+version)?`,
     String.raw`stereo(?:\s+version)?`,
   ]),
+
+  // Registered for the tier alone. Clustering needs the whole library, so it cannot be a pattern
+  // here; the empty list is what keeps matchOne from ever reaching it, and `appliesTo` is unread
+  // because this group never enters cleanTitle. It must still be a GroupName: isGated only gates a
+  // tag that is one, so a widened RuleTag like `custom` could never be held for approval.
+  punctuation: group(['track', 'album'], 'off', []),
 };
 
 /**

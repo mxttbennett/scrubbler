@@ -1,8 +1,9 @@
 import { type PlannedAlbumEdit, extractAlbumForm } from '../lastfm/albumEditor.js';
-import { LibraryPages, albumLibraryPath, extractAggregateLinks, extractAlbumTrackNames, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
+import { LibraryPages, albumLibraryPath, artistLibraryPath, extractAggregateLinks, extractAlbumTrackNames, extractFormAction, extractScrobbleRows, pageCount, trackLibraryPath } from '../lastfm/pages.js';
 import { cleanTitle } from '../rules/engine.js';
 import type { CustomRuleLookup } from '../rules/customRules.js';
 import type { GroupName } from '../rules/markers.js';
+import type { ClusterLookup } from './clusters.js';
 import {
   type Candidate,
   type EditGroup,
@@ -58,7 +59,12 @@ export class Resolver {
    * Two POSTs against one tuple cannot both land — the first rewrites the tuple the second selects
    * on — so track and album cleanups for the same tuple must share a request.
    */
-  async resolve(candidates: Candidate[], hooks: ResolveHooks = {}): Promise<ResolveResult> {
+  async resolve(
+    candidates: Candidate[],
+    hooks: ResolveHooks = {},
+    /** The same targets the planner discovered with; without them a cluster row reads as clean. */
+    clusters?: ClusterLookup,
+  ): Promise<ResolveResult> {
     const { onEdit, onAlbumEdit, onGroup, onProgress, shouldStop } = hooks;
     const byTuple = new Map<string, PlannedEdit>();
     const albumEdits: PlannedAlbumEdit[] = [];
@@ -72,7 +78,11 @@ export class Resolver {
       const path =
         candidate.kind === 'track'
           ? trackLibraryPath(this.username, candidate.artist, candidate.title)
-          : albumLibraryPath(this.username, candidate.artist, candidate.title);
+          : candidate.kind === 'album'
+            ? albumLibraryPath(this.username, candidate.artist, candidate.title)
+            : // An artist page lists aggregates, not scrobbles; collectRows recurses into the track
+              // pages behind them, which is one level and well inside MAX_RECURSION.
+              artistLibraryPath(this.username, candidate.artist);
 
       if (seenPaths.has(path)) {
         onProgress?.(done, candidates.length, byTuple.size, candidate);
@@ -103,7 +113,7 @@ export class Resolver {
       // Candidate-local, not byTuple: that map is run-wide and would regroup every earlier edit.
       const found: PlannedEdit[] = [];
       for (const { row, action, refererPath } of rows) {
-        const added = this.fold(byTuple, row, action, refererPath);
+        const added = this.fold(byTuple, row, action, refererPath, clusters);
         if (!added) continue;
         found.push(added);
         // fold() produces the complete change for a tuple from one row, so writing here cannot
@@ -161,15 +171,39 @@ export class Resolver {
     row: ScrobbleRow,
     action: string,
     refererPath: string,
+    clusters?: ClusterLookup,
   ): PlannedEdit | undefined {
     const original = rowTuple(row);
     const key = tupleKey(original);
     if (byTuple.has(key)) return undefined;
 
-    // Always re-derive from the authoritative page value; the API's copy can be stale.
-    const track = cleanTitle(row.track_name, 'track', this.enabled, this.override(row.artist_name));
+    // Undefined once the field already reads as the target, so a settled row plans no edit.
+    const mergeTarget = (
+      kind: Candidate['kind'],
+      artist: string,
+      value: string,
+    ): string | undefined => {
+      if (value === '') return undefined;
+      const target = clusters?.(kind, artist, value);
+      return target === undefined || target === value ? undefined : target;
+    };
+
+    const artistName = mergeTarget('artist', row.artist_name, row.artist_name);
+    const albumArtistName = mergeTarget('artist', row.album_artist_name, row.album_artist_name);
+    const trackTarget = mergeTarget('track', row.artist_name, row.track_name);
+    const albumTarget = mergeTarget(
+      'album',
+      row.album_artist_name || row.artist_name,
+      row.album_name,
+    );
+
+    // A merge target wins its field outright and is never stripped further — one rule, one answer.
+    const track =
+      trackTarget !== undefined
+        ? null
+        : cleanTitle(row.track_name, 'track', this.enabled, this.override(row.artist_name));
     const album =
-      row.album_name === ''
+      row.album_name === '' || albumTarget !== undefined
         ? null
         : cleanTitle(
             row.album_name,
@@ -177,15 +211,30 @@ export class Resolver {
             this.enabled,
             this.override(row.album_artist_name || row.artist_name),
           );
-    if (!track && !album) return undefined;
 
-    const groups = [...new Set([...(track?.groups ?? []), ...(album?.groups ?? [])])].sort();
+    const clustered =
+      artistName !== undefined ||
+      albumArtistName !== undefined ||
+      trackTarget !== undefined ||
+      albumTarget !== undefined;
+    if (!track && !album && !clustered) return undefined;
+
+    // Tagged here, not in cleanTitle: that stamps every override `custom`, which never gates.
+    const groups = [
+      ...new Set([
+        ...(track?.groups ?? []),
+        ...(album?.groups ?? []),
+        ...(clustered ? (['punctuation'] as const) : []),
+      ]),
+    ].sort();
     const edit: PlannedEdit = {
       original,
       next: {
         ...original,
-        track_name: track?.clean ?? original.track_name,
-        album_name: album?.clean ?? original.album_name,
+        track_name: trackTarget ?? track?.clean ?? original.track_name,
+        album_name: albumTarget ?? album?.clean ?? original.album_name,
+        artist_name: artistName ?? original.artist_name,
+        album_artist_name: albumArtistName ?? original.album_artist_name,
       },
       timestamp: row.timestamp,
       csrfToken: row.csrfmiddlewaretoken,

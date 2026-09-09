@@ -112,4 +112,35 @@ describe('sweep order', () => {
     // goes stale and the write silently no-ops. This ordering is load-bearing.
     expect(candidates.map((c) => c.kind)).toEqual(['album', 'album', 'track']);
   });
+
+  /**
+   * An artist rename changes a field every album and track tuple carries, so it has to land before
+   * both — the same staleness argument that puts albums before tracks, one level up.
+   */
+  it('orders clustered candidates in as artist, then album, then track', async () => {
+    const api = {
+      iterateTopAlbums: async function* () {
+        yield { name: 'Tim (Remastered)', artist: 'The Replacements' };
+      },
+      iterateTopTracks: async function* () {
+        yield { name: 'Unsatisfied - Remastered', artist: 'The Replacements' };
+      },
+    } as unknown as LastfmApi;
+
+    // Deliberately handed over in the wrong order: the sweep must not trust the caller's ordering.
+    const candidates = await new Planner(api, 'u', ENABLED).sweep(undefined, [
+      { kind: 'track', artist: 'Drexciya', title: 'You Don’t Know' },
+      { kind: 'artist', artist: 'Jim O’Rourke', title: 'Jim O’Rourke' },
+      { kind: 'album', artist: 'Deerhoof', title: 'Apple O’' },
+    ]);
+
+    expect(candidates.map((c) => c.kind)).toEqual([
+      'artist',
+      'album',
+      'album',
+      'track',
+      'track',
+    ]);
+    expect(candidates[0]!.artist).toBe('Jim O’Rourke');
+  });
 });

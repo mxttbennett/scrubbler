@@ -108,6 +108,21 @@ function rulesLink(outcome: Outcome, kind: 'track' | 'album', links: Links | und
 }
 
 /** "Corrected album (4 tracks)" or "Corrected 2 tracks" — the subject, not the artist. */
+/**
+ * The post-edit value is what gets linked, so an artist rename must resolve against the *new* name.
+ * Falling through to the track link would build a URL for a track named after an artist.
+ */
+function sharedUrl(
+  field: string,
+  artist: string,
+  to: string,
+  links: Links | undefined,
+): string | undefined {
+  if (field === 'album_name') return links?.album(artist, to);
+  if (field === 'artist_name' || field === 'album_artist_name') return links?.artist(to);
+  return links?.track(artist, to);
+}
+
 export function embedTitle(outcome: Outcome, kind: 'track' | 'album', count: number): string {
   const word = OUTCOME_WORD[outcome];
   if (kind === 'album') {
@@ -191,11 +206,7 @@ export function groupEmbed(g: CorrectionGroup, footer: string, links?: Links): D
               name: shared.field.replace(/_/g, ' '),
               value:
                 `~~${escapeMd(shared.from)}~~\n**${escapeMd(shared.to)}**` +
-                linkSuffix(
-                  shared.field === 'album_name'
-                    ? links?.album(g.artist, shared.to)
-                    : links?.track(g.artist, shared.to),
-                ),
+                linkSuffix(sharedUrl(shared.field, g.artist, shared.to, links)),
             },
           ]),
       ...(n > 1
@@ -264,7 +275,9 @@ export class ConsoleAndDiscordReporter implements Reporter {
         ? links?.album(c.artist, to)
         : field === 'track_name'
           ? links?.track(c.artist, to)
-          : undefined;
+          : field === 'artist_name' || field === 'album_artist_name'
+            ? links?.artist(to)
+            : undefined;
 
     const fields: DiscordEmbedField[] = c.changes.map((ch) => ({
       name: ch.field.replace(/_/g, ' '),

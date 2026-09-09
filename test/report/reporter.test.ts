@@ -589,3 +589,56 @@ describe('library links in embeds', () => {
     expect(JSON.stringify(sent[0]!)).not.toContain('last.fm');
   });
 });
+
+describe('an artist rename links to the artist, not to a track named after one', () => {
+  function linked() {
+    const sent: DiscordEmbed[] = [];
+    const reporter = new ConsoleAndDiscordReporter(
+      { send: async (e: DiscordEmbed) => void sent.push(e) } as never,
+      () => {},
+      () => {},
+      libraryLinks('dankjankem'),
+    );
+    return { sent, reporter };
+  }
+
+  const item = {
+    artist: 'Jim O’Rourke',
+    kind: 'track' as const,
+    track: 'Eureka',
+    album: 'Eureka',
+    changes: [{ field: 'artist_name', from: 'Jim O’Rourke', to: "Jim O'Rourke" }],
+    groups: ['punctuation'],
+    outcome: 'verified' as const,
+  };
+
+  /**
+   * The post-edit value is what gets linked, and for an artist rename that value is a *name*. The
+   * generic branch would spend it as a track title and produce a URL for a track that cannot exist.
+   */
+  it('points the shared field at the renamed artist page', async () => {
+    const { sent, reporter } = linked();
+    await reporter.group(
+      {
+        artist: 'Jim O’Rourke',
+        kind: 'track' as const,
+        shared: { field: 'artist_name', from: 'Jim O’Rourke', to: "Jim O'Rourke" },
+        items: [item],
+        outcome: 'verified',
+      },
+      TOTALS,
+    );
+
+    const field = sent[0]!.fields!.find((f) => f.name === 'artist name')!;
+    expect(field.value).toContain("/library/music/Jim+O'Rourke");
+    expect(field.value).not.toContain('/_/');
+  });
+
+  it('links a single artist correction to the artist page too', async () => {
+    const { sent, reporter } = linked();
+    await reporter.corrections([item], TOTALS);
+
+    const field = sent[0]!.fields!.find((f) => f.name === 'artist name')!;
+    expect(field.value).not.toContain('/_/');
+  });
+});

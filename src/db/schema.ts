@@ -65,7 +65,7 @@ export const skipped = sqliteTable(
   'skipped',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    kind: text('kind', { enum: ['track', 'album', 'artist'] }).notNull(),
     artist: text('artist').notNull(),
     title: text('title').notNull(),
     reason: text('reason').notNull(),
@@ -80,6 +80,11 @@ export const sweepState = sqliteTable('sweep_state', {
   lastSweepEditCount: integer('last_sweep_edit_count').notNull().default(0),
   /** Newest scrobble already examined; null forces a full sweep. */
   lastScrobbleUts: integer('last_scrobble_uts'),
+  /**
+   * Its own stamp rather than `last_full_sweep_at`: that one gates on a cursor which nothing on the
+   * full-sweep path ever writes, so it is permanently due and would run the cluster scan every cycle.
+   */
+  lastClusterSweepAt: integer('last_cluster_sweep_at', { mode: 'timestamp_ms' }),
   /** Live, unlike the mode itself: read at each candidate boundary so /scrub pause needs no restart. */
   paused: integer('paused', { mode: 'boolean' }).notNull().default(false),
   phase: text('phase', { enum: ['idle', 'sweeping', 'resolving', 'applying'] })
@@ -99,7 +104,7 @@ export const deadCandidates = sqliteTable(
   'dead_candidates',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    kind: text('kind', { enum: ['track', 'album', 'artist'] }).notNull(),
     artist: text('artist').notNull(),
     title: text('title').notNull(),
     attempts: integer('attempts').notNull().default(1),
@@ -161,7 +166,7 @@ export const ignored = sqliteTable(
   'ignored',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    kind: text('kind', { enum: ['track', 'album', 'artist'] }).notNull(),
     artist: text('artist').notNull(),
     title: text('title').notNull(),
     reason: text('reason').notNull(),

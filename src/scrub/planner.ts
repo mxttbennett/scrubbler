@@ -117,17 +117,15 @@ export class Planner {
     }
 
     onProgress?.(seen, candidates.length);
-    // Albums before tracks, matching the full sweep: renaming the album first keeps a later track
-    // edit's album_name_original from going stale.
-    const ordered = [
-      ...candidates.filter((c) => c.kind === 'album'),
-      ...candidates.filter((c) => c.kind === 'track'),
-    ];
-    return { candidates: this.filterLive(ordered), newestUts };
+    return { candidates: this.filterLive(byKind(candidates)), newestUts };
   }
 
-  async sweep(onProgress?: (seen: number, hits: number) => void): Promise<Candidate[]> {
-    const candidates: Candidate[] = [];
+  async sweep(
+    onProgress?: (seen: number, hits: number) => void,
+    /** Already nominated by the library-wide cluster scan; ordered in rather than appended. */
+    clustered: readonly Candidate[] = [],
+  ): Promise<Candidate[]> {
+    const candidates: Candidate[] = [...clustered];
     let seen = 0;
 
     for await (const album of this.api.iterateTopAlbums(this.username)) {
@@ -149,7 +147,7 @@ export class Planner {
     }
 
     onProgress?.(seen, candidates.length);
-    return this.filterLive(candidates);
+    return this.filterLive(byKind(candidates));
   }
 
   /** Records that a candidate resolved to nothing, so repeated emptiness stops costing a fetch. */
@@ -180,4 +178,18 @@ export class Planner {
       )
       .run();
   }
+}
+
+/**
+ * Artists, then albums, then tracks. An artist rename changes a field every later tuple carries, and
+ * an album rename changes one the track edits carry — resolve them the other way round and the
+ * `*_original` tuple the second write selects on has already been rewritten by the first, so it
+ * silently no-ops. `test/scrub/albumFirst.test.ts` fails if this order changes.
+ */
+function byKind(candidates: readonly Candidate[]): Candidate[] {
+  return [
+    ...candidates.filter((c) => c.kind === 'artist'),
+    ...candidates.filter((c) => c.kind === 'album'),
+    ...candidates.filter((c) => c.kind === 'track'),
+  ];
 }

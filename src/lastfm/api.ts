@@ -5,6 +5,7 @@ import {
   type AlbumInfo,
   type RecentTracks,
   type TopAlbums,
+  type TopArtists,
   type TopTracks,
   type TrackInfo,
   bestImageUrl,
@@ -82,6 +83,15 @@ export class LastfmApi {
 
   getTopAlbums(user: string, page = 1, limit = PAGE_SIZE): Promise<TopAlbums> {
     return this.request('user.gettopalbums', {
+      user,
+      period: 'overall',
+      limit: String(limit),
+      page: String(page),
+    });
+  }
+
+  getTopArtists(user: string, page = 1, limit = PAGE_SIZE): Promise<TopArtists> {
+    return this.request('user.gettopartists', {
       user,
       period: 'overall',
       limit: String(limit),

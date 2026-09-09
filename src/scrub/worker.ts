@@ -17,6 +17,7 @@ import { isGated, splitByTier } from './tiers.js';
 import type { Approvals } from './approvals.js';
 import type { ShadowStore } from './shadowStore.js';
 import type { Candidate } from './types.js';
+import type { ClusterLookup, ClusterPlan } from './clusters.js';
 
 export interface WorkerDeps {
   config: Config;
@@ -34,6 +35,8 @@ export interface WorkerDeps {
   approvals: Approvals;
   /** Present only when shadow mode is on; its absence is what keeps discovery silent. */
   shadowStore?: ShadowStore;
+  /** Absent when the punctuation group is off, which is what keeps the extra ~280 API calls unspent. */
+  findClusters?: () => Promise<ClusterPlan>;
   writeLock?: WriteLock;
   sleep?: (ms: number) => Promise<void>;
 }
@@ -60,6 +63,7 @@ export class ScrubWorker {
     | undefined;
   private readonly approvals: Approvals;
   private readonly shadowStore: ShadowStore | undefined;
+  private readonly findClusters: (() => Promise<ClusterPlan>) | undefined;
   private readonly writeLock: WriteLock | undefined;
   private readonly sleep: (ms: number) => Promise<void>;
 
@@ -77,6 +81,7 @@ export class ScrubWorker {
     this.trackScrobbles = deps.trackScrobbles;
     this.approvals = deps.approvals;
     this.shadowStore = deps.shadowStore;
+    this.findClusters = deps.findClusters;
     this.writeLock = deps.writeLock;
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
@@ -174,12 +179,32 @@ export class ScrubWorker {
     const lastFull = state?.lastFullSweepAt?.getTime() ?? 0;
     const fullDue = cursor === null || Date.now() - lastFull >= this.config.fullSweepIntervalMs;
 
+    // Only on a full sweep, and only on its own stamp: a cluster is a library-wide property, so the
+    // incremental cursor cannot see one arrive.
+    const lastCluster = state?.lastClusterSweepAt?.getTime() ?? 0;
+    const finder = this.findClusters;
+    let clustered: Candidate[] = [];
+    let clusterLookup: ClusterLookup | undefined;
+    // Stamped from whether the scan ran, not from whether it was due: an absent finder means the
+    // group is off, and stamping then would suppress the scan for a week after it is turned on.
+    let clusterRan = false;
+    const clusterElapsed = Date.now() - lastCluster;
+    if (fullDue && finder !== undefined && clusterElapsed >= this.config.fullSweepIntervalMs) {
+      console.log('scanning the library for punctuation clusters');
+      const plan = await finder();
+      clustered = plan.candidates;
+      clusterLookup = plan.lookup;
+      clusterRan = true;
+      console.log(`punctuation clusters: ${clustered.length} candidates`);
+    }
+
     let candidates: Candidate[];
     let newestUts: number | undefined;
     if (fullDue) {
       console.log(cursor === null ? 'full sweep (no cursor yet)' : 'full sweep (interval elapsed)');
-      candidates = await this.planner.sweep((seen, hits) =>
-        console.log(`swept ${seen} entities, ${hits} candidates`),
+      candidates = await this.planner.sweep(
+        (seen, hits) => console.log(`swept ${seen} entities, ${hits} candidates`),
+        clustered,
       );
     } else {
       console.log(`incremental sweep from uts ${cursor}`);
@@ -216,7 +241,8 @@ export class ScrubWorker {
             (gatedGroups.size > 0 ? ` · ${proposed} proposed` : ''),
         );
       },
-    });
+    },
+    clusterLookup);
 
     for (const skip of skips) this.planner.recordDead(skip.candidate, skip.reason);
     executor.recordSkips(skips);
@@ -227,6 +253,7 @@ export class ScrubWorker {
     const advanced =
       finished && newestUts !== undefined ? { lastScrobbleUts: newestUts } : {};
     const fullStamp = finished && fullDue ? { lastFullSweepAt: new Date() } : {};
+    const clusterStamp = finished && clusterRan ? { lastClusterSweepAt: new Date() } : {};
     this.db
       .insert(schema.sweepState)
       .values({
@@ -237,7 +264,7 @@ export class ScrubWorker {
       })
       .onConflictDoUpdate({
         target: schema.sweepState.id,
-        set: { lastSweepEditCount: summary.applied, ...advanced, ...fullStamp },
+        set: { lastSweepEditCount: summary.applied, ...advanced, ...fullStamp, ...clusterStamp },
       })
       .run();
 

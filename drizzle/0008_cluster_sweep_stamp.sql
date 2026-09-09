@@ -1,0 +1,1 @@
+ALTER TABLE `sweep_state` ADD `last_cluster_sweep_at` integer;

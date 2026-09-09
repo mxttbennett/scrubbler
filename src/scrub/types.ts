@@ -1,8 +1,12 @@
 import type { PlannedAlbumEdit } from '../lastfm/albumEditor.js';
 import type { RuleTag } from '../rules/markers.js';
 
+/**
+ * An artist candidate carries the artist name in `title` as well, because every table that
+ * remembers a candidate is keyed on (kind, artist, title) and there is no separate title to give.
+ */
 export interface Candidate {
-  kind: 'track' | 'album';
+  kind: 'track' | 'album' | 'artist';
   artist: string;
   title: string;
 }
