@@ -7,6 +7,16 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.6.1] - 2026-09-14
+
+- The `remaster` rule now recognises the Spanish and Portuguese spellings, so a Latin-American
+  reissue tagged `Secuencia Inicial - Remasterizado 2007` is cleaned like its English twin.
+- Covered: `Remasterizado`/`-a`/`-os`/`-as`, `Remasterización`, `Remasterização`, their accentless
+  forms, a leading `Versión`/`Versão`, a trailing `Digital`, and a year on either side.
+- The word order is the Romance one, so nothing here widens the English patterns. Every combination
+  still requires the literal stem `remasteriza`, and the rule keeps matching whole trailing segments
+  only — an album genuinely called `Remasterizado` is still left alone.
+
 ## [1.6.0] - 2026-09-09
 
 - New `/scrub repropose <rule>` — drops the pending proposals carrying one rule so a later sweep
