@@ -130,7 +130,7 @@ they are deprecated and log a notice at startup; they cannot be combined with `R
 
 | Group | Default tier | Applies to | Examples |
 |---|---|---|---|
-| `remaster` | `auto` | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)`, `(2019 Remastering)`, `(Expanded & Remastered)` |
+| `remaster` | `auto` | track, album | `- Remastered`, `- 2004 Remaster`, `(2009 Digital Remaster)`, `(2019 Remastering)`, `(Expanded & Remastered)`, `- Remasterizado 2007`, `(Versión Remasterizada)` |
 | `edition` | `auto` | track, album | `(Deluxe Edition)`, `(Expanded Version)`, `(Collector's Edition)`, `(Bonus Track Version)`, `(Reissue)`, `(40th Anniversary Remaster)`, `(Remastered And Expanded)`, `(Remastered & Expanded Edition)` |
 | `bonus` | `auto` | track, album | `- Bonus Track`, `(Bonus Tracks)`, `(Bonus Version)`, `(Explicit)`, `(Clean)` |
 | `feat-album` | `off` | album | `(feat. X)` on an *album* title — store cruft |

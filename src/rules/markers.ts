@@ -120,6 +120,31 @@ function remasterOrders(): string[] {
   return [...out];
 }
 
+/**
+ * Spanish and Portuguese share the stem, so one alternation covers "Remasterizado", the Spanish
+ * "Remasterización" and the Portuguese "Remasterização"; the accentless spellings are in real tags.
+ */
+const LOCALIZED_REMASTER = String.raw`remasteriza(?:d[oa]s?|ci[óo]n|[çc][ãa]o)`;
+
+/**
+ * The same orders as remasterOrders() but in Romance word order, where "versión" leads instead of
+ * trailing and a qualifier follows the word: "Versión Remasterizada", "Remasterizado Digital 2007".
+ */
+function localizedRemasterOrders(): string[] {
+  const WS = String.raw`\s+`;
+  const sep = String.raw`\s*[-–]?\s*`;
+  const out = new Set<string>();
+  for (const prefix of ['', String.raw`(?:versi[óo]n|vers[ãa]o)` + WS]) {
+    for (const suffix of ['', WS + 'digital']) {
+      const w = `${prefix}${LOCALIZED_REMASTER}${suffix}`;
+      out.add(w);
+      out.add(`${w}${sep}${YEAR}`);
+      out.add(`${YEAR}${sep}${w}`);
+    }
+  }
+  return [...out];
+}
+
 export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // Generated rather than listed: the same three parts recur in every order a label has ever used,
   // and enumerating them by hand kept missing one ("2006 Remastered Version", "Expanded 2004
@@ -127,6 +152,7 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // closed catalogue of named cruft and never matches by shape.
   remaster: group(['track', 'album'], 'auto', [
     ...remasterOrders(),
+    ...localizedRemasterOrders(),
     // Redundant with editionOrders, kept so these stay tagged `remaster`: `groups` is persisted.
     String.raw`expanded\s*&\s*remastered`,
     String.raw`remastered\s*&\s*expanded`,
