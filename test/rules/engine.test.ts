@@ -526,6 +526,38 @@ describe('remaster word orders', () => {
   });
 });
 
+describe('remaster in Spanish and Portuguese', () => {
+  const STRIPPED: [string, 'album' | 'track'][] = [
+    ['Secuencia Inicial - Remasterizado 2007', 'track'],
+    ['Dynamo - Remasterizado 2007', 'album'],
+    ['Album (Remasterizado)', 'album'],
+    ['Album (Remasterizada)', 'album'],
+    ['Album (Remasterizados)', 'album'],
+    ['Album (Remasterización 2011)', 'album'],
+    ['Album (Remasterizacion 2011)', 'album'],
+    ['Album (Remasterização)', 'album'],
+    ['Album (Remasterizacao)', 'album'],
+    ['Album (2007 Remasterizado)', 'album'],
+    ['Album (Versión Remasterizada)', 'album'],
+    ['Album (Versao Remasterizada 2015)', 'album'],
+    ['Album (Remasterizado Digital)', 'album'],
+  ];
+
+  it.each(STRIPPED)('strips %s', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).not.toBeNull();
+  });
+
+  const KEPT: [string, 'album' | 'track'][] = [
+    ['Remasterizado', 'album'],
+    ['Album (Remasterizado en Vivo)', 'album'],
+    ['Album (Master Remasterizado)', 'album'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+});
+
 describe('compound segments — every part must be a known marker', () => {
   const STRIPPED: [string, 'album' | 'track'][] = [
     ['Ramones (40th Anniversary Deluxe Edition; 2016 Remaster)', 'album'],
