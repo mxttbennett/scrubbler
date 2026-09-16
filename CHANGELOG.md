@@ -7,6 +7,13 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.8.1] - 2026-09-16
+
+- Repairs `package-lock.json`, which 1.8.0 shipped with every dependency's version overwritten to
+  `1.8.0`. `npm ci` rejected it outright, so CI on `main` was red and a clean install was
+  impossible; `npm test` could not catch it, because it runs against an install that already
+  exists. The dependency set is unchanged — verified identical to the 1.7.0 lockfile.
+
 ## [1.8.0] - 2026-09-16
 
 The `/scrub` surface is consolidated from seventeen subcommands to seven. Each removed command
