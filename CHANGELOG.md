@@ -7,6 +7,14 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.7.0] - 2026-09-16
+
+- `Mono`/`Stereo` in front of a remaster claim no longer blocks the rule, so the Zombies'
+  `Care of Cell 44 - Mono Remastered` is finally cleaned.
+- While `mono-stereo` is `off`, the mix name is kept rather than dropped with the claim:
+  `Care of Cell 44 - Mono Remastered` becomes `Care of Cell 44 - Mono`. Set `mono-stereo` to
+  anything other than `off` and the whole segment goes, as before.
+
 ## [1.6.1] - 2026-09-14
 
 - The `remaster` rule now recognises the Spanish and Portuguese spellings, so a Latin-American

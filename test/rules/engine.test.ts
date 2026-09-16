@@ -526,6 +526,67 @@ describe('remaster word orders', () => {
   });
 });
 
+describe('mono and stereo qualify a remaster claim', () => {
+  const MONO_ON = new Set<GroupName>([...DEFAULT_ON, 'mono-stereo']);
+
+  /** mono-stereo off: nothing claims the leftover, so the mix name survives in dash form. */
+  const REDUCED: [string, 'album' | 'track', string][] = [
+    ['Odessey and Oracle (Mono Remastered)', 'album', 'Odessey and Oracle - Mono'],
+    ['Care of Cell 44 - Mono Remastered', 'track', 'Care of Cell 44 - Mono'],
+    ['Album (Stereo Remastered)', 'album', 'Album - Stereo'],
+    ['Song (Mono Remaster)', 'track', 'Song - Mono'],
+    ['Song (2019 Mono Remaster)', 'track', 'Song - Mono'],
+    ['Song (Mono Remastered 1997)', 'track', 'Song - Mono'],
+    ['Song (Mono Remastered Version)', 'track', 'Song - Mono'],
+    ['Album (Stereo Remastered Version)', 'album', 'Album - Stereo'],
+    ['Song (Mono Master)', 'track', 'Song - Mono'],
+  ];
+
+  it.each(REDUCED)('reduces %s to the qualifier', (title, field, expected) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)?.clean).toBe(expected);
+  });
+
+  /** The leftover is re-offered to the catalogue, and mono-stereo claims it like a bare (Mono). */
+  const STRIPPED: [string, 'album' | 'track', string][] = [
+    ['Odessey and Oracle (Mono Remastered)', 'album', 'Odessey and Oracle'],
+    ['Care of Cell 44 - Mono Remastered', 'track', 'Care of Cell 44'],
+    ['Album (Stereo Remastered Version)', 'album', 'Album'],
+  ];
+
+  it.each(STRIPPED)('strips %s outright once mono-stereo is on', (title, field, expected) => {
+    expect(cleanTitle(title, field, MONO_ON)?.clean).toBe(expected);
+  });
+
+  /** `groups` is persisted, so the hit must be tagged by the word that earned it. */
+  it('tags the hit remaster, not mono-stereo', () => {
+    expect(cleanTitle('Odessey and Oracle (Mono Remastered)', 'album', DEFAULT_ON)?.groups).toEqual(
+      ['remaster'],
+    );
+  });
+
+  // The residual is carried past the remaining passes rather than left as a tail, which would hide
+  // the earlier segment from splitTail — it only ever looks at the last one.
+  it('keeps cleaning the head after a residual is set aside', () => {
+    expect(cleanTitle('Song (Deluxe Edition) (Mono Remastered)', 'album', DEFAULT_ON)?.clean).toBe(
+      'Song - Mono',
+    );
+  });
+
+  const KEPT: [string, 'album' | 'track'][] = [
+    // Without the remaster word these belong to mono-stereo, which is off unless the operator says so.
+    ['Album (Mono)', 'album'],
+    ['Song - Stereo', 'track'],
+    ['Song - Mono Mix', 'track'],
+    ['Song (Mono Live)', 'track'],
+    // A word that merely starts with the qualifier is not the qualifier.
+    ['Album (Monograph Remastered)', 'album'],
+  ];
+
+  it.each(KEPT)('leaves %s alone', (title, field) => {
+    expect(cleanTitle(title, field, DEFAULT_ON)).toBeNull();
+  });
+});
+
 describe('remaster in Spanish and Portuguese', () => {
   const STRIPPED: [string, 'album' | 'track'][] = [
     ['Secuencia Inicial - Remasterizado 2007', 'track'],
@@ -734,7 +795,6 @@ describe('a delimiter needs no leading space', () => {
 describe('a segment with unnamed words is left alone, however marker-ish', () => {
   const KEPT = [
     'In The Court Of The Crimson King (Expanded & Remastered Original Album Mix)',
-    'Odessey and Oracle (Mono Remastered)',
     'Waltz For Debby (Original Jazz Classics Remaster 2010)',
     'Christmas Jollies (Tom Moulton Remix;2022 - Remaster)',
     'Maiden Voyage (Remastered 1999/Rudy Van Gelder Edition)',

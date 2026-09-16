@@ -88,8 +88,16 @@ function editionOrders(): string {
   return `${ordinal}${word}(?:${EDITION_JOIN}${word})*(?:\\s+(?:edition|version))?`;
 }
 
-/** Qualifiers that appear in front of a remaster claim; each is store cruft on its own too. */
-const REMASTER_QUALIFIERS = ['digital', 'hd', 'expanded', 'deluxe', 'super deluxe'] as const;
+/** Qualifiers in front of a remaster claim; mono/stereo ride along even when mono-stereo is off. */
+const REMASTER_QUALIFIERS = [
+  'digital',
+  'hd',
+  'expanded',
+  'deluxe',
+  'super deluxe',
+  'mono',
+  'stereo',
+] as const;
 
 /**
  * Every order of (qualifier?, year?, "remaster(ed)", "version"?) that a label actually ships, with
@@ -144,6 +152,20 @@ function localizedRemasterOrders(): string[] {
   }
   return [...out];
 }
+
+/**
+ * Words that are *content* even when they share a trailing segment with a marker: "Mono Remastered"
+ * claims a remaster and names the mix. A segment the catalogue strips leaves these behind rather
+ * than deleting them, and the leftover is then judged by the catalogue like any other segment — so
+ * whether `Mono` survives is the `mono-stereo` group's own business, not this table's.
+ *
+ * Searched anywhere in the segment, because the year can lead it ("2019 Mono Remaster"); safe only
+ * because the segment has already matched, where the word can only be the generated qualifier.
+ */
+export const RETAINED_WORDS: readonly { marker: RegExp; canonical: string }[] = [
+  { marker: /\bmono\b/iu, canonical: 'Mono' },
+  { marker: /\bstereo\b/iu, canonical: 'Stereo' },
+];
 
 export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // Generated rather than listed: the same three parts recur in every order a label has ever used,

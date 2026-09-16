@@ -29,6 +29,14 @@ These are the things a newcomer gets wrong. Each one was found the hard way.
   segment — legitimate because every character of the qualifier survives, which is the reason the
   anchoring rule exists. A group listed there never strips, so the two operations cannot blur. The
   library already held both shapes of the same gig, and the dash form is the one nothing touches.
+- **A stripped segment can leave a word behind, and that word is then judged like any other.**
+  `RETAINED_WORDS` lists content that may share a segment with a marker (`Mono`, `Stereo`), so
+  `(Mono Remastered)` reduces to `- Mono` instead of vanishing. The leftover is re-offered to
+  `matchOne`, which is what keeps this modular: no rule reads another rule's tier, so `mono-stereo`
+  decides whether `Mono` survives exactly as it decides a bare `(Mono)`. The word is carried to the
+  end of `cleanTitle` rather than written back as a tail, since `splitTail` only ever looks at the
+  last segment and a residual would hide the cruft before it.
+
 - **`+noredirect` on every library URL, tracks and albums alike.** Without it Last.fm 301s to a
   canonical form that is *lowercased*, and a casing-only difference makes the `*_original` tuple
   stop matching — while Last.fm also rejects casing-only edits, so the write silently no-ops.

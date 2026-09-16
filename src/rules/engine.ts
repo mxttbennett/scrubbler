@@ -1,4 +1,11 @@
-import { DASH_NORMALIZED, type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
+import {
+  DASH_NORMALIZED,
+  type Field,
+  type GroupName,
+  MARKER_GROUPS,
+  RETAINED_WORDS,
+  type RuleTag,
+} from './markers.js';
 
 /**
  * What a normalizing group does with the tail it matched: rewrite it into the dash form, or drop it.
@@ -151,6 +158,14 @@ function normalized(segment: string, group: GroupName): string {
   return segment.trim().replace(marker, canonical);
 }
 
+/** The content word this segment leaves behind when the catalogue strips it, if any. */
+function retainedWord(segment: string): string | null {
+  for (const { marker, canonical } of RETAINED_WORDS) {
+    if (marker.test(segment.trim())) return canonical;
+  }
+  return null;
+}
+
 /** Returns null when the title should be left untouched; never returns a casing-only change. */
 export function cleanTitle(
   title: string,
@@ -169,6 +184,7 @@ export function cleanTitle(
 
   const groups: GroupName[] = [];
   let current = title;
+  let retained: string | null = null;
   let passes = 0;
 
   while (passes < MAX_PASSES) {
@@ -200,12 +216,18 @@ export function cleanTitle(
       break;
     }
 
+    // Carried, not appended here: a residual tail would hide further cruft from the next pass.
+    if (matched !== null) retained = retainedWord(tail.segment) ?? retained;
+
     current = head;
     passes += 1;
     for (const group of matched ?? []) {
       if (!groups.includes(group)) groups.push(group);
     }
   }
+
+  // Re-offered to the catalogue: a word an enabled rule would strip on its own is not kept here.
+  if (retained !== null && matchOne(retained, field, enabled) === null) current += ` - ${retained}`;
 
   if (passes === 0) return null;
   // Last.fm silently rejects edits that only change casing, so emitting one wastes a write.
