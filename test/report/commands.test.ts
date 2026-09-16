@@ -151,12 +151,12 @@ describe('/scrub status', () => {
   });
 });
 
-describe('/scrub stats', () => {
+describe('/scrub status — the ledger table', () => {
   it('counts albums and tracks separately, all-time', async () => {
     const h = harness();
     seedLedger(h.d);
 
-    const text = (await h.commands.handle('stats')).text;
+    const text = (await h.commands.handle('status')).text;
 
     // 5 verified + 1 applied albums; 3 verified tracks.
     expect(text).toMatch(/corrected\s+6\s+3/);
@@ -166,7 +166,7 @@ describe('/scrub stats', () => {
   });
 
   it('reads zero cleanly on an empty ledger', async () => {
-    expect((await harness().commands.handle('stats')).text).toContain('total corrected 0');
+    expect((await harness().commands.handle('status')).text).toContain('total corrected 0');
   });
 });
 
@@ -306,8 +306,8 @@ describe('/scrub reset proposals', () => {
   });
 });
 
-describe('/scrub approve-all', () => {
-  it('asks for a confirmation rather than applying straight away', async () => {
+describe('/scrub pending — the apply-all button', () => {
+  it('carries the bulk action on the list, so the decision is taken while looking at it', async () => {
     const h = harness();
     await h.approvals.propose({
       kind: 'album',
@@ -324,26 +324,16 @@ describe('/scrub approve-all', () => {
       shared: { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
     });
 
-    const reply = await h.commands.handle('approve-all');
+    const reply = await h.commands.handle('pending');
 
     expect(reply.confirm?.customId).toBe('approve-all:0');
     expect(reply.text).toContain('cannot be undone');
+    // The list itself is still there; the button did not replace it.
+    expect(reply.text).toContain('Nirvana');
   });
 
   it('offers no button when nothing is pending', async () => {
-    expect((await harness().commands.handle('approve-all')).confirm).toBeUndefined();
-  });
-});
-
-describe('/scrub pause and resume', () => {
-  it('sets the flag the worker reads at the candidate boundary', async () => {
-    const h = harness();
-
-    await h.commands.handle('pause');
-    expect(h.d.select().from(schema.sweepState).all()[0]!.paused).toBe(true);
-
-    await h.commands.handle('resume');
-    expect(h.d.select().from(schema.sweepState).all()[0]!.paused).toBe(false);
+    expect((await harness().commands.handle('pending')).confirm).toBeUndefined();
   });
 });
 
@@ -466,7 +456,7 @@ describe('/scrub replace', () => {
 
   it('refuses while paused rather than writing against a paused service', async () => {
     const h = harness();
-    await h.commands.handle('pause');
+    h.d.insert(schema.sweepState).values({ id: 1, paused: true }).run();
 
     const text = (
       await h.commands.handle('replace', {
@@ -500,18 +490,17 @@ describe('approval-only commands with the mode off', () => {
     const h = harness({ approvalMode: false });
 
     const pending = (await h.commands.handle('pending')).text;
-    const approveAll = (await h.commands.handle('approve-all')).text;
 
     expect(pending).toContain('No rule is gated');
-    expect(approveAll).toContain('No rule is gated');
     expect(pending).toContain('gated');
   });
 
-  it('still answers status and stats with the mode off', async () => {
+  it('still answers status with the mode off', async () => {
     const h = harness({ approvalMode: false });
+    const text = (await h.commands.handle('status')).text;
 
-    expect((await h.commands.handle('status')).text).toContain('unattended');
-    expect((await h.commands.handle('stats')).text).toContain('total corrected');
+    expect(text).toContain('unattended');
+    expect(text).toContain('total corrected');
   });
 });
 

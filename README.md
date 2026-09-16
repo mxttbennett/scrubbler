@@ -255,21 +255,19 @@ if the mode is on without a bot token, channel, owner and guild.
 
 The mode is read once at startup, so changing it needs a restart. Switching it **off** drains the
 outstanding queue through the ordinary path on the next cycle and retires the cards — it does not
-leave proposals stranded. For a live stop, use `/scrub pause`.
+leave proposals stranded. For a live stop, use the pause button in `/scrub config`.
 
 ### Commands
 
 Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** — set
-`DISCORD_OWNER_ID` and `DISCORD_GUILD_ID` and you get all of these unattended too; `pending` and
-`approve-all` simply say the mode is off. Type `/scrub` in the channel to see the list.
+`DISCORD_OWNER_ID` and `DISCORD_GUILD_ID` and you get all of these unattended too; `pending` simply
+says the mode is off. Type `/scrub` in the channel to see the list — there are seven.
 
 | Command | Does |
 |---|---|
-| `/scrub status` | mode, phase, candidate progress, verified/failed, pending count, cursor |
-| `/scrub stats` | all-time corrections, albums and tracks counted separately |
-| `/scrub pending [page]` | the proposals awaiting a decision, with jump links |
-| `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
-| `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |
+| `/scrub status` | mode, phase, progress, cursor, and the all-time ledger by album and track |
+| `/scrub config` | rule tiers and pause, as an interactive panel |
+| `/scrub pending [page]` | the proposals awaiting a decision, with jump links and an apply-all button |
 | `/scrub reset <target> [rule]` | forget derived state so it is worked out again (see below) |
 | `/scrub replace` | add a custom replacement and apply it now (see below) |
 | `/scrub overrides` | the replacements and ignores you have set, each removable from its row |

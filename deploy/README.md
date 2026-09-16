@@ -143,7 +143,7 @@ rule, `/scrub reset shadow <rule>` drops their stale verdicts.
 
 ## Changing a rule's tier
 
-Tiers are read once at startup, so any change needs a restart. `/scrub pause` is the live stop.
+Tiers are read once at startup, so any change needs a restart. The `/scrub config` pause button is the live stop.
 
 Promoting a group to `gated` is safe — its candidates simply start arriving as cards instead of
 being written.

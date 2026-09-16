@@ -48,7 +48,6 @@ export const COMMAND_DEFINITION = {
   description: 'Inspect and steer the scrubbler',
   options: [
     { type: 1, name: 'status', description: 'Mode, phase, progress and pending count' },
-    { type: 1, name: 'stats', description: 'All-time corrections, by kind' },
     { type: 1, name: 'config', description: 'Rule tiers and pause state' },
     {
       type: 1,
@@ -56,7 +55,6 @@ export const COMMAND_DEFINITION = {
       description: 'Proposals awaiting a decision',
       options: [{ type: 4, name: 'page', description: '1-based page', required: false }],
     },
-    { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
     {
       type: 1,
       name: 'replace',
@@ -92,8 +90,6 @@ export const COMMAND_DEFINITION = {
         { type: 4, name: 'page', description: '1-based page', required: false },
       ],
     },
-    { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
-    { type: 1, name: 'resume', description: 'Carry on sweeping' },
     {
       type: 1,
       name: 'overrides',
@@ -150,22 +146,13 @@ export class Commands {
     switch (sub) {
       case 'status':
         return { text: this.status() };
-      case 'stats':
-        return { text: this.stats() };
       case 'config':
         return this.configPanel();
-      case 'pending':
-      case 'approve-all': {
+      case 'pending': {
         const off = this.requireApprovalMode();
         if (off !== undefined) return { text: off };
-        return sub === 'pending'
-          ? { text: this.pendingList(Number(args['page'] ?? 1)) }
-          : this.approveAll();
+        return this.pending(Number(args['page'] ?? 1));
       }
-      case 'pause':
-        return { text: this.setPaused(true) };
-      case 'resume':
-        return { text: this.setPaused(false) };
       case 'replace':
         return { text: await this.replace(args) };
       case 'overrides':
@@ -254,15 +241,14 @@ export class Commands {
       `failed      ${counts.get('failed') ?? 0}`,
       `pending     ${pending} awaiting approval`,
       `cursor      ${s?.lastScrobbleUts ?? 'none — next sweep is full'}`,
+      ``,
+      ...this.ledgerTable(),
     ];
     return fence(lines);
   }
 
-  /**
-   * All-time, not per-run: applied_edits is a durable one-row-per-tuple ledger, so these numbers
-   * cover every sweep since the first.
-   */
-  stats(): string {
+  /** All-time: applied_edits is a durable one-row-per-tuple ledger, not a per-run counter. */
+  private ledgerTable(): string[] {
     const rows = this.deps.db
       .select({
         kind: schema.appliedEdits.kind,
@@ -277,7 +263,7 @@ export class Commands {
       rows.find((r) => r.kind === kind && r.status === status)?.n ?? 0;
     const done = (kind: string) => at(kind, 'verified') + at(kind, 'applied');
 
-    const lines = [
+    return [
       `                albums  tracks`,
       `corrected       ${pad(done('album'))}  ${pad(done('track'))}`,
       `unverified      ${pad(at('album', 'unverified'))}  ${pad(at('track', 'unverified'))}`,
@@ -287,7 +273,6 @@ export class Commands {
       ``,
       `total corrected ${done('album') + done('track')} since the ledger began`,
     ];
-    return fence(lines);
   }
 
   private pendingList(page: number): string {
@@ -325,26 +310,20 @@ export class Commands {
     };
   }
 
-  private approveAll(): CommandReply {
+  /**
+   * The list and the bulk action are one reply, so the decision is taken while looking at what it
+   * covers — which is also why the button needs no second confirmation step of its own.
+   */
+  private pending(page: number): CommandReply {
     const n = this.deps.approvals.pending().length;
-    if (n === 0) return { text: 'Nothing awaiting approval.' };
+    const text = this.pendingList(page);
+    if (n === 0) return { text };
     return {
-      text: `Approve all ${n} pending proposal(s)? Each is applied for real and cannot be undone.`,
+      text: `${text}\n\nApplying all ${n} is for real and cannot be undone.`,
       confirm: { customId: 'approve-all:0', label: `Apply all ${n}` },
     };
   }
 
-  /** Live, unlike the mode: the worker reads this at every candidate boundary. */
-  private setPaused(paused: boolean): string {
-    this.deps.db
-      .insert(schema.sweepState)
-      .values({ id: 1, paused })
-      .onConflictDoUpdate({ target: schema.sweepState.id, set: { paused } })
-      .run();
-    return paused
-      ? 'Paused. The current candidate finishes, then nothing new starts.'
-      : 'Resumed.';
-  }
 
   /**
    * One verb for every "forget this and work it out again". Only `proposals` confirms: the others
@@ -390,7 +369,7 @@ export class Commands {
     const state = this.state();
     // The apply is a real write; running it against a paused service would contradict the pause.
     if (state?.paused === true) {
-      return 'The service is paused. Run /scrub resume first, or the rule cannot be applied.';
+      return 'The service is paused. Resume it from /scrub config, or the rule cannot be applied.';
     }
 
     const artist = String(args['artist'] ?? '');

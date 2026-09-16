@@ -11,6 +11,7 @@ person running the service rather than for the diff.
 
 The `/scrub` surface is consolidated from seventeen subcommands to seven. Each removed command
 existed because a capability did, rather than because anyone would want to invoke it that way.
+The surface is now: `status`, `config`, `pending`, `replace`, `shadow`, `overrides`, `reset`.
 
 **`/scrub reset <target> [rule]`** replaces `repropose`, `resweep`, `retry-dead` and `shadow-clear`.
 
@@ -29,6 +30,15 @@ existed because a capability did, rather than because anyone would want to invok
 - Removing is a button on the row. Undoing an ignore used to mean retyping the artist and title
   exactly, while looking at them on screen — that was the worst of the old surface.
 - Paged once past 20 entries, with the select menu staying inside Discord's 25-option cap.
+
+**Folded into the cards that own them:** `stats`, `approve-all`, `pause`, `resume`.
+
+- `/scrub stats` is now the bottom of `/scrub status`. They were two cards answering "how is it
+  going", and you had to know both to get the whole answer.
+- `/scrub approve-all` is a button on `/scrub pending`. The decision is taken while looking at the
+  list it covers, which is both fewer steps and a better look before you leap.
+- `/scrub pause` and `/scrub resume` are gone; the `/scrub config` panel has had those buttons since
+  it shipped, so the commands were a second door to the same room.
 
 ## [1.7.0] - 2026-09-16
 
