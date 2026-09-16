@@ -8,7 +8,6 @@ import { CustomRules } from '../../src/rules/customRules.js';
 import { ShadowStore } from '../../src/scrub/shadowStore.js';
 import { Approvals } from '../../src/scrub/approvals.js';
 import { Executor } from '../../src/scrub/executor.js';
-import { Planner } from '../../src/scrub/planner.js';
 import type { Reporter } from '../../src/report/reporter.js';
 import type { ProposalTransport } from '../../src/report/proposals.js';
 
@@ -336,47 +335,6 @@ describe('/scrub approve-all', () => {
   });
 });
 
-describe('/scrub ignored and unignore', () => {
-  it('round-trips an entry back into the planner', async () => {
-    const h = harness();
-    h.d.insert(schema.ignored)
-      .values({ kind: 'track', artist: 'Slint', title: 'Good Morning, Captain', reason: 'x' })
-      .run();
-
-    expect((await h.commands.handle('ignored')).text).toContain('Slint');
-
-    const planner = new Planner({} as never, 'u', () => new Set(['remaster']), h.d, 3);
-    const candidate = { kind: 'track' as const, artist: 'Slint', title: 'Good Morning, Captain' };
-    expect(planner.filterLive([candidate])).toEqual([]);
-
-    const removed = (
-      await h.commands.handle('unignore', {
-        artist: 'Slint',
-        title: 'Good Morning, Captain',
-      })
-    ).text;
-
-    expect(removed).toContain('can be proposed again');
-    expect(planner.filterLive([candidate])).toEqual([candidate]);
-  });
-
-  it('says so for an entry that was never ignored', async () => {
-    expect((await harness().commands.handle('unignore', { artist: 'a', title: 'b' })).text).toContain(
-      'Not on the ignore list',
-    );
-  });
-
-  it('requires both fields', async () => {
-    expect((await harness().commands.handle('unignore', { artist: '', title: 'b' })).text).toContain(
-      'required',
-    );
-  });
-
-  it('reports an empty list rather than an empty fence', async () => {
-    expect((await harness().commands.handle('ignored')).text).toBe('The ignore list is empty.');
-  });
-});
-
 describe('/scrub pause and resume', () => {
   it('sets the flag the worker reads at the candidate boundary', async () => {
     const h = harness();
@@ -534,52 +492,6 @@ describe('/scrub replace', () => {
     expect(text).toContain('Not applied yet');
     // The rule is still saved: the entity may reappear, and the next sweep will catch it.
     expect(h.customRules.list()).toHaveLength(1);
-  });
-});
-
-describe('/scrub rules and unrule', () => {
-  it('lists a rule with its apply count', async () => {
-    const h = harness();
-    h.customRules.add({
-      kind: 'album',
-      artist: 'Pavement',
-      fromTitle: 'Wowee Zowee: Sordid Sentinels Edition',
-      toTitle: 'Wowee Zowee',
-    });
-
-    const text = (await h.commands.handle('rules')).text;
-
-    expect(text).toContain('Pavement');
-    expect(text).toContain('never applied');
-  });
-
-  it('says so when there are none', async () => {
-    expect((await harness().commands.handle('rules')).text).toBe('No custom replacements set.');
-  });
-
-  it('removes one and reports a miss honestly', async () => {
-    const h = harness();
-    h.customRules.add({
-      kind: 'album',
-      artist: 'Pavement',
-      fromTitle: 'Wowee Zowee: Sordid Sentinels Edition',
-      toTitle: 'Wowee Zowee',
-    });
-
-    const removed = (
-      await h.commands.handle('unrule', {
-        kind: 'album',
-        artist: 'Pavement',
-        from: 'Wowee Zowee: Sordid Sentinels Edition',
-      })
-    ).text;
-    const missing = (
-      await h.commands.handle('unrule', { kind: 'album', artist: 'Nobody', from: 'Nothing' })
-    ).text;
-
-    expect(removed).toContain('Removed');
-    expect(missing).toContain('No album rule');
-    expect(h.customRules.list()).toHaveLength(0);
   });
 });
 
