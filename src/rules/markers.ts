@@ -88,8 +88,16 @@ function editionOrders(): string {
   return `${ordinal}${word}(?:${EDITION_JOIN}${word})*(?:\\s+(?:edition|version))?`;
 }
 
-/** Qualifiers that appear in front of a remaster claim; each is store cruft on its own too. */
-const REMASTER_QUALIFIERS = ['digital', 'hd', 'expanded', 'deluxe', 'super deluxe'] as const;
+/** Qualifiers in front of a remaster claim; mono/stereo ride along even when mono-stereo is off. */
+const REMASTER_QUALIFIERS = [
+  'digital',
+  'hd',
+  'expanded',
+  'deluxe',
+  'super deluxe',
+  'mono',
+  'stereo',
+] as const;
 
 /**
  * Every order of (qualifier?, year?, "remaster(ed)", "version"?) that a label actually ships, with
@@ -144,6 +152,22 @@ function localizedRemasterOrders(): string[] {
   }
   return [...out];
 }
+
+/**
+ * A qualifier that is *content* sharing a segment with a remaster claim. Stripping "Mono
+ * Remastered" whole would delete a mix name that `owner` governs, so while `owner` is off the
+ * segment reduces to `canonical` in dash form instead of vanishing. Searched anywhere in the
+ * segment, because the year can lead it ("2019 Mono Remaster"); safe only because the segment has
+ * already matched the remaster catalogue, where the word can only be the generated qualifier.
+ */
+export const RETAINED_QUALIFIERS: readonly {
+  owner: GroupName;
+  marker: RegExp;
+  canonical: string;
+}[] = [
+  { owner: 'mono-stereo', marker: /\bmono\b/iu, canonical: 'Mono' },
+  { owner: 'mono-stereo', marker: /\bstereo\b/iu, canonical: 'Stereo' },
+];
 
 export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
   // Generated rather than listed: the same three parts recur in every order a label has ever used,

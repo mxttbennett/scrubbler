@@ -1,4 +1,11 @@
-import { DASH_NORMALIZED, type Field, type GroupName, MARKER_GROUPS, type RuleTag } from './markers.js';
+import {
+  DASH_NORMALIZED,
+  type Field,
+  type GroupName,
+  MARKER_GROUPS,
+  RETAINED_QUALIFIERS,
+  type RuleTag,
+} from './markers.js';
 
 /**
  * What a normalizing group does with the tail it matched: rewrite it into the dash form, or drop it.
@@ -151,6 +158,14 @@ function normalized(segment: string, group: GroupName): string {
   return segment.trim().replace(marker, canonical);
 }
 
+/** The content qualifier this segment keeps when its owning group is not itself removing it. */
+function retainedQualifier(segment: string, enabled: ReadonlySet<GroupName>): string | null {
+  for (const { owner, marker, canonical } of RETAINED_QUALIFIERS) {
+    if (!enabled.has(owner) && marker.test(segment.trim())) return canonical;
+  }
+  return null;
+}
+
 /** Returns null when the title should be left untouched; never returns a casing-only change. */
 export function cleanTitle(
   title: string,
@@ -169,6 +184,7 @@ export function cleanTitle(
 
   const groups: GroupName[] = [];
   let current = title;
+  let suffix = '';
   let passes = 0;
 
   while (passes < MAX_PASSES) {
@@ -200,12 +216,18 @@ export function cleanTitle(
       break;
     }
 
+    // Carried, not appended here: a residual tail would hide further cruft from the next pass.
+    const keep = matched === null ? null : retainedQualifier(tail.segment, enabled);
+    if (keep !== null) suffix = ` - ${keep}`;
+
     current = head;
     passes += 1;
     for (const group of matched ?? []) {
       if (!groups.includes(group)) groups.push(group);
     }
   }
+
+  current += suffix;
 
   if (passes === 0) return null;
   // Last.fm silently rejects edits that only change casing, so emitting one wastes a write.
