@@ -529,7 +529,7 @@ describe('remaster word orders', () => {
 describe('mono and stereo qualify a remaster claim', () => {
   const MONO_ON = new Set<GroupName>([...DEFAULT_ON, 'mono-stereo']);
 
-  /** mono-stereo off: the remaster claim goes, the mix name survives in dash form. */
+  /** mono-stereo off: nothing claims the leftover, so the mix name survives in dash form. */
   const REDUCED: [string, 'album' | 'track', string][] = [
     ['Odessey and Oracle (Mono Remastered)', 'album', 'Odessey and Oracle - Mono'],
     ['Care of Cell 44 - Mono Remastered', 'track', 'Care of Cell 44 - Mono'],
@@ -546,7 +546,7 @@ describe('mono and stereo qualify a remaster claim', () => {
     expect(cleanTitle(title, field, DEFAULT_ON)?.clean).toBe(expected);
   });
 
-  /** mono-stereo on: the operator is removing mix names anyway, so the whole segment goes. */
+  /** The leftover is re-offered to the catalogue, and mono-stereo claims it like a bare (Mono). */
   const STRIPPED: [string, 'album' | 'track', string][] = [
     ['Odessey and Oracle (Mono Remastered)', 'album', 'Odessey and Oracle'],
     ['Care of Cell 44 - Mono Remastered', 'track', 'Care of Cell 44'],

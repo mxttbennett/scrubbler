@@ -154,19 +154,17 @@ function localizedRemasterOrders(): string[] {
 }
 
 /**
- * A qualifier that is *content* sharing a segment with a remaster claim. Stripping "Mono
- * Remastered" whole would delete a mix name that `owner` governs, so while `owner` is off the
- * segment reduces to `canonical` in dash form instead of vanishing. Searched anywhere in the
- * segment, because the year can lead it ("2019 Mono Remaster"); safe only because the segment has
- * already matched the remaster catalogue, where the word can only be the generated qualifier.
+ * Words that are *content* even when they share a trailing segment with a marker: "Mono Remastered"
+ * claims a remaster and names the mix. A segment the catalogue strips leaves these behind rather
+ * than deleting them, and the leftover is then judged by the catalogue like any other segment — so
+ * whether `Mono` survives is the `mono-stereo` group's own business, not this table's.
+ *
+ * Searched anywhere in the segment, because the year can lead it ("2019 Mono Remaster"); safe only
+ * because the segment has already matched, where the word can only be the generated qualifier.
  */
-export const RETAINED_QUALIFIERS: readonly {
-  owner: GroupName;
-  marker: RegExp;
-  canonical: string;
-}[] = [
-  { owner: 'mono-stereo', marker: /\bmono\b/iu, canonical: 'Mono' },
-  { owner: 'mono-stereo', marker: /\bstereo\b/iu, canonical: 'Stereo' },
+export const RETAINED_WORDS: readonly { marker: RegExp; canonical: string }[] = [
+  { marker: /\bmono\b/iu, canonical: 'Mono' },
+  { marker: /\bstereo\b/iu, canonical: 'Stereo' },
 ];
 
 export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
