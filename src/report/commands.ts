@@ -5,6 +5,7 @@ import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
 import { ALL_GROUPS, type Field, isGroupName } from '../rules/markers.js';
 import { reproposeId } from './proposals.js';
+import { clearCursor, clearDead, clearShadow, isResetTarget } from '../scrub/resets.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
 import { readPackageVersion } from '../core/version.js';
 
@@ -55,20 +56,6 @@ export const COMMAND_DEFINITION = {
       options: [{ type: 4, name: 'page', description: '1-based page', required: false }],
     },
     { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
-    {
-      type: 1,
-      name: 'repropose',
-      description: 'Drop one rule’s pending proposals so a later sweep re-resolves them',
-      options: [
-        {
-          type: 3,
-          name: 'rule',
-          description: 'The rule whose proposals are stale',
-          required: true,
-          choices: ALL_GROUPS.map((g) => ({ name: g, value: g })),
-        },
-      ],
-    },
     {
       type: 1,
       name: 'ignored',
@@ -139,24 +126,34 @@ export const COMMAND_DEFINITION = {
         { type: 4, name: 'page', description: '1-based page', required: false },
       ],
     },
+    { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
+    { type: 1, name: 'resume', description: 'Carry on sweeping' },
     {
       type: 1,
-      name: 'shadow-clear',
-      description: 'Forget recorded shadow hits so they are announced again',
+      name: 'reset',
+      description: 'Forget derived state so the service works it out again',
       options: [
         {
           type: 3,
+          name: 'target',
+          description: 'What to forget',
+          required: true,
+          choices: [
+            { name: 'cursor — re-sweep the whole library', value: 'cursor' },
+            { name: 'dead — retry candidates that resolved to nothing', value: 'dead' },
+            { name: 'proposals — drop one rule’s pending proposals', value: 'proposals' },
+            { name: 'shadow — announce recorded shadow hits again', value: 'shadow' },
+          ],
+        },
+        {
+          type: 3,
           name: 'rule',
-          description: 'Limit to one rule',
+          description: 'Required for proposals, optional for shadow',
           required: false,
           choices: ALL_GROUPS.map((g) => ({ name: g, value: g })),
         },
       ],
     },
-    { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
-    { type: 1, name: 'resume', description: 'Carry on sweeping' },
-    { type: 1, name: 'resweep', description: 'Clear the scrobble cursor so the next sweep is full' },
-    { type: 1, name: 'retry-dead', description: 'Forget the learned-empty candidates' },
   ],
 } as const;
 
@@ -194,8 +191,6 @@ export class Commands {
           ? { text: this.pendingList(Number(args['page'] ?? 1)) }
           : this.approveAll();
       }
-      case 'repropose':
-        return this.repropose(String(args['rule'] ?? ''));
       case 'ignored':
         return { text: this.ignoredList(Number(args['page'] ?? 1)) };
       case 'unignore':
@@ -204,8 +199,6 @@ export class Commands {
         return { text: this.setPaused(true) };
       case 'resume':
         return { text: this.setPaused(false) };
-      case 'resweep':
-        return { text: this.resweep() };
       case 'replace':
         return { text: await this.replace(args) };
       case 'rules':
@@ -214,10 +207,8 @@ export class Commands {
         return { text: this.unrule(args) };
       case 'shadow':
         return { text: this.shadowList(args) };
-      case 'shadow-clear':
-        return { text: this.shadowClear(args) };
-      case 'retry-dead':
-        return { text: this.retryDead() };
+      case 'reset':
+        return this.reset(args);
       default:
         return { text: `Unknown subcommand: ${sub}` };
     }
@@ -406,13 +397,37 @@ export class Commands {
       : 'Resumed.';
   }
 
-  private resweep(): string {
-    this.deps.db
-      .insert(schema.sweepState)
-      .values({ id: 1, lastScrobbleUts: null })
-      .onConflictDoUpdate({ target: schema.sweepState.id, set: { lastScrobbleUts: null } })
-      .run();
-    return 'Cursor cleared. The next sweep walks the whole library.';
+  /**
+   * One verb for every "forget this and work it out again". Only `proposals` confirms: the others
+   * clear derived state the next sweep rebuilds, while that one discards recorded decisions.
+   */
+  private reset(args: Record<string, string | number>): CommandReply {
+    const target = String(args['target'] ?? '');
+    if (!isResetTarget(target)) return { text: `Unknown target: ${target}` };
+
+    const rule = args['rule'] === undefined ? undefined : String(args['rule']);
+    if (rule !== undefined && (target === 'cursor' || target === 'dead')) {
+      return { text: `\`${target}\` takes no rule.` };
+    }
+    if (rule !== undefined && !isGroupName(rule)) return { text: `Unknown rule: ${rule}` };
+
+    switch (target) {
+      case 'cursor':
+        clearCursor(this.deps.db);
+        return { text: 'Cursor cleared. The next sweep walks the whole library.' };
+      case 'dead': {
+        const n = clearDead(this.deps.db);
+        return { text: `Forgot ${n} learned-empty candidate(s). They will be tried again.` };
+      }
+      case 'shadow': {
+        const n = clearShadow(this.deps.db, rule);
+        const scope = rule === undefined ? '' : ` for ${rule}`;
+        return { text: `Forgot ${n} shadow hit(s)${scope}. They will be announced again.` };
+      }
+      case 'proposals':
+        if (rule === undefined) return { text: '`proposals` needs a rule.' };
+        return this.repropose(rule);
+    }
   }
 
   private static kindOf(raw: unknown): Field | undefined {
@@ -509,21 +524,6 @@ export class Commands {
     return fence([...lines, ``, `page ${page}/${pages} · ${counts}`]);
   }
 
-  private shadowClear(args: Record<string, string | number>): string {
-    const raw = args['rule'] === undefined ? undefined : String(args['rule']);
-    const before = this.deps.shadowStore.list(raw).length;
-    this.deps.db
-      .delete(schema.shadowHits)
-      .where(raw === undefined ? undefined : eq(schema.shadowHits.rule, raw))
-      .run();
-    return `Forgot ${before} shadow hit(s)${raw === undefined ? '' : ` for ${raw}`}. They will be announced again.`;
-  }
-
-  private retryDead(): string {
-    const n = this.deps.db.select().from(schema.deadCandidates).all().length;
-    this.deps.db.delete(schema.deadCandidates).run();
-    return `Forgot ${n} learned-empty candidate(s). They will be tried again.`;
-  }
 }
 
 function pad(n: number): string {

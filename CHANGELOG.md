@@ -7,6 +7,21 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.8.0] - 2026-09-16
+
+The `/scrub` surface is consolidated from seventeen subcommands to seven. Each removed command
+existed because a capability did, rather than because anyone would want to invoke it that way.
+
+**`/scrub reset <target> [rule]`** replaces `repropose`, `resweep`, `retry-dead` and `shadow-clear`.
+
+- They were four names for one intent — forget some derived state so the service works it out
+  again — and nothing tied them together or made them behave alike.
+- Only `proposals` asks for a confirmation now, and the reason is stated: it discards recorded
+  decisions, while the other three clear state the next sweep rebuilds on its own.
+- The `--resweep` and `--retry-dead` CLI flags keep their names but now share one definition with
+  the slash command, so the two doors to a reset cannot drift apart. `--resweep` no longer nulls
+  `lastFullSweepAt` as well; a null cursor already forces a full sweep, so behaviour is unchanged.
+
 ## [1.7.0] - 2026-09-16
 
 - `Mono`/`Stereo` in front of a remaster claim no longer blocks the rule, so the Zombies'

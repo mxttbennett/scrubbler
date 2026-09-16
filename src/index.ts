@@ -1,8 +1,9 @@
 import { loadConfig } from './core/config.js';
+import { clearCursor, clearDead } from './scrub/resets.js';
 import { readPackageVersion } from './core/version.js';
 import { AlreadyRunningError, acquireLock, lockPath } from './core/lock.js';
 import { WriteLock } from './core/writeLock.js';
-import { createDb, runMigrations, schema } from './db/index.js';
+import { createDb, runMigrations } from './db/index.js';
 import { LastfmApi } from './lastfm/api.js';
 import { AlbumEditor } from './lastfm/albumEditor.js';
 import { Editor } from './lastfm/editor.js';
@@ -159,17 +160,15 @@ async function main() {
       ` | mode ${tierStore.gated().size > 0 ? 'approval' : 'unattended'}`,
   );
 
-  // Reset flags: the slash-command equivalents arrive with the gateway client.
+  // Shared with /scrub reset, so the two doors to a reset cannot drift apart.
   if (process.argv.includes('--resweep')) {
-    db.update(schema.sweepState).set({ lastScrobbleUts: null, lastFullSweepAt: null }).run();
+    clearCursor(db);
     console.log('cursor cleared — the next cycle will sweep the whole library');
     releaseLock();
     return;
   }
   if (process.argv.includes('--retry-dead')) {
-    const before = db.select().from(schema.deadCandidates).all().length;
-    db.delete(schema.deadCandidates).run();
-    console.log(`cleared ${before} dead candidate(s) — they will be tried again`);
+    console.log(`cleared ${clearDead(db)} dead candidate(s) — they will be tried again`);
     releaseLock();
     return;
   }
