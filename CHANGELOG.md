@@ -22,6 +22,14 @@ existed because a capability did, rather than because anyone would want to invok
   the slash command, so the two doors to a reset cannot drift apart. `--resweep` no longer nulls
   `lastFullSweepAt` as well; a null cursor already forces a full sweep, so behaviour is unchanged.
 
+**`/scrub overrides`** replaces `rules`, `unrule`, `ignored` and `unignore`.
+
+- The replacements you have set and the things you have told it to ignore are one list, because
+  they are one idea: things you told the service by hand.
+- Removing is a button on the row. Undoing an ignore used to mean retyping the artist and title
+  exactly, while looking at them on screen — that was the worst of the old surface.
+- Paged once past 20 entries, with the select menu staying inside Discord's 25-option cap.
+
 ## [1.7.0] - 2026-09-16
 
 - `Mono`/`Stereo` in front of a remaster claim no longer blocks the rule, so the Zombies'

@@ -269,13 +269,10 @@ Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** 
 | `/scrub stats` | all-time corrections, albums and tracks counted separately |
 | `/scrub pending [page]` | the proposals awaiting a decision, with jump links |
 | `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
-| `/scrub ignored [page]` | the ignore list |
-| `/scrub unignore <artist> <title>` | remove an entry so it can be proposed again |
 | `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |
 | `/scrub reset <target> [rule]` | forget derived state so it is worked out again (see below) |
 | `/scrub replace` | add a custom replacement and apply it now (see below) |
-| `/scrub rules` | the custom replacements you have set, with apply counts |
-| `/scrub unrule` | remove one |
+| `/scrub overrides` | the replacements and ignores you have set, each removable from its row |
 
 `/scrub reset` is the one verb for "forget this and work it out again":
 

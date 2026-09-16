@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, MessageFlags } from 'discord.js';
 import type { ButtonInteraction, ChatInputCommandInteraction, Interaction, StringSelectMenuInteraction } from 'discord.js';
 import { COMMAND_DEFINITION, COMMAND_NAME, type Commands } from './commands.js';
 import { parseConfigId } from './configPanel.js';
+import { parseOverridesId } from './overridesPanel.js';
 import type { GroupName } from '../rules/markers.js';
 import { parseCustomId } from './proposals.js';
 
@@ -19,6 +20,7 @@ export interface GatewayDeps {
   guildId?: string;
   commands?: Commands;
   configPanel?: { handle(customId: string): { content: string; components: unknown[] } };
+  overridesPanel?: { handle(customId: string): { content: string; components: unknown[] } };
   decisions: DecisionHandler;
   /** Reached even when Discord is unreachable, which is the point of alerting through it. */
   alert: (error: unknown, context: string) => Promise<void>;
@@ -138,9 +140,15 @@ export class Gateway {
       const id =
         isSelect && interaction.customId === 'cfg:pick'
           ? `cfg:pick:${interaction.values[0] ?? ''}`
-          : interaction.customId;
+          : isSelect && interaction.customId === 'ovr:pick'
+            ? `ovr:pick:${interaction.values[0] ?? ''}`
+            : interaction.customId;
       if (id.startsWith('cfg:')) {
         await this.onConfigInteraction(interaction, id);
+        return;
+      }
+      if (id.startsWith('ovr:')) {
+        await this.onOverridesInteraction(interaction, id);
         return;
       }
     }
@@ -211,6 +219,21 @@ export class Gateway {
       return;
     }
     const panel = this.deps.configPanel;
+    if (panel === undefined) return;
+    const payload = panel.handle(customId);
+    await interaction.update({ content: payload.content, components: payload.components as never });
+  }
+
+  private async onOverridesInteraction(
+    interaction: ButtonInteraction | StringSelectMenuInteraction,
+    customId: string,
+  ): Promise<void> {
+    if (parseOverridesId(customId) === undefined) return;
+    if (interaction.user.id !== this.deps.ownerId) {
+      await interaction.reply({ content: NOT_OWNER, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    const panel = this.deps.overridesPanel;
     if (panel === undefined) return;
     const payload = panel.handle(customId);
     await interaction.update({ content: payload.content, components: payload.components as never });

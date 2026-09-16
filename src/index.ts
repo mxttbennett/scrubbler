@@ -11,6 +11,7 @@ import { LibraryPages } from './lastfm/pages.js';
 import { Session, sessionStatePath } from './lastfm/session.js';
 import { Commands } from './report/commands.js';
 import { ConfigPanel } from './report/configPanel.js';
+import { OverridesPanel } from './report/overridesPanel.js';
 import { Discord } from './report/discord.js';
 import { Gateway } from './report/gateway.js';
 import { Proposals } from './report/proposals.js';
@@ -126,6 +127,7 @@ async function main() {
     overrides: customRules.lookup,
   });
   const configPanel = new ConfigPanel({ db, tiers: tierStore, approvalMode: config.approvalMode });
+  const overridesPanel = new OverridesPanel({ db, customRules });
 
   const worker = new ScrubWorker({
     config,
@@ -245,11 +247,13 @@ async function main() {
         shadowMode: config.shadowMode,
         enabledRules: () => tierStore.enabled(),
         configPanel,
+        overridesPanel,
         channelId: config.discordChannelId,
         guildId: config.discordGuildId,
       }),
       decisions: approvals,
       configPanel,
+      overridesPanel,
       alert: (error, context) => reporter.report(error, context),
       alertAfterMinutes: config.gatewayAlertMinutes,
     });

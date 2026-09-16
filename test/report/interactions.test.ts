@@ -16,6 +16,7 @@ interface Calls {
   deferred: number;
   order: string[];
   config: string[];
+  overrides: string[];
   updates: string[];
 }
 
@@ -31,6 +32,7 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
     deferred: 0,
     order: [],
     config: [],
+    overrides: [],
     updates: [],
   };
 
@@ -67,6 +69,12 @@ function harness(opts: { outcome?: string; throws?: boolean } = {}) {
       handle: (customId) => {
         calls.config.push(customId);
         return { content: 'panel', components: [] };
+      },
+    },
+    overridesPanel: {
+      handle: (customId) => {
+        calls.overrides.push(customId);
+        return { content: 'overrides', components: [] };
       },
     },
     alert: async () => {},
@@ -202,6 +210,22 @@ describe('Gateway interactions', () => {
 
     expect(calls.config).toEqual(['cfg:pick:edition']);
     expect(calls.updates).toEqual(['panel']);
+  });
+
+  it('routes ovr selects to the overrides panel', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(selectInteraction('ovr:pick', OWNER, ['rule:7'], calls));
+
+    expect(calls.overrides).toEqual(['ovr:pick:rule:7']);
+    expect(calls.updates).toEqual(['overrides']);
+  });
+
+  it('owner-gates ovr interactions, so a stranger cannot remove an override', async () => {
+    const { gateway, calls } = harness();
+    await gateway.onInteraction(buttonInteraction('ovr:remove:rule:7', STRANGER, calls));
+
+    expect(calls.replies).toEqual([NOT_OWNER]);
+    expect(calls.overrides).toEqual([]);
   });
 
   it('owner-gates cfg interactions', async () => {

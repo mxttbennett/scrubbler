@@ -28,6 +28,7 @@ export interface CommandDeps {
   /** So an already-enabled rule is answered honestly rather than shown as an empty list. */
   enabledRules: RuleSet;
   configPanel?: { handle(customId?: string): { content: string; components: unknown[] } };
+  overridesPanel?: { handle(customId?: string): { content: string; components: unknown[] } };
   channelId: string | undefined;
   guildId: string | undefined;
 }
@@ -58,21 +59,6 @@ export const COMMAND_DEFINITION = {
     { type: 1, name: 'approve-all', description: 'Approve every pending proposal' },
     {
       type: 1,
-      name: 'ignored',
-      description: 'The ignore list',
-      options: [{ type: 4, name: 'page', description: '1-based page', required: false }],
-    },
-    {
-      type: 1,
-      name: 'unignore',
-      description: 'Allow an ignored entity to be proposed again',
-      options: [
-        { type: 3, name: 'artist', description: 'Artist name', required: true },
-        { type: 3, name: 'title', description: 'Track or album title', required: true },
-      ],
-    },
-    {
-      type: 1,
       name: 'replace',
       description: 'Replace a title the rule catalogue cannot express',
       options: [
@@ -89,26 +75,6 @@ export const COMMAND_DEFINITION = {
         { type: 3, name: 'artist', description: 'Artist name, exactly as scrobbled', required: true },
         { type: 3, name: 'from', description: 'The current title', required: true },
         { type: 3, name: 'to', description: 'What it should be', required: true },
-      ],
-    },
-    { type: 1, name: 'rules', description: 'The custom replacements you have set' },
-    {
-      type: 1,
-      name: 'unrule',
-      description: 'Remove a custom replacement',
-      options: [
-        {
-          type: 3,
-          name: 'kind',
-          description: 'track or album',
-          required: true,
-          choices: [
-            { name: 'track', value: 'track' },
-            { name: 'album', value: 'album' },
-          ],
-        },
-        { type: 3, name: 'artist', description: 'Artist name', required: true },
-        { type: 3, name: 'from', description: 'The current title', required: true },
       ],
     },
     {
@@ -128,6 +94,11 @@ export const COMMAND_DEFINITION = {
     },
     { type: 1, name: 'pause', description: 'Stop at the next candidate boundary' },
     { type: 1, name: 'resume', description: 'Carry on sweeping' },
+    {
+      type: 1,
+      name: 'overrides',
+      description: 'The replacements and ignores you have set, with remove buttons',
+    },
     {
       type: 1,
       name: 'reset',
@@ -191,20 +162,14 @@ export class Commands {
           ? { text: this.pendingList(Number(args['page'] ?? 1)) }
           : this.approveAll();
       }
-      case 'ignored':
-        return { text: this.ignoredList(Number(args['page'] ?? 1)) };
-      case 'unignore':
-        return { text: this.unignore(String(args['artist'] ?? ''), String(args['title'] ?? '')) };
       case 'pause':
         return { text: this.setPaused(true) };
       case 'resume':
         return { text: this.setPaused(false) };
       case 'replace':
         return { text: await this.replace(args) };
-      case 'rules':
-        return { text: this.rulesList() };
-      case 'unrule':
-        return { text: this.unrule(args) };
+      case 'overrides':
+        return this.overrides();
       case 'shadow':
         return { text: this.shadowList(args) };
       case 'reset':
@@ -238,6 +203,13 @@ export class Commands {
         ? ` ${pending} proposal(s) are still queued from an earlier run; the next sweep drains them.`
         : ' Set a rule to `gated` in RULES and restart to turn it on.')
     );
+  }
+
+  private overrides(): CommandReply {
+    const panel = this.deps.overridesPanel;
+    if (panel === undefined) return { text: 'Overrides panel is not available.' };
+    const payload = panel.handle();
+    return { text: payload.content, components: payload.components };
   }
 
   private configPanel(): CommandReply {
@@ -362,29 +334,6 @@ export class Commands {
     };
   }
 
-  private ignoredList(page: number): string {
-    const rows = this.deps.db.select().from(schema.ignored).all();
-    if (rows.length === 0) return 'The ignore list is empty.';
-    const start = Math.max(0, (Math.max(1, page) - 1) * PAGE_SIZE);
-    const slice = rows.slice(start, start + PAGE_SIZE);
-    if (slice.length === 0) return `Page ${page} is past the end (${rows.length} entries).`;
-    const lines = slice.map((r) => `${r.kind} ${r.artist} — ${r.title}`);
-    const pages = Math.ceil(rows.length / PAGE_SIZE);
-    return fence([...lines, ``, `page ${Math.max(1, page)}/${pages} · ${rows.length} entries`]);
-  }
-
-  private unignore(artist: string, title: string): string {
-    if (artist === '' || title === '') return 'Both artist and title are required.';
-    const before = this.deps.db.select().from(schema.ignored).all().length;
-    this.deps.db
-      .delete(schema.ignored)
-      .where(sql`${schema.ignored.artist} = ${artist} and ${schema.ignored.title} = ${title}`)
-      .run();
-    const after = this.deps.db.select().from(schema.ignored).all().length;
-    if (before === after) return `Not on the ignore list: ${artist} — ${title}`;
-    return `Removed ${artist} — ${title}. It can be proposed again on the next sweep.`;
-  }
-
   /** Live, unlike the mode: the worker reads this at every candidate boundary. */
   private setPaused(paused: boolean): string {
     this.deps.db
@@ -465,30 +414,6 @@ export class Commands {
       `Rule saved: ${rule.kind} "${rule.fromTitle}" by ${rule.artist} -> "${rule.toTitle}".\n` +
       `${outcome}\nIt will also be applied to anything else matching on the next full sweep.`
     );
-  }
-
-  private rulesList(): string {
-    const rules = this.deps.customRules.list();
-    if (rules.length === 0) return 'No custom replacements set.';
-    const lines = rules.slice(0, PAGE_SIZE).map((r) => {
-      const applied = r.timesApplied === 0 ? 'never applied' : `applied ${r.timesApplied}x`;
-      return `${r.kind} ${r.artist}\n  "${r.fromTitle}"\n  -> "${r.toTitle}"  (${applied})`;
-    });
-    if (rules.length > PAGE_SIZE) lines.push(`… ${rules.length - PAGE_SIZE} more`);
-    return fence(lines);
-  }
-
-  private unrule(args: Record<string, string | number>): string {
-    const kind = Commands.kindOf(args['kind']);
-    if (kind === undefined) return 'kind must be track or album.';
-    const artist = String(args['artist'] ?? '');
-    const fromTitle = String(args['from'] ?? '');
-    if (artist === '' || fromTitle === '') return 'Both artist and the current title are required.';
-
-    const removed = this.deps.customRules.remove(kind, artist, fromTitle);
-    return removed
-      ? `Removed the ${kind} rule for ${artist} — "${fromTitle}".`
-      : `No ${kind} rule for ${artist} — "${fromTitle}".`;
   }
 
   private shadowList(args: Record<string, string | number>): string {
