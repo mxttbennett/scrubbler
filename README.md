@@ -269,15 +269,25 @@ Guild-scoped, owner-only, replies are ephemeral. **Not gated on approval mode** 
 | `/scrub stats` | all-time corrections, albums and tracks counted separately |
 | `/scrub pending [page]` | the proposals awaiting a decision, with jump links |
 | `/scrub approve-all` | approve every pending proposal, behind a confirmation button |
-| `/scrub repropose <rule>` | drop that rule's pending proposals so a later sweep re-resolves them |
 | `/scrub ignored [page]` | the ignore list |
 | `/scrub unignore <artist> <title>` | remove an entry so it can be proposed again |
 | `/scrub pause` / `/scrub resume` | stop and start at the candidate boundary, no restart needed |
-| `/scrub resweep` | clear the scrobble cursor so the next sweep walks the whole library |
-| `/scrub retry-dead` | forget the learned-empty candidates |
+| `/scrub reset <target> [rule]` | forget derived state so it is worked out again (see below) |
 | `/scrub replace` | add a custom replacement and apply it now (see below) |
 | `/scrub rules` | the custom replacements you have set, with apply counts |
 | `/scrub unrule` | remove one |
+
+`/scrub reset` is the one verb for "forget this and work it out again":
+
+| Target | Forgets |
+|---|---|
+| `cursor` | the scrobble cursor, so the next sweep walks the whole library |
+| `dead` | the candidates learned to resolve to nothing, so they are tried again |
+| `proposals <rule>` | that rule's pending proposals, so a later sweep re-resolves them |
+| `shadow [rule]` | recorded shadow hits, so they are announced again |
+
+Only `proposals` asks for a confirmation — it discards recorded decisions, while the others clear
+state the next sweep rebuilds on its own.
 
 ## Shadow mode
 
@@ -302,7 +312,7 @@ numbers are the argument for looking first.
 - One card per hit, **capped per sweep** (`SHADOW_MAX_PER_SWEEP`, 50). Everything is recorded either
   way; the cap only delays announcements, and the rest go out on the next cycle.
 - Each entity is announced **once**. A later sweep is silent unless the rule's answer changed.
-- `/scrub shadow [rule]` lists everything recorded; `/scrub shadow-clear [rule]` forgets it so it is
+- `/scrub shadow [rule]` lists everything recorded; `/scrub reset shadow [rule]` forgets it so it is
   announced again.
 - Albums are shadowed on the **weekly full sweep** only — the incremental path knows a scrobble's
   track artist but not its album artist, and filing an album under the wrong artist would break the

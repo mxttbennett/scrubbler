@@ -267,7 +267,7 @@ describe('/scrub pending', () => {
   });
 });
 
-describe('/scrub repropose', () => {
+describe('/scrub reset proposals', () => {
   it('asks for a confirmation carrying the rule, rather than dropping straight away', async () => {
     const h = harness();
     await h.approvals.propose({
@@ -285,7 +285,7 @@ describe('/scrub repropose', () => {
       shared: { field: 'album_name', from: 'Flowerss - EP', to: 'Flowerss' },
     });
 
-    const reply = await h.commands.handle('repropose', { rule: 'ep-single' });
+    const reply = await h.commands.handle('reset', { target: 'proposals', rule: 'ep-single' });
 
     expect(reply.confirm?.customId).toBe('repropose:ep-single');
     expect(reply.text).toContain('1 pending proposal');
@@ -295,13 +295,13 @@ describe('/scrub repropose', () => {
   });
 
   it('says so when no pending proposal carries the rule, and offers no button', async () => {
-    const reply = await harness().commands.handle('repropose', { rule: 'live-track' });
+    const reply = await harness().commands.handle('reset', { target: 'proposals', rule: 'live-track' });
     expect(reply.text).toBe('No pending proposal carries live-track.');
     expect(reply.confirm).toBeUndefined();
   });
 
   it('rejects a rule outside the catalogue', async () => {
-    const reply = await harness().commands.handle('repropose', { rule: 'nonsense' });
+    const reply = await harness().commands.handle('reset', { target: 'proposals', rule: 'nonsense' });
     expect(reply.text).toContain('Unknown rule');
     expect(reply.confirm).toBeUndefined();
   });
@@ -389,12 +389,37 @@ describe('/scrub pause and resume', () => {
   });
 });
 
-describe('/scrub resweep and retry-dead', () => {
+describe('/scrub reset — one verb, four targets', () => {
+  it('rejects an unknown target', async () => {
+    const reply = await harness().commands.handle('reset', { target: 'everything' });
+    expect(reply.text).toContain('Unknown target');
+  });
+
+  it('refuses a rule on a target that has no rules', async () => {
+    const reply = await harness().commands.handle('reset', { target: 'cursor', rule: 'remaster' });
+    expect(reply.text).toContain('takes no rule');
+  });
+
+  it('needs a rule for proposals, which is the one target that discards decisions', async () => {
+    const reply = await harness().commands.handle('reset', { target: 'proposals' });
+    expect(reply.text).toContain('needs a rule');
+  });
+
+  /** Only proposals confirms; the rest clear derived state the next sweep rebuilds. */
+  it('acts straight away on the derived-state targets', async () => {
+    const h = harness();
+    expect((await h.commands.handle('reset', { target: 'cursor' })).confirm).toBeUndefined();
+    expect((await h.commands.handle('reset', { target: 'dead' })).confirm).toBeUndefined();
+    expect((await h.commands.handle('reset', { target: 'shadow' })).confirm).toBeUndefined();
+  });
+});
+
+describe('/scrub reset cursor and dead', () => {
   it('clears the cursor so the next sweep is full', async () => {
     const h = harness();
     h.d.insert(schema.sweepState).values({ id: 1, lastScrobbleUts: 1772659220 }).run();
 
-    await h.commands.handle('resweep');
+    await h.commands.handle('reset', { target: 'cursor' });
 
     expect(h.d.select().from(schema.sweepState).all()[0]!.lastScrobbleUts).toBeNull();
   });
@@ -405,7 +430,7 @@ describe('/scrub resweep and retry-dead', () => {
       .values({ kind: 'track', artist: 'a', title: 'b', reason: 'x', lastTriedAt: new Date() })
       .run();
 
-    expect((await h.commands.handle('retry-dead')).text).toContain('Forgot 1');
+    expect((await h.commands.handle('reset', { target: 'dead' })).text).toContain('Forgot 1');
     expect(h.d.select().from(schema.deadCandidates).all()).toHaveLength(0);
   });
 });
@@ -664,7 +689,7 @@ describe('/scrub shadow', () => {
       wouldBe: 'all apologies',
     });
 
-    const text = (await h.commands.handle('shadow-clear')).text;
+    const text = (await h.commands.handle('reset', { target: 'shadow' })).text;
 
     expect(text).toContain('Forgot 1');
     expect(h.shadowStore.list()).toEqual([]);
@@ -675,7 +700,7 @@ describe('/scrub shadow', () => {
     h.shadowStore.record({ rule: 'live-track', kind: 'track', artist: 'A', title: 'a - live', wouldBe: 'a' });
     h.shadowStore.record({ rule: 'version', kind: 'track', artist: 'A', title: 'b (radio edit)', wouldBe: 'b' });
 
-    await h.commands.handle('shadow-clear', { rule: 'version' });
+    await h.commands.handle('reset', { target: 'shadow', rule: 'version' });
 
     expect(h.shadowStore.list().map((r) => r.rule)).toEqual(['live-track']);
   });

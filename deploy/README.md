@@ -139,7 +139,7 @@ ssh ubuntu@<host> 'cd /opt/scrubbler && node deploy/repropose-stale.mjs live-tra
 The script deletes the `approvals`, `approval_edits` and `applied_edits` rows together, so nothing
 carries the old target forward and the next full sweep re-resolves the entity. It cannot retire the
 Discord cards (no token), so the orphaned messages are cleared by hand. If shadow rows exist for the
-rule, `/scrub shadow-clear <rule>` drops their stale verdicts.
+rule, `/scrub reset shadow <rule>` drops their stale verdicts.
 
 ## Changing a rule's tier
 
