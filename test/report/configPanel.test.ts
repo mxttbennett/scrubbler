@@ -20,6 +20,25 @@ const state = {
   approvalMode: false,
 } as const;
 
+/** The only door to pausing now that the slash commands are gone, so the write itself is pinned. */
+describe('config panel pause', () => {
+  it('sets the flag the worker reads at the candidate boundary', () => {
+    const db = createDb(':memory:');
+    runMigrations(db);
+    const panel = new ConfigPanel({
+      db,
+      tiers: new TierStore(db, DEFAULT_TIERS, { approvalMode: false, discordConfigured: true }),
+      approvalMode: false,
+    });
+
+    panel.handle('cfg:pause');
+    expect(db.select().from(schema.sweepState).all()[0]!.paused).toBe(true);
+
+    panel.handle('cfg:resume');
+    expect(db.select().from(schema.sweepState).all()[0]!.paused).toBe(false);
+  });
+});
+
 describe('config panel ids', () => {
   it('round-trips the ids the renderer issues', () => {
     expect(parseConfigId(pickId())).toEqual({ action: 'pick' });
