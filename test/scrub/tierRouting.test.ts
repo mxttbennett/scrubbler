@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupName, Tier } from '../../src/rules/markers.js';
-import { isGated, partitionByTier } from '../../src/scrub/tiers.js';
+import { DEFAULT_TIERS, type GroupName, type Tier } from '../../src/rules/markers.js';
+import { isGated, partitionByTier, tierOf } from '../../src/scrub/tiers.js';
 import { toAlbumGroup, toGroup } from '../../src/scrub/types.js';
 import type { PlannedAlbumEdit } from '../../src/lastfm/albumEditor.js';
 import type { PlannedEdit } from '../../src/scrub/types.js';
@@ -71,6 +71,10 @@ describe('isGated', () => {
     expect(isGated(['custom'], GATED)).toBe(false);
   });
 
+  it('always gates an MCP-origin tuple without a gated catalogue rule', () => {
+    expect(isGated(['custom', 'mcp'], new Set())).toBe(true);
+  });
+
   /** The ledger casts its stored names back without validating them. */
   it('ignores a stale name that is no longer a group', () => {
     expect(isGated(['live'], GATED)).toBe(false);
@@ -86,7 +90,32 @@ describe('isGated', () => {
   });
 });
 
+describe('tierOf', () => {
+  it.each([
+    ['all catalogue rules auto', { ...DEFAULT_TIERS, edition: 'auto' }],
+    ['a catalogue rule gated', { ...DEFAULT_TIERS, edition: 'gated' }],
+    ['a catalogue rule off', { ...DEFAULT_TIERS, edition: 'off' }],
+  ] as const)('keeps MCP origin gated when %s', (_name, tiers) => {
+    expect(tierOf(['custom', 'mcp', 'edition'], tiers)).toBe('gated');
+  });
+});
+
 describe('partitionByTier — track groups', () => {
+  it.each([
+    ['all catalogue rules auto', { ...DEFAULT_TIERS, edition: 'auto' }],
+    ['a catalogue rule gated', { ...DEFAULT_TIERS, edition: 'gated' }],
+    ['a catalogue rule off', { ...DEFAULT_TIERS, edition: 'off' }],
+  ] as const)('sends MCP-origin tracks to gated when %s', (_name, tiers) => {
+    const split = partitionByTier(
+      toGroup('Joy Division', [trackEdit('Disorder', ['custom', 'mcp', 'edition'])]),
+      tiers,
+    );
+
+    expect(split.gated?.kind).toBe('track');
+    expect(split.auto).toBeUndefined();
+    expect(split.off).toBeUndefined();
+  });
+
   it('sends an all-auto candidate to the auto side only', () => {
     const g = toGroup('Joy Division', [trackEdit('Disorder', ['remaster'])]);
     const split = partitionByTier(g, TIERS);
@@ -179,6 +208,18 @@ describe('partitionByTier — track groups', () => {
 });
 
 describe('partitionByTier — album groups go whole', () => {
+  it.each([
+    ['all catalogue rules auto', { ...DEFAULT_TIERS, edition: 'auto' }],
+    ['a catalogue rule gated', { ...DEFAULT_TIERS, edition: 'gated' }],
+    ['a catalogue rule off', { ...DEFAULT_TIERS, edition: 'off' }],
+  ] as const)('sends MCP-origin albums to gated when %s', (_name, tiers) => {
+    const split = partitionByTier(toAlbumGroup(albumEdit(['custom', 'mcp', 'edition'])), tiers);
+
+    expect(split.gated?.kind).toBe('album');
+    expect(split.auto).toBeUndefined();
+    expect(split.off).toBeUndefined();
+  });
+
   it('gates the whole album group', () => {
     const split = partitionByTier(toAlbumGroup(albumEdit(['live-album'])), TIERS);
     expect(split.gated?.kind).toBe('album');

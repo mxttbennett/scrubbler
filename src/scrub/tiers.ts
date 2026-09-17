@@ -12,7 +12,7 @@ import { type EditGroup, type PlannedEdit, toGroup } from './types.js';
  * unchecked cast — does not gate on its own, so a custom replacement behaves as it always has.
  */
 export function isGated(groups: readonly string[], gated: ReadonlySet<GroupName>): boolean {
-  return groups.some((g) => isGroupName(g) && gated.has(g));
+  return groups.some((group) => group === 'mcp' || (isGroupName(group) && gated.has(group)));
 }
 
 export interface TierSplit {
@@ -55,7 +55,11 @@ export function partitionByTier(group: EditGroup, tiers: Readonly<Record<GroupNa
   };
 }
 
-function tierOf(groups: readonly string[], tiers: Readonly<Record<GroupName, Tier>>): Tier {
+export function tierOf(
+  groups: readonly string[],
+  tiers: Readonly<Record<GroupName, Tier>>,
+): Tier {
+  if (groups.includes('mcp')) return 'gated';
   let tier: Tier = 'auto';
   for (const group of groups) {
     if (!isGroupName(group)) continue;

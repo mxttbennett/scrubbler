@@ -46,6 +46,7 @@ function harness(
     silent,
     { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
   );
+  const customRules = new CustomRules(d);
   const approvals = new Approvals({
     db: d,
     executor,
@@ -54,9 +55,9 @@ function harness(
     ttlHours: 168,
     enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
     tiers: () => ({ remaster: 'auto', edition: 'auto', bonus: 'auto' }) as never,
+    customRules,
     log: () => {},
   });
-  const customRules = new CustomRules(d);
   const shadowStore = new ShadowStore(d);
   const applied: { kind: string; artist: string; fromTitle: string }[] = [];
   const commands = new Commands({
@@ -501,6 +502,29 @@ describe('approval-only commands with the mode off', () => {
 
     expect(text).toContain('unattended');
     expect(text).toContain('total corrected');
+  });
+
+  it('keeps a durable MCP proposal visible and bulk-decidable with no gated catalogue rule', async () => {
+    const h = harness({ approvalMode: false });
+    await h.approvals.propose({
+      kind: 'album',
+      artist: 'Nirvana',
+      album: {
+        artist: 'Nirvana',
+        from: 'In Utero (Deluxe Edition)',
+        to: 'In Utero',
+        csrfToken: 't',
+        action: '/library/edit-album',
+        refererPath: '/x',
+        groups: ['custom', 'mcp'],
+      },
+      shared: { field: 'album_name', from: 'In Utero (Deluxe Edition)', to: 'In Utero' },
+    });
+
+    const reply = await h.commands.handle('pending');
+
+    expect(reply.text).toContain('Nirvana');
+    expect(reply.confirm).toEqual({ customId: 'approve-all:0', label: 'Apply all 1' });
   });
 });
 

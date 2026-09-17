@@ -124,6 +124,7 @@ async function main() {
     ttlHours: config.approvalTtlHours,
     enabledGroups: () => tierStore.enabled(),
     tiers: () => tierStore.effective(),
+    customRules,
     overrides: customRules.lookup,
   });
   const configPanel = new ConfigPanel({ db, tiers: tierStore, approvalMode: config.approvalMode });
