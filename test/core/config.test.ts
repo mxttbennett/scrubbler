@@ -54,6 +54,15 @@ describe('loadConfig', () => {
     );
   });
 
+  it('spaces writes 10-15s by default', () => {
+    // Act
+    const config = loadConfig(BASE);
+
+    // Assert
+    expect(config.writeDelayMs).toBe(10_000);
+    expect(config.writeDelayJitterMs).toBe(5_000);
+  });
+
   it('rejects a non-boolean flag instead of coercing it', () => {
     expect(() => loadConfig({ ...BASE, DRY_RUN: 'maybe' })).toThrow(/Invalid DRY_RUN/);
   });

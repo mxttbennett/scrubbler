@@ -176,7 +176,7 @@ sharing the tuple:
   any write, and the next run applies those first. An interruption part-way through a multi-hour
   resolution costs one page fetch to resume, not the whole pass — the CSRF token comes from the
   session cookie, so one fresh token serves every carried-over write.
-- **Serial writes** with `WRITE_DELAY_MS` spacing. Parallel writes produce inconsistent results.
+- **Serial writes** spaced `WRITE_DELAY_MS` (default 10s) plus up to `WRITE_DELAY_JITTER_MS` (default 5s) of jitter. Parallel writes produce inconsistent results.
 - **Paced reads** — `PAGE_DELAY_MS` defaults to 15s. Last.fm throttles the web pages with an HTTP
   `200` error page, and 1.5s still tripped it. A first pass therefore takes hours, which is the
   right trade for a service that runs continuously.
