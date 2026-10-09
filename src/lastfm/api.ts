@@ -156,6 +156,22 @@ export class LastfmApi {
    * old name has none left to count. Uncached: unlike an album, a track is asked about once per run.
    * Silent on failure because this is reporting only and must never fail a correction.
    */
+  /**
+   * The release track list, uncached and throwing. `albumDetails` collapses every failure to an
+   * empty result and caches it, which is right for a report but wrong for a crawl that has to tell
+   * "this album has no tracks" from "Last.fm did not answer".
+   */
+  async albumTrackNames(artist: string, album: string): Promise<string[]> {
+    const data = await this.request<AlbumInfo>('album.getinfo', {
+      artist,
+      album,
+      ...(this.username === undefined ? {} : { username: this.username }),
+    });
+    const raw = data.album?.tracks?.track;
+    const list = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
+    return list.map((t) => t.name).filter((n) => n !== '');
+  }
+
   async trackScrobbles(artist: string, track: string): Promise<number | undefined> {
     if (artist === '' || track === '' || this.username === undefined) return undefined;
     try {

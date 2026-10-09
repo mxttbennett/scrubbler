@@ -46,6 +46,8 @@ const envSchema = z.object({
   VERIFY_DELAY_MS: z.string().default('2000'),
   VERIFY_ATTEMPTS: z.string().default('3'),
   SHUTDOWN_GRACE_MS: z.string().default('60000'),
+  WEB_ENABLED: z.string().default('false'),
+  WEB_PORT: z.string().default('8787'),
   USER_AGENT: z.string().default(DEFAULT_USER_AGENT),
 });
 
@@ -90,6 +92,9 @@ export interface Config {
   verifyAttempts: number;
   shutdownGraceMs: number;
   userAgent: string;
+  /** Off by default: it opens a local port and mirrors the library. */
+  webEnabled: boolean;
+  webPort: number;
 }
 
 function parseGroups(raw: string, label: string, expectExperimental: boolean): GroupName[] {
@@ -256,5 +261,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     verifyAttempts: parsePositiveInt(e.VERIFY_ATTEMPTS, 'VERIFY_ATTEMPTS'),
     shutdownGraceMs: parsePositiveInt(e.SHUTDOWN_GRACE_MS, 'SHUTDOWN_GRACE_MS'),
     userAgent: e.USER_AGENT,
+    webEnabled: parseBool(e.WEB_ENABLED, 'WEB_ENABLED'),
+    webPort: parsePositiveInt(e.WEB_PORT, 'WEB_PORT'),
   };
 }
