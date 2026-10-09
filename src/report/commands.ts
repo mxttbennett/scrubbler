@@ -1,6 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/index.js';
-import { schema } from '../db/index.js';
 import type { Approvals } from '../scrub/approvals.js';
 import { RuleRejected, type CustomRules } from '../rules/customRules.js';
 import { ALL_GROUPS, type Field, isGroupName } from '../rules/markers.js';
@@ -8,6 +6,7 @@ import { reproposeId } from './proposals.js';
 import { clearCursor, clearDead, clearShadow, isResetTarget } from '../scrub/resets.js';
 import type { ShadowStore } from '../scrub/shadowStore.js';
 import { readPackageVersion } from '../core/version.js';
+import { type DaemonStatus, readDaemonStatus } from '../scrub/status.js';
 
 type RuleSet = ReadonlySet<string> | (() => ReadonlySet<string>);
 
@@ -184,11 +183,10 @@ export class Commands {
   private requireApprovalMode(): string | undefined {
     if (this.gatedRules().size > 0) return undefined;
     const pending = this.deps.approvals.pending().length;
+    if (pending > 0) return undefined;
     return (
       'No rule is gated — corrections apply unattended, so there is nothing to approve.' +
-      (pending > 0
-        ? ` ${pending} proposal(s) are still queued from an earlier run; the next sweep drains them.`
-        : ' Set a rule to `gated` in RULES and restart to turn it on.')
+      ' Set a rule to `gated` in RULES and restart to turn it on.'
     );
   }
 
@@ -206,62 +204,32 @@ export class Commands {
     return { text: payload.content, components: payload.components };
   }
 
-  private state() {
-    return this.deps.db
-      .select()
-      .from(schema.sweepState)
-      .where(eq(schema.sweepState.id, 1))
-      .get();
-  }
-
-  private countsByStatus(): Map<string, number> {
-    const rows = this.deps.db
-      .select({
-        status: schema.appliedEdits.status,
-        n: sql<number>`count(*)`,
-      })
-      .from(schema.appliedEdits)
-      .groupBy(schema.appliedEdits.status)
-      .all();
-    return new Map(rows.map((r) => [r.status, r.n]));
-  }
-
   status(): string {
-    const s = this.state();
-    const counts = this.countsByStatus();
-    const pending = this.deps.approvals.pending().length;
+    const status = readDaemonStatus(this.deps.db);
+    const s = status.sweep;
+    const counts = status.ledger.byStatus;
     const lines = [
       `version     ${readPackageVersion()}`,
       `mode        ${this.gatedRules().size > 0 ? 'approval' : 'unattended'}${this.deps.dryRun ? ' (dry run)' : ''}`,
       `rules       ${this.tierLine()}`,
       `phase       ${s?.phase ?? 'idle'}${s?.paused === true ? ' — PAUSED' : ''}`,
       `progress    ${s?.candidatesDone ?? 0}/${s?.candidatesTotal ?? 0} candidates`,
-      `verified    ${counts.get('verified') ?? 0}`,
-      `unverified  ${counts.get('unverified') ?? 0}`,
-      `failed      ${counts.get('failed') ?? 0}`,
-      `pending     ${pending} awaiting approval`,
+      `verified    ${counts.verified}`,
+      `unverified  ${counts.unverified}`,
+      `failed      ${counts.failed}`,
+      `pending     ${status.pendingApprovals} awaiting approval`,
       `cursor      ${s?.lastScrobbleUts ?? 'none — next sweep is full'}`,
       ``,
-      ...this.ledgerTable(),
+      ...this.ledgerTable(status),
     ];
     return fence(lines);
   }
 
   /** All-time: applied_edits is a durable one-row-per-tuple ledger, not a per-run counter. */
-  private ledgerTable(): string[] {
-    const rows = this.deps.db
-      .select({
-        kind: schema.appliedEdits.kind,
-        status: schema.appliedEdits.status,
-        n: sql<number>`count(*)`,
-      })
-      .from(schema.appliedEdits)
-      .groupBy(schema.appliedEdits.kind, schema.appliedEdits.status)
-      .all();
-
-    const at = (kind: string, status: string) =>
-      rows.find((r) => r.kind === kind && r.status === status)?.n ?? 0;
-    const done = (kind: string) => at(kind, 'verified') + at(kind, 'applied');
+  private ledgerTable(status: DaemonStatus): string[] {
+    const at = (kind: 'track' | 'album', ledgerStatus: keyof typeof status.ledger.byStatus) =>
+      status.ledger.byKind[kind][ledgerStatus];
+    const done = (kind: 'track' | 'album') => at(kind, 'verified') + at(kind, 'applied');
 
     return [
       `                albums  tracks`,
@@ -366,7 +334,7 @@ export class Commands {
     const kind = Commands.kindOf(args['kind']);
     if (kind === undefined) return 'kind must be track or album.';
 
-    const state = this.state();
+    const state = readDaemonStatus(this.deps.db).sweep;
     // The apply is a real write; running it against a paused service would contradict the pause.
     if (state?.paused === true) {
       return 'The service is paused. Resume it from /scrub config, or the rule cannot be applied.';

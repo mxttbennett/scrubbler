@@ -176,19 +176,17 @@ export class ScrubWorker {
     });
     this.executor = executor;
 
-    // The sentinel, not a real token: demanding one would drop gated rows whenever it failed.
-    if (this.gatedGroups().size > 0) {
-      const expired = await this.approvals.expire();
-      if (expired > 0) console.log(`expired ${expired} unanswered proposal(s)`);
-      const gatedRows = executor
-        .resumable(CARRY_OVER_TOKEN)
-        .filter((row) => isGated(row.edit.groups, this.gatedGroups()));
-      if (gatedRows.length > 0) {
-        const carried = await this.approvals.carryOver(gatedRows);
-        console.log(
-          `carried over: ${carried.proposed} proposed, ${carried.duplicate} already pending, ${carried.failed} failed to post`,
-        );
-      }
+    // The sentinel, not a real token: demanding one would drop approval-required rows whenever it failed.
+    const expired = await this.approvals.expire();
+    if (expired > 0) console.log(`expired ${expired} unanswered proposal(s)`);
+    const gatedRows = executor
+      .resumable(CARRY_OVER_TOKEN)
+      .filter((row) => isGated(row.edit.groups, this.gatedGroups()));
+    if (gatedRows.length > 0) {
+      const carried = await this.approvals.carryOver(gatedRows);
+      console.log(
+        `carried over: ${carried.proposed} proposed, ${carried.duplicate} already pending, ${carried.failed} failed to post`,
+      );
     }
     const drained = await this.approvals.drainOnTierChange(this.tiers());
     if (drained.applied > 0 || drained.retired > 0) {
@@ -259,7 +257,7 @@ export class ScrubWorker {
       onGroup: async (group) => {
         const split = partitionByTier(group, this.tiers());
         if (split.gated !== undefined) {
-          if ((await this.approvals.propose(split.gated)) === 'proposed') proposed++;
+          if ((await this.approvals.propose(split.gated)).status === 'proposed') proposed++;
         }
         if (split.auto !== undefined) await executor.applyGroup(split.auto, rules.keys);
         if (split.off !== undefined) executor.recordSkips(groupSkips(split.off));

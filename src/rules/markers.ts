@@ -17,7 +17,7 @@ export type GroupName =
  * A custom replacement is not a catalogue group: it has no pattern, applies to one artist's title,
  * and must never be nameable in RULES_ENABLED — hence a widened tag rather than a tenth GroupName.
  */
-export type RuleTag = GroupName | 'custom';
+export type RuleTag = GroupName | 'custom' | 'mcp';
 
 /**
  * How much supervision a group gets: `auto` applies, `gated` proposes a Discord card first, `off`
@@ -237,8 +237,8 @@ export const MARKER_GROUPS: Record<GroupName, MarkerGroup> = {
 
   // Registered for the tier alone. Clustering needs the whole library, so it cannot be a pattern
   // here; the empty list is what keeps matchOne from ever reaching it, and `appliesTo` is unread
-  // because this group never enters cleanTitle. It must still be a GroupName: isGated only gates a
-  // tag that is one, so a widened RuleTag like `custom` could never be held for approval.
+  // because this group never enters cleanTitle. It must still be a GroupName so operators can
+  // configure its tier; provenance tags such as `custom` and `mcp` are not configurable.
   punctuation: group(['track', 'album'], 'off', []),
 };
 

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createDb, runMigrations, schema } from '../../src/db/index.js';
-import { CustomRules, RuleRejected } from '../../src/rules/customRules.js';
+import {
+  CustomRules,
+  RuleRejected,
+  normalizeCustomRule,
+} from '../../src/rules/customRules.js';
 
 function store() {
   const d = createDb(':memory:');
@@ -16,6 +20,26 @@ const RULE = {
 };
 
 describe('CustomRules', () => {
+  it('normalizes a rename without persisting it', () => {
+    const { rules } = store();
+
+    expect(
+      normalizeCustomRule({
+        ...RULE,
+        artist: '  Pavement  ',
+        fromTitle: `  ${RULE.fromTitle}  `,
+        toTitle: '  Wowee Zowee  ',
+      }),
+    ).toEqual(RULE);
+    expect(rules.list()).toEqual([]);
+  });
+
+  it('rejects an invalid rename kind before it reaches persistence', () => {
+    expect(() => normalizeCustomRule({ ...RULE, kind: 'artist' })).toThrow(
+      new RuleRejected('kind must be track or album.'),
+    );
+  });
+
   it('round-trips add, list and remove', () => {
     const { rules } = store();
     rules.add(RULE);

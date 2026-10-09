@@ -8,6 +8,20 @@ import type { PlannedAlbumEdit } from '../../src/lastfm/albumEditor.js';
 import { ALL_GROUPS, type GroupName, type Tier } from '../../src/rules/markers.js';
 import type { Reporter } from '../../src/report/reporter.js';
 import type { ProposalTransport } from '../../src/report/proposals.js';
+import { CustomRules } from '../../src/rules/customRules.js';
+import { ScrubWorker } from '../../src/scrub/worker.js';
+import { loadConfig } from '../../src/core/config.js';
+
+const ENV = {
+  LASTFM_USERNAME: 'u',
+  LASTFM_PASSWORD: 'p',
+  LASTFM_API_KEY: 'k',
+  DISCORD_BOT_TOKEN: 'b',
+  DISCORD_CHANNEL_ID: 'c',
+  DISCORD_OWNER_ID: 'o',
+  DISCORD_GUILD_ID: 'g',
+  DRY_RUN: 'false',
+};
 
 const silent: Reporter = {
   corrections: async () => {},
@@ -73,12 +87,93 @@ function harness() {
     ttlHours: 168,
     enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
     tiers: () => TIERS,
+    customRules: new CustomRules(d),
     log: () => {},
   });
   return { executor, approvals, applied, posted: () => posted };
 }
 
 describe('the resume path partitions carried rows by tier', () => {
+  it('publishes planned MCP rows before resuming only unattended rows when no catalogue rule is gated', async () => {
+    const d = createDb(':memory:');
+    runMigrations(d);
+    const events: string[] = [];
+    const seedExecutor = new Executor(
+      d,
+      {} as never,
+      {} as never,
+      silent,
+      { dryRun: false, maxEditsPerRun: 100, writeDelayMs: 0, digestEvery: 1 },
+    );
+    seedExecutor.checkpoint(edit('MCP Planned', ['custom', 'mcp']));
+    seedExecutor.checkpoint(edit('Unattended', ['edition']));
+    const transport: ProposalTransport = {
+      enabled: true,
+      channelId: 'chan',
+      postProposal: async (_embed, buttons) => {
+        events.push(`post:${buttons[0]!.customId}`);
+        return { messageId: 'm1' };
+      },
+      editMessage: async () => {},
+    };
+    const approvals = new Approvals({
+      db: d,
+      executor: seedExecutor,
+      proposals: transport,
+      freshToken: async () => 'fresh',
+      ttlHours: 168,
+      enabledGroups: () => new Set<GroupName>(),
+      tiers: () => Object.fromEntries(ALL_GROUPS.map((group) => [group, 'auto'])) as Record<GroupName, Tier>,
+      customRules: new CustomRules(d),
+      log: () => {},
+    });
+    await approvals.propose({
+      kind: 'track',
+      artist: 'Yes',
+      edits: [edit('MCP Awaiting', ['custom', 'mcp'])],
+      shared: { field: 'album_name', from: 'Yessongs (Live)', to: 'Yessongs' },
+    });
+    events.length = 0;
+    const config = loadConfig({ ...ENV, RULES: '' });
+    const worker = new ScrubWorker({
+      config,
+      db: d,
+      session: {
+        ensureSession: async () => {},
+        request: async () => ({
+          status: 200,
+          text: async () => '',
+          body: { cancel: async () => {} },
+        }),
+        freshCsrfToken: async () => {
+          events.push('token');
+          return 'fresh';
+        },
+      } as never,
+      planner: { sweep: async () => [] } as never,
+      resolver: { resolve: async () => ({ edits: [], albumEdits: [], skips: [] }) } as never,
+      editor: {
+        apply: async (planned: PlannedEdit) => {
+          events.push(`apply:${planned.original.track_name}`);
+          return 'verified';
+        },
+      } as never,
+      albumEditor: {} as never,
+      reporter: silent,
+      albumArt: async () => undefined,
+      approvals,
+      tiers: () => Object.fromEntries(ALL_GROUPS.map((group) => [group, 'auto'])) as Record<GroupName, Tier>,
+      enabledGroups: () => new Set(),
+      gatedGroups: () => new Set(),
+      sleep: async () => {},
+    });
+
+    await worker.runOnce();
+
+    expect(events).toEqual(['post:approve:2', 'token', 'apply:Unattended']);
+    expect(approvals.pending()).toHaveLength(2);
+  });
+
   /**
    * The ordering is what keeps the two sides disjoint: proposing moves a row to
    * `awaiting_approval`, and resumable() selects only `planned`. So the second read needs no tier

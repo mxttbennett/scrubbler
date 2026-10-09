@@ -15,9 +15,10 @@ import {
 import { type CorrectionGroup, type Links, groupEmbed } from '../report/reporter.js';
 import type { Executor, ResumableEdit } from './executor.js';
 import { type NormalizeAction, cleanTitle } from '../rules/engine.js';
-import type { CustomRuleLookup } from '../rules/customRules.js';
+import type { CustomRuleLookup, CustomRules } from '../rules/customRules.js';
 import { DASH_NORMALIZED, type GroupName, type Tier, isGroupName } from '../rules/markers.js';
 import { type EditGroup, type PlannedEdit, changedFields, tupleKey } from './types.js';
+import { tierOf } from './tiers.js';
 
 export interface ApprovalDeps {
   db: Db;
@@ -39,6 +40,7 @@ export interface ApprovalDeps {
   /** Needed to re-derive an edit when a decision asks for a different answer than the one proposed. */
   enabledGroups: () => ReadonlySet<GroupName>;
   tiers: () => Readonly<Record<GroupName, Tier>>;
+  customRules: Pick<CustomRules, 'add'>;
   overrides?: CustomRuleLookup;
   log?: (msg: string) => void;
 }
@@ -49,6 +51,10 @@ export interface DecisionResult {
   outcome: Decision | 'gone' | 'already-decided' | 'stale' | 'no-op' | 'discarded';
   detail: string;
 }
+
+export type ProposeResult =
+  | { status: 'proposed'; approvalId: number }
+  | { status: 'duplicate' | 'post-failed' };
 
 /**
  * Order-independent so a re-swept candidate matches its own pending row, and content-sensitive so a
@@ -84,7 +90,7 @@ export class Approvals {
    * insert. A pending_post row is never actionable and marks no edits, so a failed post strands
    * nothing — the group is simply re-proposed on a later sweep.
    */
-  async propose(group: EditGroup): Promise<'proposed' | 'duplicate' | 'post-failed'> {
+  async propose(group: EditGroup): Promise<ProposeResult> {
     const { db, executor, proposals } = this.deps;
     const key = groupKeyOf(group);
 
@@ -94,7 +100,7 @@ export class Approvals {
       .where(eq(schema.approvals.groupKey, key))
       .get();
     if (existing && (existing.status === 'pending' || existing.status === 'pending_post')) {
-      return 'duplicate';
+      return { status: 'duplicate' };
     }
     if (existing) db.delete(schema.approvals).where(eq(schema.approvals.id, existing.id)).run();
 
@@ -116,7 +122,7 @@ export class Approvals {
         if (id !== undefined) editIds.push(id);
       }
     }
-    if (editIds.length === 0) return 'duplicate';
+    if (editIds.length === 0) return { status: 'duplicate' };
 
     const shared = group.shared;
     const inserted = db
@@ -156,12 +162,12 @@ export class Approvals {
           .onConflictDoNothing()
           .run();
       }
-      return 'proposed';
+      return { status: 'proposed', approvalId };
     } catch (error) {
       // Leaves the edits planned, so the next sweep proposes them again.
       db.delete(schema.approvals).where(eq(schema.approvals.id, approvalId)).run();
       this.log(`approval post failed, left ${editIds.length} edit(s) planned: ${String(error)}`);
-      return 'post-failed';
+      return { status: 'post-failed' };
     }
   }
 
@@ -191,12 +197,21 @@ export class Approvals {
       };
     }
 
+    if (action === 'rewrite') {
+      const rule = this.mcpRuleFor(approvalId, claimed.row.kind);
+      if (rule !== undefined) {
+        try {
+          this.deps.customRules.add({ ...rule, createdBy: 'mcp' });
+        } catch (error) {
+          this.releaseClaim(approvalId);
+          throw error;
+        }
+      }
+    }
+
     const token = await freshToken();
     if (token === undefined) {
-      db.update(schema.approvals)
-        .set({ status: 'pending', decidedBy: null, decidedAt: null })
-        .where(eq(schema.approvals.id, approvalId))
-        .run();
+      this.releaseClaim(approvalId);
       return { outcome: 'stale', detail: 'could not get a Last.fm token; try again' };
     }
 
@@ -204,10 +219,7 @@ export class Approvals {
     // Recomputed before any ledger status moves: a row left `planned` is written with no approval.
     const rebuilt = action === 'strip' ? this.strippedEdits(items) : new Map<number, ResumableEdit>();
     if (action === 'strip' && rebuilt.size === 0) {
-      db.update(schema.approvals)
-        .set({ status: 'pending', decidedBy: null, decidedAt: null })
-        .where(eq(schema.approvals.id, approvalId))
-        .run();
+      this.releaseClaim(approvalId);
       return { outcome: 'no-op', detail: 'nothing to remove — the label is not there to strip' };
     }
 
@@ -285,8 +297,8 @@ export class Approvals {
     const out = { proposed: 0, duplicate: 0, failed: 0 };
     for (const group of groupCarried(carried)) {
       const result = await this.propose(group);
-      if (result === 'proposed') out.proposed++;
-      else if (result === 'duplicate') out.duplicate++;
+      if (result.status === 'proposed') out.proposed++;
+      else if (result.status === 'duplicate') out.duplicate++;
       else out.failed++;
     }
     return out;
@@ -458,6 +470,49 @@ export class Approvals {
       .map((r) => r.appliedEditId);
   }
 
+  private ledgerRowsFor(approvalId: number): (typeof schema.appliedEdits.$inferSelect)[] {
+    const ids = this.editIdsFor(approvalId);
+    if (ids.length === 0) return [];
+    return this.deps.db
+      .select()
+      .from(schema.appliedEdits)
+      .where(inArray(schema.appliedEdits.id, ids))
+      .all();
+  }
+
+  private mcpRuleFor(
+    approvalId: number,
+    kind: 'track' | 'album',
+  ):
+    | { kind: 'track' | 'album'; artist: string; fromTitle: string; toTitle: string }
+    | undefined {
+    const rows = this.ledgerRowsFor(approvalId);
+    if (!rows.some((row) => row.groups.split(',').includes('mcp'))) return undefined;
+    const row = rows[0];
+    if (row === undefined) return undefined;
+    return kind === 'album'
+      ? {
+          kind,
+          artist: row.albumArtistNameOriginal,
+          fromTitle: row.albumNameOriginal,
+          toTitle: row.albumName,
+        }
+      : {
+          kind,
+          artist: row.artistNameOriginal,
+          fromTitle: row.trackNameOriginal,
+          toTitle: row.trackName,
+        };
+  }
+
+  private releaseClaim(approvalId: number): void {
+    this.deps.db
+      .update(schema.approvals)
+      .set({ status: 'pending', decidedBy: null, decidedAt: null })
+      .where(eq(schema.approvals.id, approvalId))
+      .run();
+  }
+
   /**
    * Every item that still yields an edit once the live label is removed instead of rewritten, keyed
    * by ledger id. An item whose recomputation leaves the title unchanged is absent, and an empty map
@@ -546,23 +601,13 @@ export class Approvals {
     approvalId: number,
     tiers: Readonly<Record<GroupName, Tier>> = this.deps.tiers(),
   ): Tier {
-    const groups = this.groupsFor(approvalId);
-    if (groups.some((group) => tiers[group] === 'off')) return 'off';
-    if (groups.some((group) => tiers[group] === 'gated')) return 'gated';
-    return 'auto';
+    return tierOf(this.groupsFor(approvalId), tiers);
   }
 
-  private groupsFor(approvalId: number): GroupName[] {
-    const ids = this.editIdsFor(approvalId);
-    if (ids.length === 0) return [];
-    const rows = this.deps.db
-      .select({ groups: schema.appliedEdits.groups })
-      .from(schema.appliedEdits)
-      .where(inArray(schema.appliedEdits.id, ids))
-      .all();
-    const groups = new Set<GroupName>();
-    for (const row of rows) {
-      for (const group of row.groups.split(',')) if (isGroupName(group)) groups.add(group);
+  private groupsFor(approvalId: number): string[] {
+    const groups = new Set<string>();
+    for (const row of this.ledgerRowsFor(approvalId)) {
+      for (const group of row.groups.split(',')) groups.add(group);
     }
     return [...groups];
   }
