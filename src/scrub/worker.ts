@@ -166,6 +166,7 @@ export class ScrubWorker {
       dryRun: this.config.dryRun,
       maxEditsPerRun: this.config.maxEditsPerRun,
       writeDelayMs: this.config.writeDelayMs,
+      writeDelayJitterMs: this.config.writeDelayJitterMs,
       digestEvery: this.config.digestEvery,
       sleep: this.sleep,
       albumArt: this.albumArt,

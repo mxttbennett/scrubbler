@@ -18,8 +18,11 @@ export interface ExecutorOptions {
   dryRun: boolean;
   maxEditsPerRun: number;
   writeDelayMs: number;
+  /** Spread added on top of writeDelayMs so edits do not land on a fixed cadence. */
+  writeDelayJitterMs?: number;
   digestEvery: number;
   sleep?: (ms: number) => Promise<void>;
+  random?: () => number;
   /** Post-edit album art, looked up per album and cached by the API client. */
   albumArt?: (artist: string, album: string) => Promise<string | undefined>;
   /**
@@ -65,6 +68,7 @@ export type ResumableEdit =
 
 export class Executor {
   private readonly sleep: (ms: number) => Promise<void>;
+  private readonly random: () => number;
   private stopRequested = false;
 
   /** Stops before the *next* write; the in-flight one always finishes and records its ledger row. */
@@ -84,6 +88,7 @@ export class Executor {
     private readonly opts: ExecutorOptions,
   ) {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.random = opts.random ?? Math.random;
   }
 
   /** Persists a resolved tuple before any write, so an interrupted resolution can be resumed. */
@@ -255,7 +260,11 @@ export class Executor {
         await this.reporter.report(error, `album edit ${edit.artist} — ${edit.from}`);
       }
     }
-    await this.sleep(this.opts.writeDelayMs);
+    await this.sleep(this.writeDelay());
+  }
+
+  private writeDelay(): number {
+    return this.opts.writeDelayMs + Math.floor(this.random() * (this.opts.writeDelayJitterMs ?? 0));
   }
 
   private upsertAlbum(
@@ -529,7 +538,7 @@ export class Executor {
       }
 
       if (pending.length >= this.opts.digestEvery) await flush();
-      await this.sleep(this.opts.writeDelayMs);
+      await this.sleep(this.writeDelay());
     }
 
     await flush();

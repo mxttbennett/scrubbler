@@ -7,6 +7,12 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.8.2] - 2026-10-09
+
+- Spaces Last.fm edits 10-15s apart instead of a fixed 3s. `WRITE_DELAY_MS` now defaults to 10s and a
+  new `WRITE_DELAY_JITTER_MS` (default 5s) adds a random spread, so writes no longer land on a fixed
+  cadence. An existing `WRITE_DELAY_MS` in your environment still overrides the default.
+
 ## [1.8.1] - 2026-09-16
 
 - Repairs `package-lock.json`, which 1.8.0 shipped with every dependency's version overwritten to

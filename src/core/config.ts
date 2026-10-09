@@ -38,7 +38,8 @@ const envSchema = z.object({
   FULL_SWEEP_INTERVAL_MS: z.string().default('604800000'),
   DEAD_CANDIDATE_ATTEMPTS: z.string().default('3'),
   MAX_EDITS_PER_RUN: z.string().default('2000'),
-  WRITE_DELAY_MS: z.string().default('3000'),
+  WRITE_DELAY_MS: z.string().default('10000'),
+  WRITE_DELAY_JITTER_MS: z.string().default('5000'),
   PAGE_DELAY_MS: z.string().default('15000'),
   PAGE_DELAY_JITTER_MS: z.string().default('5000'),
   VERIFY_EDITS: z.string().default('true'),
@@ -81,6 +82,7 @@ export interface Config {
   deadCandidateAttempts: number;
   maxEditsPerRun: number;
   writeDelayMs: number;
+  writeDelayJitterMs: number;
   pageDelayMs: number;
   pageDelayJitterMs: number;
   verifyEdits: boolean;
@@ -246,6 +248,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     deadCandidateAttempts: parsePositiveInt(e.DEAD_CANDIDATE_ATTEMPTS, 'DEAD_CANDIDATE_ATTEMPTS'),
     maxEditsPerRun: parsePositiveInt(e.MAX_EDITS_PER_RUN, 'MAX_EDITS_PER_RUN'),
     writeDelayMs: parsePositiveInt(e.WRITE_DELAY_MS, 'WRITE_DELAY_MS'),
+    writeDelayJitterMs: parsePositiveInt(e.WRITE_DELAY_JITTER_MS, 'WRITE_DELAY_JITTER_MS'),
     pageDelayMs: parsePositiveInt(e.PAGE_DELAY_MS, 'PAGE_DELAY_MS'),
     pageDelayJitterMs: parsePositiveInt(e.PAGE_DELAY_JITTER_MS, 'PAGE_DELAY_JITTER_MS'),
     verifyEdits: parseBool(e.VERIFY_EDITS, 'VERIFY_EDITS'),
