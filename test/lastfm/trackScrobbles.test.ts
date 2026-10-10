@@ -55,3 +55,25 @@ describe('trackScrobbles', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe('iterateLovedTracks', () => {
+  it('pages through every love', async () => {
+    const attr = (page: number) => ({ user: 'u', page: String(page), perPage: '1', totalPages: '2', total: '2' });
+    const { client } = api((url) => {
+      const page = Number(url.searchParams.get('page'));
+      return {
+        lovedtracks: {
+          track: [{ name: `t${page}`, artist: { name: `a${page}`, url: '' } }],
+          '@attr': attr(page),
+        },
+      };
+    });
+
+    const out = [];
+    for await (const t of client.iterateLovedTracks('u')) out.push(t);
+    expect(out).toEqual([
+      { name: 't1', artist: 'a1' },
+      { name: 't2', artist: 'a2' },
+    ]);
+  });
+});

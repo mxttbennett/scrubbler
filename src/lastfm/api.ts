@@ -3,6 +3,7 @@ import { RateLimiter } from './rateLimiter.js';
 import {
   type AlbumDetails,
   type AlbumInfo,
+  type LovedTracks,
   type RecentTracks,
   type TopAlbums,
   type TopArtists,
@@ -207,6 +208,24 @@ export class LastfmApi {
           album: t.album['#text'],
           uts: toInt(t.date.uts),
         };
+      }
+      page++;
+    } while (page <= totalPages);
+  }
+
+  getLovedTracks(user: string, page = 1, limit = PAGE_SIZE): Promise<LovedTracks> {
+    return this.request('user.getlovedtracks', { user, limit: String(limit), page: String(page) });
+  }
+
+  /** Newest love first. A user with no loves comes back with an empty `track` list, not an error. */
+  async *iterateLovedTracks(user: string): AsyncGenerator<{ name: string; artist: string }> {
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const data = await this.getLovedTracks(user, page);
+      totalPages = toInt(data.lovedtracks['@attr'].totalPages);
+      for (const track of data.lovedtracks.track) {
+        yield { name: track.name, artist: track.artist.name };
       }
       page++;
     } while (page <= totalPages);

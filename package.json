@@ -1,6 +1,6 @@
 {
   "name": "scrubbler",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "description": "scrubbler — headless Last.fm metadata cleaner",
   "type": "module",
   "main": "dist/index.js",
@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "report": "tsx scripts/sweep-report.ts",
+    "sync:apple": "tsx src/sync/cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },

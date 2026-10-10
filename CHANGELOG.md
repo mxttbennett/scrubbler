@@ -7,6 +7,14 @@ GitHub release takes its notes from the matching section.
 Entry format: `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD`, then one `-` bullet per change, written for the
 person running the service rather than for the diff.
 
+## [1.9.0] - 2026-10-10
+
+- Adds `npm run sync:apple`, a one-way sync of your Last.fm loved tracks to Apple Music favorites. It
+  runs on a Mac (it drives Music.app through `osascript`) and needs only `LASTFM_USERNAME` and
+  `LASTFM_API_KEY`. It matches on artist and title against your existing library and lists loves with
+  no library match instead of guessing. Respects `DRY_RUN` (default `true`); each handled track is
+  remembered in `.data/apple-sync.json`, so a favorite you remove later is not re-added.
+
 ## [1.8.2] - 2026-10-09
 
 - Spaces Last.fm edits 10-15s apart instead of a fixed 3s. `WRITE_DELAY_MS` now defaults to 10s and a
