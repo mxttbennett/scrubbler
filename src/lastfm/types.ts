@@ -45,6 +45,15 @@ export function toInt(value: string | number | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export interface LovedTrack {
+  name: string;
+  artist: { name: string; url: string; mbid?: string };
+}
+
+export interface LovedTracks {
+  lovedtracks: { track: LovedTrack[]; '@attr': PagedAttr };
+}
+
 export interface RecentTrack {
   name: string;
   artist: { '#text': string; mbid?: string };

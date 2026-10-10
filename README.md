@@ -343,6 +343,19 @@ that is simply wrong.
 Matching ignores casing and surrounding spaces, since Last.fm's own casing varies. A replacement that
 differs from the original only in casing is rejected, because Last.fm silently discards such an edit.
 
+## Syncing loves to Apple Music
+
+`npm run sync:apple` favorites, in Music.app, every track you have loved on Last.fm. It is separate
+from the worker because it must run on a Mac: it drives Music.app through `osascript`, so give it
+Automation permission for Music the first time. It needs only `LASTFM_USERNAME` and `LASTFM_API_KEY`.
+
+- One-way, and **library only**: a love is matched on artist and title (punctuation- and
+  case-folded, otherwise exact) against tracks already in your library. Loves with no match are
+  listed, not guessed at.
+- `DRY_RUN=true` by default; set `DRY_RUN=false` to write.
+- Handled tracks are remembered in `APPLE_SYNC_STATE_PATH` (default `.data/apple-sync.json`), so a
+  favorite you remove in Music.app stays removed.
+
 ## Seeing what it would change
 
 `npm run report` sweeps the API and prints every planned change without scraping or writing
