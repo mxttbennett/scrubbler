@@ -82,6 +82,35 @@ Each write sets `edit_all` (apply to all past scrobbles of that exact tuple) and
 itself, steady-state work approaches zero — the service is really a rule-discovery loop, and sweeps
 are stateless full enumerations rather than an incremental cursor.
 
+## Local macOS Music library
+
+The on-demand Music CLI previews track name and album changes with no flags, independently of Last.fm:
+
+```sh
+npm run music
+npm run music -- --apply
+npm run music -- --undo /absolute/path.csv
+```
+
+After `npm run build`, use `node dist/music/index.js` with the same flags.
+Music uses only the default groups (`remaster`, `edition`, `bonus`), with no environment/database
+rule overrides, custom replacements, ignores, punctuation clustering, or artist renames.
+For a nonempty `--apply`, `.data/music/undo-<UTC timestamp to seconds>.csv` records exact
+`persistent ID,field,original,new` values and is written, flushed, and closed before any Music write.
+Its absolute path is printed; a backup failure prevents all writes.
+
+Each field is checked by persistent ID: an exact target is `already-target`; a value different from
+the recorded original is a `conflict` and stays unchanged. Otherwise it is set and read back:
+an exact match is `applied`; missing/nonunique IDs, setter errors, and read-back mismatches are `failed`.
+The run continues past per-field failures and conflicts, returning nonzero if any occur. A process
+failure, timeout, or malformed/incomplete response stops the run; the active batch's outcome is
+unknown, later fields are not submitted, and the CSV remains available without automatic retry or rollback.
+
+`--undo` validates the CSV, reverses original/new values, and uses the same conditional writer in the
+same Music library, without discovery or a new CSV. Restored or never-applied fields are `already-target`;
+later edits are conflicts. Eligible fields restore alongside unrelated failures. Keep the CSV for recovery.
+Real-library validation on macOS remains pending.
+
 ## The rule engine
 
 The catalogue is **closed**, and each pattern must match the **entire** trailing segment of a title.
