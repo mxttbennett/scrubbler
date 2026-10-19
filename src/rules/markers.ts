@@ -16,8 +16,10 @@ export type GroupName =
 /**
  * A custom replacement is not a catalogue group: it has no pattern, applies to one artist's title,
  * and must never be nameable in RULES_ENABLED — hence a widened tag rather than a tenth GroupName.
+ * `manual` is the same shape for a one-off typed in the grid, kept distinct from `custom` so the
+ * ledger can tell a hand-typed edit from one a saved rule produced.
  */
-export type RuleTag = GroupName | 'custom';
+export type RuleTag = GroupName | 'custom' | 'manual';
 
 /**
  * How much supervision a group gets: `auto` applies, `gated` proposes a Discord card first, `off`

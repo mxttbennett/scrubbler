@@ -234,3 +234,39 @@ export const ruleTiers = sqliteTable('rule_tiers', {
   tier: text('tier', { enum: ['auto', 'gated', 'off'] }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+/**
+ * Every entity in the library, not just the ones the engine acted on — the grid needs to offer a
+ * track it has no opinion about. Populated entirely from the JSON API, which is a separate and far
+ * cheaper rate-limit domain than the library pages; nothing here is ever scraped.
+ *
+ * A row is never the source of an edit tuple. The csrf token, the per-scrobble timestamp and the
+ * form action cannot be cached, so a write still re-derives the tuple from a live page — which is
+ * also why an imperfect album mapping can misgroup a row in the UI but cannot produce a wrong edit.
+ */
+export const library = sqliteTable(
+  'library',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind', { enum: ['track', 'album'] }).notNull(),
+    artist: text('artist').notNull(),
+    title: text('title').notNull(),
+    /** Null on a track until the album crawl maps it; always null on an album row. */
+    albumTitle: text('album_title'),
+    albumArtist: text('album_artist'),
+    playcount: integer('playcount').notNull().default(0),
+    /** How the album fields were learned, so the UI can say when a grouping is approximate. */
+    albumSource: text('album_source', { enum: ['api', 'page', 'ledger'] }),
+    mappedAt: integer('mapped_at', { mode: 'timestamp_ms' }),
+    /** Retry budget for the crawl; a transient album.getinfo failure must not poison the row. */
+    mapAttempts: integer('map_attempts').notNull().default(0),
+    mapError: text('map_error'),
+    firstSeenAt: createdAt(),
+    lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }),
+  },
+  (t) => [
+    uniqueIndex('library_entity').on(t.kind, t.artist, t.title),
+    index('library_album').on(t.albumArtist, t.albumTitle),
+    index('library_playcount').on(t.playcount),
+  ],
+);

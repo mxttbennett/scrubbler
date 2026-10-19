@@ -25,7 +25,12 @@ section 18).
 
 Run it on your own account, at your own risk. It is non-commercial, identifies itself honestly in
 its User-Agent, paces library reads at 15s with jitter, and backs off when Last.fm signals a
-throttle — but none of that amounts to permission. The MIT licence covers defects in this code. It
+throttle — but none of that amounts to permission.
+
+With the web grid enabled the service also keeps a local mirror of your own library — titles,
+artists and play counts, gathered only through the documented API. It is a few megabytes, well
+inside the 100 MB Reasonable Usage Cap of clause 4.3.4, never leaves the machine, and is a cache
+that can be deleted and rebuilt at any time. The MIT licence covers defects in this code. It
 does not cover what happens to your Last.fm account.
 
 ## How it works
