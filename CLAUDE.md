@@ -9,6 +9,7 @@ vitest. Modelled on the sibling `feed1` service; same conventions apply unless n
 |---|---|
 | `src/core/` | zod-validated env config |
 | `src/rules/` | the marker catalogue, the **pure** title engine, the punctuation fold; no I/O |
+| `src/music/` | isolated macOS Music CLI, bulk discovery, pure plans, undo CSV, conditional batch writes |
 | `src/lastfm/` | read API client, web session + cookie jar, page parsing, the edit writer |
 | `src/scrub/` | planner (sweep), clusters (punctuation twins), resolver (candidates → tuples), executor, worker loop |
 | `src/db/` | Drizzle schema; migrations in `drizzle/` applied at startup |
@@ -200,6 +201,7 @@ already has them.
 ## Testing
 
 Seams are constructor-injected (`sleep`, `fetchImpl`, `log`, `statePath`) rather than module-mocked.
+The Music CLI injects `runScript`, output, and backup/file operations; generated JXA runs only against fake `Application` objects in tests.
 No network in tests. `test/rules/engine.test.ts` runs against
 `test/fixtures/lfm-title-corpus.json` — a real library snapshot — and **snapshots the full verdict**.
 That snapshot is the safety net: read its diff on every catalogue change. It has already caught two
