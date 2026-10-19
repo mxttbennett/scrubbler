@@ -9,6 +9,7 @@ import type { PlannedAlbumEdit } from '../../src/lastfm/albumEditor.js';
 import type { DiscordEmbed } from '../../src/report/discord.js';
 import type { ProposalButton, ProposalTransport } from '../../src/report/proposals.js';
 import type { Correction, Reporter } from '../../src/report/reporter.js';
+import { CustomRules, RuleRejected } from '../../src/rules/customRules.js';
 
 const silent: Reporter = {
   corrections: async () => {},
@@ -78,7 +79,12 @@ interface Harness {
 }
 
 function harness(
-  opts: { failPosts?: boolean; token?: string | undefined; ttlHours?: number } = {},
+  opts: {
+    failPosts?: boolean;
+    token?: string | undefined;
+    ttlHours?: number;
+    customRules?: Pick<CustomRules, 'add'>;
+  } = {},
 ) {
   const d = db();
   const state: Harness = { applied: [], tokens: 0 };
@@ -107,6 +113,7 @@ function harness(
     ttlHours: opts.ttlHours ?? 168,
     enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
     tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
+    customRules: opts.customRules ?? new CustomRules(d),
     log: () => {},
   });
   return { d, executor, approvals, state, ...t };
@@ -121,7 +128,7 @@ describe('Approvals.propose', () => {
       toGroup('The Replacements', ['Bastards of Young', 'Left of the Dial'].map(trackEdit)),
     );
 
-    expect(result).toBe('proposed');
+    expect(result).toEqual({ status: 'proposed', approvalId: 1 });
     const edits = h.d.select().from(schema.appliedEdits).all();
     expect(edits).toHaveLength(2);
     for (const row of edits) expect(row.status).toBe('awaiting_approval');
@@ -140,7 +147,7 @@ describe('Approvals.propose', () => {
       toGroup('The Replacements', [trackEdit('Bastards of Young')]),
     );
 
-    expect(result).toBe('post-failed');
+    expect(result).toEqual({ status: 'post-failed' });
     expect(h.d.select().from(schema.approvals).all()).toHaveLength(0);
     expect(h.d.select().from(schema.approvalEdits).all()).toHaveLength(0);
     // Still `planned`, so a later sweep proposes it again rather than stranding it.
@@ -152,7 +159,7 @@ describe('Approvals.propose', () => {
     const group = toGroup('The Replacements', [trackEdit('Bastards of Young')]);
     await h.approvals.propose(group);
 
-    expect(await h.approvals.propose(group)).toBe('duplicate');
+    expect(await h.approvals.propose(group)).toEqual({ status: 'duplicate' });
     expect(h.posts).toHaveLength(1);
     expect(h.d.select().from(schema.approvals).all()).toHaveLength(1);
   });
@@ -167,6 +174,75 @@ describe('Approvals.propose', () => {
 });
 
 describe('Approvals.approve', () => {
+  function mcpTrackEdit(): PlannedEdit {
+    const edit = trackEdit('Bastards of Young (Demo)');
+    return {
+      ...edit,
+      next: { ...edit.original, track_name: 'Bastards of Young' },
+      groups: ['custom', 'mcp'],
+    };
+  }
+
+  function mcpAlbumEdit(): PlannedAlbumEdit {
+    return { ...albumEdit(), groups: ['custom', 'mcp'] };
+  }
+
+  it('persists an MCP track rule under its provenance and keeps the Discord decider', async () => {
+    const h = harness();
+    await h.approvals.propose(toGroup('The Replacements', [mcpTrackEdit()]));
+
+    await h.approvals.approve(1, OWNER);
+
+    expect(h.d.select().from(schema.customRules).all()).toMatchObject([
+      {
+        kind: 'track',
+        artist: 'The Replacements',
+        fromTitle: 'Bastards of Young (Demo)',
+        toTitle: 'Bastards of Young',
+        createdBy: 'mcp',
+      },
+    ]);
+    expect(h.d.select().from(schema.approvals).get()?.decidedBy).toBe(OWNER);
+  });
+
+  it('reconstructs and persists an MCP album rule', async () => {
+    const h = harness();
+    await h.approvals.propose(toAlbumGroup(mcpAlbumEdit()));
+
+    await h.approvals.approve(1, OWNER);
+
+    expect(h.d.select().from(schema.customRules).all()).toMatchObject([
+      {
+        kind: 'album',
+        artist: 'Nirvana',
+        fromTitle: 'In Utero (Deluxe Edition)',
+        toTitle: 'In Utero',
+        createdBy: 'mcp',
+      },
+    ]);
+  });
+
+  it('releases an MCP claim when rule persistence fails', async () => {
+    const h = harness({
+      customRules: {
+        add: () => {
+          throw new RuleRejected('rule store failed');
+        },
+      },
+    });
+    await h.approvals.propose(toGroup('The Replacements', [mcpTrackEdit()]));
+
+    await expect(h.approvals.approve(1, OWNER)).rejects.toThrow('rule store failed');
+
+    expect(h.state.tokens).toBe(0);
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).get()).toMatchObject({
+      status: 'pending',
+      decidedBy: null,
+      decidedAt: null,
+    });
+  });
+
   it('applies with a fresh token, never the one stored at proposal time', async () => {
     const h = harness();
     await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
@@ -241,6 +317,7 @@ describe('Approvals.approve', () => {
       ttlHours: 168,
       enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
       tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
+      customRules: new CustomRules(d),
       log: () => {},
     });
 
@@ -265,6 +342,24 @@ describe('Approvals.approve', () => {
 });
 
 describe('Approvals.ignore', () => {
+  it('does not create a custom rule for an ignored MCP proposal', async () => {
+    const h = harness();
+    const edit = trackEdit('Bastards of Young (Demo)');
+    await h.approvals.propose(
+      toGroup('The Replacements', [
+        {
+          ...edit,
+          next: { ...edit.original, track_name: 'Bastards of Young' },
+          groups: ['custom', 'mcp'],
+        },
+      ]),
+    );
+
+    await h.approvals.ignore(1, OWNER);
+
+    expect(h.d.select().from(schema.customRules).all()).toEqual([]);
+  });
+
   it('writes the ignored entity and the planner then filters it', async () => {
     const h = harness();
     await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
@@ -397,6 +492,26 @@ describe('Approvals.repropose', () => {
 });
 
 describe('Approvals.drainOnTierChange', () => {
+  it.each(['auto', 'off'] as const)('keeps an MCP proposal gated when catalogue rules are %s', async (tier) => {
+    const h = harness();
+    const edit = trackEdit('Bastards of Young (Demo)');
+    await h.approvals.propose(
+      toGroup('The Replacements', [
+        {
+          ...edit,
+          next: { ...edit.original, track_name: 'Bastards of Young' },
+          groups: ['custom', 'mcp'],
+        },
+      ]),
+    );
+
+    const drained = await h.approvals.drainOnTierChange({ ...DEFAULT_TIERS, edition: tier });
+
+    expect(drained).toEqual({ applied: 0, retired: 0, kept: 1 });
+    expect(h.state.applied).toEqual([]);
+    expect(h.d.select().from(schema.approvals).get()?.status).toBe('pending');
+  });
+
   it('applies pending proposals whose groups are now auto', async () => {
     const h = harness();
     await h.approvals.propose(toGroup('The Replacements', [trackEdit('Bastards of Young')]));
@@ -485,6 +600,7 @@ describe('reported corrections', () => {
       ttlHours: 168,
       enabledGroups: () => new Set<GroupName>(['live-track', 'remaster', 'edition']),
       tiers: () => ({ ...DEFAULT_TIERS, edition: 'gated', 'live-track': 'gated' }),
+      customRules: new CustomRules(d),
       log: () => {},
     });
 
@@ -609,6 +725,7 @@ describe('Approvals.strip', () => {
       ttlHours: 168,
       enabledGroups: () => new Set<GroupName>(['remaster', 'edition']),
       tiers: () => ({ ...DEFAULT_TIERS, 'live-track': 'off' }),
+      customRules: new CustomRules(h.d),
       log: () => {},
     });
     await approvals.propose(toGroup('Nirvana', [liveEdit('All Apologies')]));
